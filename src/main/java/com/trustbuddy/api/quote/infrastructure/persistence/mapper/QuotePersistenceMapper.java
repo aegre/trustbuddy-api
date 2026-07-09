@@ -4,7 +4,10 @@ import java.util.HashSet;
 
 import org.springframework.stereotype.Component;
 
+import com.trustbuddy.api.quote.domain.model.CoverageDetails;
+import com.trustbuddy.api.quote.domain.model.PersonalInfo;
 import com.trustbuddy.api.quote.domain.model.Quote;
+import com.trustbuddy.api.quote.domain.model.QuoteAudit;
 import com.trustbuddy.api.quote.infrastructure.persistence.entity.QuoteEntity;
 
 @Component
@@ -32,20 +35,26 @@ public class QuotePersistenceMapper {
 	public Quote toDomain(QuoteEntity entity) {
 		return Quote.reconstitute(
 				entity.getId(),
-				entity.getName(),
-				entity.getEmail(),
-				entity.getAge(),
-				entity.getZipCode(),
+				new PersonalInfo(entity.getName(), entity.getEmail(), entity.getAge(), entity.getZipCode()),
+				toCoverageDetails(entity),
+				new QuoteAudit(
+						entity.getStatus(),
+						entity.getCreatedAt(),
+						entity.getUpdatedAt(),
+						entity.getVersion()));
+	}
+
+	private CoverageDetails toCoverageDetails(QuoteEntity entity) {
+		if (entity.getCoverageType() == null) {
+			return null;
+		}
+		return new CoverageDetails(
 				entity.getCoverageType(),
 				entity.getHasPreexistingConditions(),
 				entity.getConditions(),
 				entity.getTakesPrescriptionMedication(),
 				entity.getUsesTobacco(),
 				entity.getNeedsSpouseCoverage(),
-				entity.getEstimatedMonthlyPremium(),
-				entity.getStatus(),
-				entity.getCreatedAt(),
-				entity.getUpdatedAt(),
-				entity.getVersion());
+				entity.getEstimatedMonthlyPremium());
 	}
 }

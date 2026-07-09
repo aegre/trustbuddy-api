@@ -15,6 +15,7 @@ import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
+import com.trustbuddy.api.quote.domain.model.CoverageDetails;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.service.CoverageHealthPolicy;
 import com.trustbuddy.api.quote.domain.service.PremiumCalculator;
@@ -83,25 +84,10 @@ public class QuoteService {
 
 		Set<ConditionType> normalizedConditions =
 				command.getConditions() == null ? Set.of() : command.getConditions();
-		Quote forPricing = quote.applyCoverage(
-				command.getCoverageType(),
-				command.getHasPreexistingConditions(),
-				normalizedConditions,
-				command.getTakesPrescriptionMedication(),
-				command.getUsesTobacco(),
-				command.getNeedsSpouseCoverage(),
-				BigDecimal.ZERO);
-		BigDecimal premium = premiumCalculator.calculate(forPricing);
-		Quote withCoverage = forPricing.applyCoverage(
-				command.getCoverageType(),
-				command.getHasPreexistingConditions(),
-				normalizedConditions,
-				command.getTakesPrescriptionMedication(),
-				command.getUsesTobacco(),
-				command.getNeedsSpouseCoverage(),
-				premium);
+		CoverageDetails coverageDetails = toCoverageDetails(command, normalizedConditions, BigDecimal.ZERO);
+		BigDecimal premium = premiumCalculator.calculate(quote.applyCoverage(coverageDetails));
 
-		return quoteRepository.save(withCoverage);
+		return quoteRepository.save(quote.applyCoverage(coverageDetails.withPremium(premium)));
 	}
 
 	public Quote getQuote(UUID id) {
@@ -111,5 +97,19 @@ public class QuoteService {
 
 	public Page<Quote> listQuotes(Pageable pageable) {
 		return quoteRepository.findAll(pageable);
+	}
+
+	private CoverageDetails toCoverageDetails(
+			UpdateCoverageCommand command,
+			Set<ConditionType> conditions,
+			BigDecimal premium) {
+		return new CoverageDetails(
+				command.getCoverageType(),
+				command.getHasPreexistingConditions(),
+				conditions,
+				command.getTakesPrescriptionMedication(),
+				command.getUsesTobacco(),
+				command.getNeedsSpouseCoverage(),
+				premium);
 	}
 }
