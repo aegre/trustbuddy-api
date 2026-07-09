@@ -20,7 +20,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 	private final JsonMapper jsonMapper;
 
 	public JwtAuthenticationEntryPoint(JsonMapper jsonMapper) {
-		this.jsonMapper = jsonMapper;
+		this.jsonMapper = jsonMapper.rebuild().build();
 	}
 
 	@Override

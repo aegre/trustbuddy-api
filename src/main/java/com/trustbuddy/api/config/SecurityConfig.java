@@ -37,26 +37,30 @@ public class SecurityConfig {
 	SecurityFilterChain securityFilterChain(
 			HttpSecurity http,
 			JwtAuthFilter jwtAuthFilter,
-			JwtAuthenticationEntryPoint authenticationEntryPoint) throws Exception {
-		http
-				.csrf(csrf -> csrf.disable())
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint))
-				.authorizeHttpRequests(auth -> {
-					auth.requestMatchers("/auth/token").permitAll();
-					auth.requestMatchers("/actuator/health", "/actuator/info").permitAll();
-					if (isSwaggerEnabled()) {
-						auth.requestMatchers(
-								"/swagger-ui/**",
-								"/swagger-ui.html",
-								"/v3/api-docs/**")
-								.permitAll();
-					}
-					auth.requestMatchers("/quotes/**").authenticated();
-					auth.anyRequest().denyAll();
-				})
-				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-		return http.build();
+			JwtAuthenticationEntryPoint authenticationEntryPoint) {
+		try {
+			http
+					.csrf(csrf -> csrf.disable())
+					.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+					.exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint))
+					.authorizeHttpRequests(auth -> {
+						auth.requestMatchers("/auth/token").permitAll();
+						auth.requestMatchers("/actuator/health", "/actuator/info").permitAll();
+						if (isSwaggerEnabled()) {
+							auth.requestMatchers(
+									"/swagger-ui/**",
+									"/swagger-ui.html",
+									"/v3/api-docs/**")
+									.permitAll();
+						}
+						auth.requestMatchers("/quotes/**").authenticated();
+						auth.anyRequest().denyAll();
+					})
+					.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+			return http.build();
+		} catch (Exception exception) {
+			throw new IllegalStateException("Failed to configure security filter chain", exception);
+		}
 	}
 
 	private boolean isSwaggerEnabled() {
