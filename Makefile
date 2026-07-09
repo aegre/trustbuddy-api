@@ -11,7 +11,7 @@ include .env
 export $(shell sed -n 's/=.*//p' .env)
 endif
 
-.PHONY: help compile test test-one verify lint run run-dev token infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs
+.PHONY: help compile test test-one verify lint run run-dev token infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs kafka-consume
 
 help: ## Show available targets
 	@echo "Trustbuddy API — available targets:"
@@ -64,6 +64,12 @@ infra-down: ## Stop infrastructure containers
 
 infra-logs: ## Tail infrastructure container logs
 	$(COMPOSE) logs -f postgres redis kafka
+
+kafka-consume: ## Tail quote-submitted Kafka topic locally
+	@docker exec trustbuddy-kafka /opt/kafka/bin/kafka-console-consumer.sh \
+		--bootstrap-server localhost:9092 \
+		--topic $${KAFKA_TOPIC:-quote-submitted} \
+		--from-beginning
 
 infra-reset: ## Stop infrastructure and remove volumes
 	$(COMPOSE) down -v

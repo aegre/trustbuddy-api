@@ -6,7 +6,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.trustbuddy.api.quote.domain.model.CoverageDetails;
+import com.trustbuddy.api.quote.domain.model.PersonalInfo;
 import com.trustbuddy.api.quote.domain.model.Quote;
+import com.trustbuddy.api.quote.domain.model.QuoteAudit;
 
 @Component
 public class QuoteCacheMapper {
@@ -57,22 +60,24 @@ public class QuoteCacheMapper {
 	}
 
 	private static Quote toDomain(QuoteCacheDocument document) {
+		CoverageDetails coverage = document.coverageType() == null
+				? null
+				: new CoverageDetails(
+						document.coverageType(),
+						document.hasPreexistingConditions(),
+						document.conditions(),
+						document.takesPrescriptionMedication(),
+						document.usesTobacco(),
+						document.needsSpouseCoverage(),
+						document.estimatedMonthlyPremium());
 		return Quote.reconstitute(
 				document.id(),
-				document.name(),
-				document.email(),
-				document.age(),
-				document.zipCode(),
-				document.coverageType(),
-				document.hasPreexistingConditions(),
-				document.conditions(),
-				document.takesPrescriptionMedication(),
-				document.usesTobacco(),
-				document.needsSpouseCoverage(),
-				document.estimatedMonthlyPremium(),
-				document.status(),
-				document.createdAt(),
-				document.updatedAt(),
-				document.version());
+				new PersonalInfo(document.name(), document.email(), document.age(), document.zipCode()),
+				coverage,
+				new QuoteAudit(
+						document.status(),
+						document.createdAt(),
+						document.updatedAt(),
+						document.version()));
 	}
 }

@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.trustbuddy.api.quote.application.port.out.InsurerGatewayPort;
 import com.trustbuddy.api.quote.application.port.out.InsurerSubmissionResult;
+import com.trustbuddy.api.quote.application.port.out.QuoteEventPublisherPort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
@@ -35,11 +36,14 @@ class QuoteSubmissionServiceTest {
 	@Mock
 	private InsurerGatewayPort insurerGateway;
 
+	@Mock
+	private QuoteEventPublisherPort quoteEventPublisher;
+
 	private QuoteSubmissionService quoteSubmissionService;
 
 	@BeforeEach
 	void setUp() {
-		quoteSubmissionService = new QuoteSubmissionService(quoteRepository, insurerGateway);
+		quoteSubmissionService = new QuoteSubmissionService(quoteRepository, insurerGateway, quoteEventPublisher);
 	}
 
 	@Test
@@ -56,6 +60,7 @@ class QuoteSubmissionServiceTest {
 		// Then
 		assertThat(submitted.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
 		verify(insurerGateway).submit(draft);
+		verify(quoteEventPublisher).publishQuoteSubmitted(submitted);
 	}
 
 	@Test
@@ -71,6 +76,7 @@ class QuoteSubmissionServiceTest {
 		assertThat(result).isSameAs(submitted);
 		verify(insurerGateway, never()).submit(any());
 		verify(quoteRepository, never()).save(any());
+		verify(quoteEventPublisher, never()).publishQuoteSubmitted(any());
 	}
 
 	@Test
@@ -99,6 +105,7 @@ class QuoteSubmissionServiceTest {
 				.hasMessageContaining("gateway down");
 
 		verify(quoteRepository).save(any(Quote.class));
+		verify(quoteEventPublisher, never()).publishQuoteSubmitted(any());
 	}
 
 	@Test
@@ -114,6 +121,7 @@ class QuoteSubmissionServiceTest {
 
 		// Then
 		assertThat(submitted.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
+		verify(quoteEventPublisher).publishQuoteSubmitted(submitted);
 	}
 
 	@Test
