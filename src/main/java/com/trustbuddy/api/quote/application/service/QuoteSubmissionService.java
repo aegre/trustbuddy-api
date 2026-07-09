@@ -76,11 +76,6 @@ public class QuoteSubmissionService {
 		if (!quote.hasCoverage()) {
 			throw new QuoteValidationException("Quote is missing required coverage data");
 		}
-		if (quote.getTakesPrescriptionMedication() == null
-				|| quote.getUsesTobacco() == null
-				|| quote.getNeedsSpouseCoverage() == null) {
-			throw new QuoteValidationException("Coverage health answers are required before submit");
-		}
 
 		Set<ConditionType> conditions = quote.getConditions().isEmpty() ? null : quote.getConditions();
 		coverageHealthPolicy.validateHealthFieldsForAge(

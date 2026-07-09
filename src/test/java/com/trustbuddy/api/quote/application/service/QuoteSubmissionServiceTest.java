@@ -123,6 +123,24 @@ class QuoteSubmissionServiceTest {
 	}
 
 	@Test
+	void givenCoveredQuoteWithoutOptionalHealthAnswers_whenSubmitQuote_thenSubmitsSuccessfully() {
+		// Given
+		Quote draft = QuoteGenerator.coverage(30, CoverageType.STANDARD).build().withStatus(QuoteStatus.DRAFT);
+		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+		when(insurerGateway.submit(draft)).thenReturn(new InsurerSubmissionResult(true, 200, "ok"));
+		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		// When
+		Quote submitted = quoteSubmissionService.submitQuote(draft.getId());
+
+		// Then
+		assertThat(submitted.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
+		assertThat(draft.getTakesPrescriptionMedication()).isNull();
+		assertThat(draft.getUsesTobacco()).isNull();
+		assertThat(draft.getNeedsSpouseCoverage()).isNull();
+	}
+
+	@Test
 	void givenDraftWithoutCoverage_whenSubmitQuote_thenThrowsQuoteValidationException() {
 		// Given
 		Quote draft = QuoteGenerator.draft(30);

@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
-import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
@@ -61,7 +60,6 @@ public class QuoteService {
 			Boolean needsSpouseCoverage) {
 		Quote quote = getQuote(id);
 		quoteStateTransitionService.ensureCanUpdateCoverage(quote);
-		validateRequiredCoverageAnswers(takesPrescriptionMedication, usesTobacco, needsSpouseCoverage);
 		coverageHealthPolicy.validateHealthFieldsForAge(
 				quote.getAge(),
 				hasPreexistingConditions,
@@ -96,20 +94,5 @@ public class QuoteService {
 
 	public Page<Quote> listQuotes(Pageable pageable) {
 		return quoteRepository.findAll(pageable);
-	}
-
-	private void validateRequiredCoverageAnswers(
-			Boolean takesPrescriptionMedication,
-			Boolean usesTobacco,
-			Boolean needsSpouseCoverage) {
-		if (takesPrescriptionMedication == null) {
-			throw new QuoteValidationException("takesPrescriptionMedication is required");
-		}
-		if (usesTobacco == null) {
-			throw new QuoteValidationException("usesTobacco is required");
-		}
-		if (needsSpouseCoverage == null) {
-			throw new QuoteValidationException("needsSpouseCoverage is required");
-		}
 	}
 }

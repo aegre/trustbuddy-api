@@ -65,6 +65,31 @@ class QuoteServiceTest {
 	}
 
 	@Test
+	void givenDraftQuote_whenUpdateCoverageWithOptionalFieldsOmitted_thenSavesCoverage() {
+		// Given
+		Quote draft = QuoteGenerator.draft(30);
+		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		// When
+		Quote updated = quoteService.updateCoverage(
+				draft.getId(),
+				CoverageType.STANDARD,
+				null,
+				null,
+				null,
+				null,
+				null);
+
+		// Then
+		assertThat(updated.getCoverageType()).isEqualTo(CoverageType.STANDARD);
+		assertThat(updated.getTakesPrescriptionMedication()).isNull();
+		assertThat(updated.getUsesTobacco()).isNull();
+		assertThat(updated.getNeedsSpouseCoverage()).isNull();
+		assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("100.00");
+	}
+
+	@Test
 	void givenDraftQuote_whenUpdateCoverage_thenRecalculatesPremiumAndSaves() {
 		// Given
 		Quote draft = QuoteGenerator.draft(30);

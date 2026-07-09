@@ -83,9 +83,9 @@ public final class QuoteGenerator {
 					coverageType,
 					hasPreexistingConditions,
 					conditions == null ? Set.of() : conditions,
-					takesPrescriptionMedication != null ? takesPrescriptionMedication : false,
-					usesTobacco != null ? usesTobacco : false,
-					needsSpouseCoverage != null ? needsSpouseCoverage : false,
+					takesPrescriptionMedication,
+					usesTobacco,
+					needsSpouseCoverage,
 					PLACEHOLDER_PREMIUM);
 		}
 	}
