@@ -21,16 +21,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import com.trustbuddy.api.quote.application.dto.CreateQuoteCommand;
+import com.trustbuddy.api.quote.application.dto.UpdateCoverageCommand;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
+import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
-import com.trustbuddy.api.quote.domain.service.CoverageHealthPolicy;
-import com.trustbuddy.api.quote.domain.service.PremiumCalculator;
-import com.trustbuddy.api.quote.domain.service.QuoteStateTransitionService;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,11 +43,7 @@ class QuoteServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		quoteService = new QuoteService(
-				quoteRepository,
-				new PremiumCalculator(),
-				new CoverageHealthPolicy(),
-				new QuoteStateTransitionService());
+		quoteService = new QuoteService(quoteRepository);
 	}
 
 	@Test
@@ -56,12 +52,23 @@ class QuoteServiceTest {
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		// When
-		Quote created = quoteService.createQuote("Jane Doe", "jane@example.com", 30, "12345");
+		Quote created = quoteService.createQuote(createCommand("Jane Doe", "jane@example.com", 30, "12345"));
 
 		// Then
 		assertThat(created.getStatus()).isEqualTo(QuoteStatus.DRAFT);
 		assertThat(created.getName()).isEqualTo("Jane Doe");
 		verify(quoteRepository).save(any(Quote.class));
+	}
+
+	@Test
+	void givenInvalidCreateCommand_whenCreateQuote_thenThrowsQuoteValidationException() {
+		// Given
+		CreateQuoteCommand command = createCommand("", "not-an-email", 0, "abc");
+
+		// When / Then
+		assertThatThrownBy(() -> quoteService.createQuote(command))
+				.isInstanceOf(QuoteValidationException.class);
+		verify(quoteRepository, org.mockito.Mockito.never()).save(any());
 	}
 
 	@Test
@@ -72,14 +79,7 @@ class QuoteServiceTest {
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		// When
-		Quote updated = quoteService.updateCoverage(
-				draft.getId(),
-				CoverageType.STANDARD,
-				null,
-				null,
-				null,
-				null,
-				null);
+		Quote updated = quoteService.updateCoverage(draft.getId(), updateCommand(CoverageType.STANDARD));
 
 		// Then
 		assertThat(updated.getCoverageType()).isEqualTo(CoverageType.STANDARD);
@@ -95,16 +95,13 @@ class QuoteServiceTest {
 		Quote draft = QuoteGenerator.draft(30);
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		UpdateCoverageCommand command = updateCommand(CoverageType.STANDARD);
+		command.setTakesPrescriptionMedication(false);
+		command.setUsesTobacco(true);
+		command.setNeedsSpouseCoverage(false);
 
 		// When
-		Quote updated = quoteService.updateCoverage(
-				draft.getId(),
-				CoverageType.STANDARD,
-				null,
-				null,
-				false,
-				true,
-				false);
+		Quote updated = quoteService.updateCoverage(draft.getId(), command);
 
 		// Then
 		assertThat(updated.getUsesTobacco()).isTrue();
@@ -119,14 +116,7 @@ class QuoteServiceTest {
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		// When
-		Quote updated = quoteService.updateCoverage(
-				draft.getId(),
-				CoverageType.STANDARD,
-				null,
-				null,
-				null,
-				null,
-				null);
+		Quote updated = quoteService.updateCoverage(draft.getId(), updateCommand(CoverageType.STANDARD));
 
 		// Then
 		assertThat(updated.getCoverageType()).isEqualTo(CoverageType.STANDARD);
@@ -142,12 +132,7 @@ class QuoteServiceTest {
 		// When / Then
 		assertThatThrownBy(() -> quoteService.updateCoverage(
 				submitted.getId(),
-				CoverageType.STANDARD,
-				null,
-				null,
-				null,
-				null,
-				null))
+				updateCommand(CoverageType.STANDARD)))
 				.isInstanceOf(InvalidQuoteStateException.class);
 	}
 
@@ -182,16 +167,15 @@ class QuoteServiceTest {
 		Quote draft = QuoteGenerator.draft(70);
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		UpdateCoverageCommand command = updateCommand(CoverageType.STANDARD);
+		command.setHasPreexistingConditions(true);
+		command.setConditions(Set.of(ConditionType.DIABETES));
+		command.setTakesPrescriptionMedication(false);
+		command.setUsesTobacco(true);
+		command.setNeedsSpouseCoverage(true);
 
 		// When
-		Quote updated = quoteService.updateCoverage(
-				draft.getId(),
-				CoverageType.STANDARD,
-				true,
-				Set.of(ConditionType.DIABETES),
-				false,
-				true,
-				true);
+		Quote updated = quoteService.updateCoverage(draft.getId(), command);
 
 		// Then
 		assertThat(updated.getHasPreexistingConditions()).isTrue();
@@ -208,18 +192,26 @@ class QuoteServiceTest {
 		ArgumentCaptor<Quote> savedQuote = ArgumentCaptor.forClass(Quote.class);
 
 		// When
-		quoteService.updateCoverage(
-				draft.getId(),
-				CoverageType.BASIC,
-				null,
-				null,
-				null,
-				null,
-				null);
+		quoteService.updateCoverage(draft.getId(), updateCommand(CoverageType.BASIC));
 
 		// Then
 		verify(quoteRepository).save(savedQuote.capture());
 		assertThat(savedQuote.getValue().getId()).isEqualTo(draft.getId());
 		assertThat(savedQuote.getValue().getEstimatedMonthlyPremium()).isEqualByComparingTo(new BigDecimal("50.00"));
+	}
+
+	private static CreateQuoteCommand createCommand(String name, String email, int age, String zipCode) {
+		CreateQuoteCommand command = new CreateQuoteCommand();
+		command.setName(name);
+		command.setEmail(email);
+		command.setAge(age);
+		command.setZipCode(zipCode);
+		return command;
+	}
+
+	private static UpdateCoverageCommand updateCommand(CoverageType coverageType) {
+		UpdateCoverageCommand command = new UpdateCoverageCommand();
+		command.setCoverageType(coverageType);
+		return command;
 	}
 }

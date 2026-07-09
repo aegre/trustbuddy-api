@@ -1,31 +1,38 @@
 package com.trustbuddy.api.quote.infrastructure.web.request;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "Personal information for creating a draft quote")
 public class CreateQuoteRequest {
 
-	@NotBlank
-	@Size(max = 255)
+	@Schema(
+			description = "Applicant full name",
+			example = "Jane Doe",
+			requiredMode = Schema.RequiredMode.REQUIRED,
+			maxLength = 255)
 	private String name;
 
-	@NotBlank
-	@Email
-	@Size(max = 255)
+	@Schema(
+			description = "Applicant email address",
+			example = "jane@example.com",
+			requiredMode = Schema.RequiredMode.REQUIRED,
+			format = "email",
+			maxLength = 255)
 	private String email;
 
-	@NotNull
-	@Min(1)
-	@Max(120)
+	@Schema(
+			description = "Applicant age in years",
+			example = "30",
+			requiredMode = Schema.RequiredMode.REQUIRED,
+			minimum = "1",
+			maximum = "120")
 	private Integer age;
 
-	@NotBlank
-	@Pattern(regexp = "\\d{5}")
+	@Schema(
+			description = "5-digit US zip code",
+			example = "12345",
+			requiredMode = Schema.RequiredMode.REQUIRED,
+			pattern = "\\d{5}")
 	private String zipCode;
 
 	public String getName() {

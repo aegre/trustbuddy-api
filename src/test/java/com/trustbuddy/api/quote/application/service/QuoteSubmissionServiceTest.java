@@ -24,8 +24,6 @@ import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
-import com.trustbuddy.api.quote.domain.service.CoverageHealthPolicy;
-import com.trustbuddy.api.quote.domain.service.QuoteStateTransitionService;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,11 +39,7 @@ class QuoteSubmissionServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		quoteSubmissionService = new QuoteSubmissionService(
-				quoteRepository,
-				insurerGateway,
-				new QuoteStateTransitionService(),
-				new CoverageHealthPolicy());
+		quoteSubmissionService = new QuoteSubmissionService(quoteRepository, insurerGateway);
 	}
 
 	@Test

@@ -1,7 +1,6 @@
 package com.trustbuddy.api.quote.infrastructure.web.controller;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,26 +28,34 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.service.QuoteService;
 import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
+import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
+import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
 import com.trustbuddy.api.quote.infrastructure.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 
 @WebMvcTest(controllers = QuoteController.class)
-@Import({ GlobalExceptionHandler.class, QuoteControllerTest.CacheTestConfig.class })
+@Import({ GlobalExceptionHandler.class, CommandValidator.class, QuoteControllerTest.TestConfig.class })
 @AutoConfigureMockMvc(addFilters = false)
 class QuoteControllerTest {
 
 	@TestConfiguration
-	static class CacheTestConfig {
+	static class TestConfig {
 
 		@Bean
 		CacheManager cacheManager() {
 			return new ConcurrentMapCacheManager();
+		}
+
+		@Bean
+		QuoteService quoteService(QuoteRepositoryPort quoteRepository, CommandValidator commandValidator) {
+			return new QuoteService(quoteRepository, commandValidator);
 		}
 	}
 
@@ -56,7 +63,7 @@ class QuoteControllerTest {
 	private MockMvc mockMvc;
 
 	@MockitoBean
-	private QuoteService quoteService;
+	private QuoteRepositoryPort quoteRepository;
 
 	@MockitoBean
 	private QuoteSubmissionService quoteSubmissionService;
@@ -64,8 +71,7 @@ class QuoteControllerTest {
 	@Test
 	void givenValidRequest_whenCreateQuote_thenReturns201WithLocation() throws Exception {
 		// Given
-		var quote = QuoteGenerator.draft(30);
-		when(quoteService.createQuote("Jane Doe", "jane@example.com", 30, "12345")).thenReturn(quote);
+		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		// When / Then
 		mockMvc.perform(post("/quotes")
@@ -79,8 +85,8 @@ class QuoteControllerTest {
 								}
 								"""))
 				.andExpect(status().isCreated())
-				.andExpect(header().string("Location", "http://localhost/quotes/" + quote.getId()))
-				.andExpect(jsonPath("$.id").value(quote.getId().toString()))
+				.andExpect(header().exists("Location"))
+				.andExpect(jsonPath("$.id").exists())
 				.andExpect(jsonPath("$.status").value("DRAFT"));
 	}
 
@@ -100,7 +106,7 @@ class QuoteControllerTest {
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.status").value(400));
 
-		verify(quoteService, never()).createQuote(any(), any(), any(Integer.class), any());
+		verify(quoteRepository, never()).save(any());
 	}
 
 	@Test
@@ -135,7 +141,7 @@ class QuoteControllerTest {
 	void givenUnknownQuote_whenGetQuote_thenReturns404() throws Exception {
 		// Given
 		UUID id = UUID.randomUUID();
-		when(quoteService.getQuote(id)).thenThrow(new QuoteNotFoundException(id));
+		when(quoteRepository.findById(id)).thenReturn(java.util.Optional.empty());
 
 		// When / Then
 		mockMvc.perform(get("/quotes/{id}", id))
@@ -146,18 +152,12 @@ class QuoteControllerTest {
 	@Test
 	void givenCoverageRequest_whenUpdateCoverage_thenReturnsUpdatedQuote() throws Exception {
 		// Given
-		var quote = QuoteGenerator.coverage(30, CoverageType.PREMIUM).build();
-		when(quoteService.updateCoverage(
-				eq(quote.getId()),
-				eq(CoverageType.PREMIUM),
-				eq(null),
-				eq(null),
-				eq(null),
-				eq(null),
-				eq(null))).thenReturn(quote);
+		var draft = QuoteGenerator.draft(30);
+		when(quoteRepository.findById(draft.getId())).thenReturn(java.util.Optional.of(draft));
+		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		// When / Then
-		mockMvc.perform(patch("/quotes/{id}/coverage", quote.getId())
+		mockMvc.perform(patch("/quotes/{id}/coverage", draft.getId())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{
@@ -172,7 +172,7 @@ class QuoteControllerTest {
 	void givenQuotes_whenListQuotes_thenReturnsPage() throws Exception {
 		// Given
 		var quote = QuoteGenerator.draft(30);
-		when(quoteService.listQuotes(PageRequest.of(0, 20)))
+		when(quoteRepository.findAll(PageRequest.of(0, 20)))
 				.thenReturn(new PageImpl<>(java.util.List.of(quote)));
 
 		// When / Then

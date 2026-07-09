@@ -26,7 +26,6 @@ import com.trustbuddy.api.quote.infrastructure.web.response.QuoteResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/quotes")
@@ -43,12 +42,8 @@ public class QuoteController {
 
 	@PostMapping
 	@Operation(summary = "Create a draft quote from personal information")
-	public ResponseEntity<QuoteResponse> createQuote(@Valid @RequestBody CreateQuoteRequest request) {
-		Quote created = quoteService.createQuote(
-				request.getName(),
-				request.getEmail(),
-				request.getAge(),
-				request.getZipCode());
+	public ResponseEntity<QuoteResponse> createQuote(@RequestBody CreateQuoteRequest request) {
+		Quote created = quoteService.createQuote(QuoteWebMapper.toCommand(request));
 		QuoteResponse response = QuoteWebMapper.toResponse(created);
 		URI location = ServletUriComponentsBuilder.fromCurrentRequest()
 				.path("/{id}")
@@ -61,15 +56,8 @@ public class QuoteController {
 	@Operation(summary = "Set coverage type and supplemental health answers")
 	public QuoteResponse updateCoverage(
 			@PathVariable UUID id,
-			@Valid @RequestBody UpdateCoverageRequest request) {
-		Quote updated = quoteService.updateCoverage(
-				id,
-				request.getCoverageType(),
-				request.getHasPreexistingConditions(),
-				request.getConditions(),
-				request.getTakesPrescriptionMedication(),
-				request.getUsesTobacco(),
-				request.getNeedsSpouseCoverage());
+			@RequestBody UpdateCoverageRequest request) {
+		Quote updated = quoteService.updateCoverage(id, QuoteWebMapper.toCommand(request));
 		return QuoteWebMapper.toResponse(updated);
 	}
 

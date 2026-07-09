@@ -1,4 +1,4 @@
-package com.trustbuddy.api.quote.infrastructure.web.request;
+package com.trustbuddy.api.quote.application.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -12,7 +12,7 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 
-class CreateQuoteRequestValidationTest {
+class CreateQuoteCommandValidationTest {
 
 	private Validator validator;
 
@@ -23,12 +23,12 @@ class CreateQuoteRequestValidationTest {
 	}
 
 	@Test
-	void givenValidRequest_whenValidate_thenHasNoViolations() {
+	void givenValidCommand_whenValidate_thenHasNoViolations() {
 		// Given
-		CreateQuoteRequest request = validRequest();
+		CreateQuoteCommand command = validCommand();
 
 		// When
-		Set<ConstraintViolation<CreateQuoteRequest>> violations = validator.validate(request);
+		Set<ConstraintViolation<CreateQuoteCommand>> violations = validator.validate(command);
 
 		// Then
 		assertThat(violations).isEmpty();
@@ -37,11 +37,11 @@ class CreateQuoteRequestValidationTest {
 	@Test
 	void givenBlankName_whenValidate_thenReportsNameViolation() {
 		// Given
-		CreateQuoteRequest request = validRequest();
-		request.setName("  ");
+		CreateQuoteCommand command = validCommand();
+		command.setName("  ");
 
 		// When
-		Set<ConstraintViolation<CreateQuoteRequest>> violations = validator.validate(request);
+		Set<ConstraintViolation<CreateQuoteCommand>> violations = validator.validate(command);
 
 		// Then
 		assertThat(violations).extracting(violation -> violation.getPropertyPath().toString())
@@ -51,11 +51,11 @@ class CreateQuoteRequestValidationTest {
 	@Test
 	void givenInvalidEmail_whenValidate_thenReportsEmailViolation() {
 		// Given
-		CreateQuoteRequest request = validRequest();
-		request.setEmail("not-an-email");
+		CreateQuoteCommand command = validCommand();
+		command.setEmail("not-an-email");
 
 		// When
-		Set<ConstraintViolation<CreateQuoteRequest>> violations = validator.validate(request);
+		Set<ConstraintViolation<CreateQuoteCommand>> violations = validator.validate(command);
 
 		// Then
 		assertThat(violations).extracting(violation -> violation.getPropertyPath().toString())
@@ -65,23 +65,23 @@ class CreateQuoteRequestValidationTest {
 	@Test
 	void givenInvalidZipCode_whenValidate_thenReportsZipCodeViolation() {
 		// Given
-		CreateQuoteRequest request = validRequest();
-		request.setZipCode("ABCDE");
+		CreateQuoteCommand command = validCommand();
+		command.setZipCode("ABCDE");
 
 		// When
-		Set<ConstraintViolation<CreateQuoteRequest>> violations = validator.validate(request);
+		Set<ConstraintViolation<CreateQuoteCommand>> violations = validator.validate(command);
 
 		// Then
 		assertThat(violations).extracting(violation -> violation.getPropertyPath().toString())
 				.contains("zipCode");
 	}
 
-	private static CreateQuoteRequest validRequest() {
-		CreateQuoteRequest request = new CreateQuoteRequest();
-		request.setName("Jane Doe");
-		request.setEmail("jane@example.com");
-		request.setAge(30);
-		request.setZipCode("12345");
-		return request;
+	private static CreateQuoteCommand validCommand() {
+		CreateQuoteCommand command = new CreateQuoteCommand();
+		command.setName("Jane Doe");
+		command.setEmail("jane@example.com");
+		command.setAge(30);
+		command.setZipCode("12345");
+		return command;
 	}
 }

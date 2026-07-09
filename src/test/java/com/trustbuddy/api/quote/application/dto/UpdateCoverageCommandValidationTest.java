@@ -1,4 +1,4 @@
-package com.trustbuddy.api.quote.infrastructure.web.request;
+package com.trustbuddy.api.quote.application.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,7 +14,7 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 
-class UpdateCoverageRequestValidationTest {
+class UpdateCoverageCommandValidationTest {
 
 	private Validator validator;
 
@@ -25,13 +25,13 @@ class UpdateCoverageRequestValidationTest {
 	}
 
 	@Test
-	void givenCoverageTypeOnly_whenValidate_thenHasNoViolations() {
+	void givenValidCommand_whenValidate_thenHasNoViolations() {
 		// Given
-		UpdateCoverageRequest request = new UpdateCoverageRequest();
-		request.setCoverageType(CoverageType.STANDARD);
+		UpdateCoverageCommand command = new UpdateCoverageCommand();
+		command.setCoverageType(CoverageType.STANDARD);
 
 		// When
-		Set<ConstraintViolation<UpdateCoverageRequest>> violations = validator.validate(request);
+		Set<ConstraintViolation<UpdateCoverageCommand>> violations = validator.validate(command);
 
 		// Then
 		assertThat(violations).isEmpty();
@@ -40,10 +40,10 @@ class UpdateCoverageRequestValidationTest {
 	@Test
 	void givenMissingCoverageType_whenValidate_thenReportsCoverageTypeViolation() {
 		// Given
-		UpdateCoverageRequest request = new UpdateCoverageRequest();
+		UpdateCoverageCommand command = new UpdateCoverageCommand();
 
 		// When
-		Set<ConstraintViolation<UpdateCoverageRequest>> violations = validator.validate(request);
+		Set<ConstraintViolation<UpdateCoverageCommand>> violations = validator.validate(command);
 
 		// Then
 		assertThat(violations).extracting(violation -> violation.getPropertyPath().toString())
