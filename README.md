@@ -125,9 +125,11 @@ Swagger UI (when running): `http://localhost:8080/swagger-ui.html`
 
 ```bash
 make test
-# Coverage report (after JaCoCo wiring):
-./mvnw verify
-# open target/site/jacoco/index.html
+
+make test-one TEST=QuoteSubmissionServiceTest   # one class
+make test-one TEST='*Premium*'                  # name pattern
+make test-one TEST='com.trustbuddy.api.quote.domain.service.*'  # package
+make verify         # compile, test, and static analysis
 ```
 
 ## Frontend

@@ -149,6 +149,19 @@ This layer implements outbound ports and hosts inbound adapters.
 | `quote/infrastructure/` | `quote/application/`, `quote/domain/` | other feature modules directly |
 | `config/` | all layers | business logic |
 
+## Testing layout
+
+Tests mirror the capability packages:
+
+| Layer | Examples |
+|-------|----------|
+| Domain | `PremiumCalculatorTest`, `CoverageHealthPolicyTest`, `QuoteStateTransitionServiceTest` |
+| Application | `QuoteServiceTest`, `QuoteSubmissionServiceTest` (mock outbound ports) |
+| Infrastructure | `QuotePersistenceAdapterTest` (`@DataJpaTest`), `QuoteControllerTest` (`@WebMvcTest`), `InsurerGatewayHttpAdapterTest` |
+| Support | `testsupport/QuoteGenerator` — test data factory |
+
+Run a subset with Surefire patterns: `make test-one TEST=QuoteSubmissionServiceTest` (class), `TEST='*Premium*'` (wildcard), or `TEST='com.trustbuddy.api.quote.domain.service.*'` (package). Full suite: `make verify`.
+
 ## Adding a new capability
 
 1. Create `src/main/java/com/trustbuddy/api/<capability>/` with `application/`, `domain/`, `infrastructure/`.
