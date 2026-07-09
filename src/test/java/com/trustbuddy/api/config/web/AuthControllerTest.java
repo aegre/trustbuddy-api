@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.cache.CacheManager;
@@ -23,7 +24,8 @@ import com.trustbuddy.api.config.SecurityConfig;
 import com.trustbuddy.api.quote.infrastructure.web.exception.GlobalExceptionHandler;
 
 @WebMvcTest(controllers = AuthController.class)
-@Import({ ApplicationConfig.class, JwtService.class, SecurityConfig.class, GlobalExceptionHandler.class,
+@Import({ ApplicationConfig.class, JwtService.class, JwtAuthFilter.class, JwtAuthenticationEntryPoint.class,
+		SecurityConfig.class, GlobalExceptionHandler.class, JacksonAutoConfiguration.class,
 		AuthControllerTest.CacheTestConfig.class })
 @AutoConfigureMockMvc(addFilters = false)
 @TestPropertySource(properties = {
