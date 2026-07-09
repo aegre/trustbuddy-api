@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.trustbuddy.api.config.QuoteMetrics;
 import com.trustbuddy.api.config.properties.QuoteProperties;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.model.Quote;
@@ -17,25 +18,37 @@ public class DraftExpirationService {
 
 	private final QuoteRepositoryPort quoteRepository;
 	private final QuoteStateTransitionService quoteStateTransitionService;
+	private final QuoteMetrics quoteMetrics;
 	private final int draftExpirationMinutes;
 
 	@Autowired
 	public DraftExpirationService(
 			QuoteRepositoryPort quoteRepository,
-			QuoteProperties quoteProperties) {
+			QuoteProperties quoteProperties,
+			QuoteMetrics quoteMetrics) {
 		this(
 				quoteRepository,
 				new QuoteStateTransitionService(),
+				quoteMetrics,
 				quoteProperties.draftExpirationMinutes());
 	}
 
 	DraftExpirationService(
 			QuoteRepositoryPort quoteRepository,
 			QuoteStateTransitionService quoteStateTransitionService,
+			QuoteMetrics quoteMetrics,
 			int draftExpirationMinutes) {
 		this.quoteRepository = quoteRepository;
 		this.quoteStateTransitionService = quoteStateTransitionService;
+		this.quoteMetrics = quoteMetrics;
 		this.draftExpirationMinutes = draftExpirationMinutes;
+	}
+
+	DraftExpirationService(
+			QuoteRepositoryPort quoteRepository,
+			QuoteStateTransitionService quoteStateTransitionService,
+			int draftExpirationMinutes) {
+		this(quoteRepository, quoteStateTransitionService, QuoteMetrics.noop(), draftExpirationMinutes);
 	}
 
 	public int expireStaleDrafts() {
@@ -47,6 +60,7 @@ public class DraftExpirationService {
 			quoteRepository.save(expired);
 			expiredCount++;
 		}
+		quoteMetrics.recordExpired(expiredCount);
 		return expiredCount;
 	}
 }
