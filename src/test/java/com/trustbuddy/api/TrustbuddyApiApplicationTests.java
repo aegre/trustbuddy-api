@@ -26,6 +26,8 @@ class TrustbuddyApiApplicationTests {
 
 	@Test
 	void contextLoads() {
+		// Given — full application context with PostgreSQL and Redis (see class annotations)
+		// When / Then — context starts without failure
 	}
 
 }

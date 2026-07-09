@@ -324,6 +324,34 @@ Mirror the hexagonal package structure under `src/test/java/com/trustbuddy/api/`
 - Use Testcontainers only when testing adapter integration (persistence, Kafka, Redis).
 - Every bug fix should include a test that would have caught it.
 
+### Given / When / Then
+
+Structure every test method with three clearly separated sections:
+
+| Section | Purpose |
+|---------|---------|
+| **Given** | Arrange — build domain objects, seed data, configure mocks |
+| **When** | Act — invoke the method or operation under test |
+| **Then** | Assert — verify outcomes with AssertJ (or JUnit assertions) |
+
+Use `// Given`, `// When`, and `// Then` comments and a blank line between sections. Keep each section focused on one concern. Smoke tests that only verify context startup may combine **When** and **Then**.
+
+```java
+@Test
+void saveAndFindById_roundTripsQuoteFields() {
+	// Given
+	Quote draft = Quote.createDraft("Jane Doe", "jane@example.com", 30, "12345");
+
+	// When
+	Quote saved = quoteRepository.save(draft);
+	Quote found = quoteRepository.findById(saved.getId()).orElseThrow();
+
+	// Then
+	assertThat(found.getName()).isEqualTo("Jane Doe");
+	assertThat(found.getStatus()).isEqualTo(QuoteStatus.DRAFT);
+}
+```
+
 ## Verification checklist
 
 Before marking work complete:

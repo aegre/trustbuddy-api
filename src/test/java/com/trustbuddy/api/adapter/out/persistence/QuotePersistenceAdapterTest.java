@@ -46,11 +46,14 @@ class QuotePersistenceAdapterTest {
 
 	@Test
 	void saveAndFindById_roundTripsQuoteFields() {
+		// Given
 		Quote draft = Quote.createDraft("Jane Doe", "jane@example.com", 30, "12345");
 
+		// When
 		Quote saved = quoteRepository.save(draft);
-
 		Quote found = quoteRepository.findById(saved.getId()).orElseThrow();
+
+		// Then
 		assertThat(found.getName()).isEqualTo("Jane Doe");
 		assertThat(found.getEmail()).isEqualTo("jane@example.com");
 		assertThat(found.getAge()).isEqualTo(30);
@@ -60,6 +63,7 @@ class QuotePersistenceAdapterTest {
 
 	@Test
 	void save_persistsCoverageAndConditions() {
+		// Given
 		Quote draft = quoteRepository.save(Quote.createDraft("John", "john@example.com", 70, "90210"));
 		Quote withCoverage = draft.applyCoverage(
 				CoverageType.STANDARD,
@@ -70,9 +74,11 @@ class QuotePersistenceAdapterTest {
 				true,
 				new BigDecimal("327.60"));
 
+		// When
 		Quote saved = quoteRepository.save(withCoverage);
-
 		Quote found = quoteRepository.findById(saved.getId()).orElseThrow();
+
+		// Then
 		assertThat(found.getCoverageType()).isEqualTo(CoverageType.STANDARD);
 		assertThat(found.getEstimatedMonthlyPremium()).isEqualByComparingTo("327.60");
 		assertThat(found.getConditions()).containsExactlyInAnyOrder(
@@ -83,16 +89,20 @@ class QuotePersistenceAdapterTest {
 
 	@Test
 	void findAll_returnsPagedQuotes() {
+		// Given
 		quoteRepository.save(Quote.createDraft("A", "a@example.com", 25, "11111"));
 		quoteRepository.save(Quote.createDraft("B", "b@example.com", 35, "22222"));
 
+		// When
 		var page = quoteRepository.findAll(PageRequest.of(0, 10));
 
+		// Then
 		assertThat(page.getTotalElements()).isEqualTo(2);
 	}
 
 	@Test
 	void findStaleDrafts_returnsDraftsOlderThanCutoff() {
+		// Given
 		Instant staleUpdatedAt = Instant.now().minus(Duration.ofMinutes(31));
 		Quote staleDraft = Quote.reconstitute(
 				java.util.UUID.randomUUID(),
@@ -114,8 +124,10 @@ class QuotePersistenceAdapterTest {
 		quoteRepository.save(staleDraft);
 		quoteRepository.save(Quote.createDraft("Fresh", "fresh@example.com", 40, "44444"));
 
+		// When
 		var staleDrafts = quoteRepository.findStaleDrafts(Instant.now().minus(Duration.ofMinutes(30)));
 
+		// Then
 		assertThat(staleDrafts).extracting(Quote::getEmail).containsExactly("stale@example.com");
 	}
 
