@@ -106,7 +106,7 @@ class QuoteSubmissionServiceTest {
 				.hasMessageContaining("gateway down");
 
 		verify(quoteRepository).save(any(Quote.class));
-		verify(quoteCache, never()).evict(any());
+		verify(quoteCache).evict(draft.getId());
 	}
 
 	@Test

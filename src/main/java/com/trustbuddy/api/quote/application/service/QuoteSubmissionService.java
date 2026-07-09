@@ -98,6 +98,7 @@ public class QuoteSubmissionService {
 		}
 
 		quoteRepository.save(quoteStateTransitionService.markSubmissionFailed(quote));
+		quoteCache.evict(id);
 		throw new ExternalSubmissionException(result.message());
 	}
 
