@@ -1,6 +1,7 @@
 package com.trustbuddy.api.quote.application.service;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.trustbuddy.api.quote.application.dto.CreateQuoteCommand;
 import com.trustbuddy.api.quote.application.dto.UpdateCoverageCommand;
+import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
@@ -26,15 +28,20 @@ import jakarta.validation.Validation;
 public class QuoteService {
 
 	private final QuoteRepositoryPort quoteRepository;
+	private final QuoteCachePort quoteCache;
 	private final PremiumCalculator premiumCalculator;
 	private final CoverageHealthPolicy coverageHealthPolicy;
 	private final QuoteStateTransitionService quoteStateTransitionService;
 	private final CommandValidator commandValidator;
 
 	@Autowired
-	public QuoteService(QuoteRepositoryPort quoteRepository, CommandValidator commandValidator) {
+	public QuoteService(
+			QuoteRepositoryPort quoteRepository,
+			QuoteCachePort quoteCache,
+			CommandValidator commandValidator) {
 		this(
 				quoteRepository,
+				quoteCache,
 				new PremiumCalculator(),
 				new CoverageHealthPolicy(),
 				new QuoteStateTransitionService(),
@@ -43,20 +50,23 @@ public class QuoteService {
 
 	QuoteService(
 			QuoteRepositoryPort quoteRepository,
+			QuoteCachePort quoteCache,
 			PremiumCalculator premiumCalculator,
 			CoverageHealthPolicy coverageHealthPolicy,
 			QuoteStateTransitionService quoteStateTransitionService,
 			CommandValidator commandValidator) {
 		this.quoteRepository = quoteRepository;
+		this.quoteCache = quoteCache;
 		this.premiumCalculator = premiumCalculator;
 		this.coverageHealthPolicy = coverageHealthPolicy;
 		this.quoteStateTransitionService = quoteStateTransitionService;
 		this.commandValidator = commandValidator;
 	}
 
-	QuoteService(QuoteRepositoryPort quoteRepository) {
+	QuoteService(QuoteRepositoryPort quoteRepository, QuoteCachePort quoteCache) {
 		this(
 				quoteRepository,
+				quoteCache,
 				new PremiumCalculator(),
 				new CoverageHealthPolicy(),
 				new QuoteStateTransitionService(),
@@ -101,12 +111,21 @@ public class QuoteService {
 				command.getNeedsSpouseCoverage(),
 				premium);
 
-		return quoteRepository.save(withCoverage);
+		Quote saved = quoteRepository.save(withCoverage);
+		quoteCache.evict(id);
+		return saved;
 	}
 
 	public Quote getQuote(UUID id) {
-		return quoteRepository.findById(id)
+		Optional<Quote> cached = quoteCache.get(id);
+		if (cached.isPresent()) {
+			return cached.get();
+		}
+
+		Quote quote = quoteRepository.findById(id)
 				.orElseThrow(() -> new QuoteNotFoundException(id));
+		quoteCache.put(quote);
+		return quote;
 	}
 
 	public Page<Quote> listQuotes(Pageable pageable) {
