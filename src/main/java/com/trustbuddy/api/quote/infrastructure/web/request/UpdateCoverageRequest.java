@@ -1,5 +1,6 @@
 package com.trustbuddy.api.quote.infrastructure.web.request;
 
+import java.util.Collections;
 import java.util.Set;
 
 import com.trustbuddy.api.quote.domain.model.ConditionType;
@@ -39,11 +40,11 @@ public class UpdateCoverageRequest {
 	}
 
 	public Set<ConditionType> getConditions() {
-		return conditions;
+		return conditions == null ? null : Collections.unmodifiableSet(conditions);
 	}
 
 	public void setConditions(Set<ConditionType> conditions) {
-		this.conditions = conditions;
+		this.conditions = conditions == null ? null : Set.copyOf(conditions);
 	}
 
 	public Boolean getTakesPrescriptionMedication() {

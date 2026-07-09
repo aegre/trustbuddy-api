@@ -2,6 +2,7 @@ package com.trustbuddy.api.quote.infrastructure.web.response;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -85,11 +86,11 @@ public class QuoteResponse {
 	}
 
 	public Set<ConditionType> getConditions() {
-		return conditions;
+		return conditions == null ? null : Collections.unmodifiableSet(conditions);
 	}
 
 	public void setConditions(Set<ConditionType> conditions) {
-		this.conditions = conditions;
+		this.conditions = conditions == null ? null : Set.copyOf(conditions);
 	}
 
 	public Boolean getTakesPrescriptionMedication() {
