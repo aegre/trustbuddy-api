@@ -32,6 +32,12 @@ test-one: ## Run tests matching TEST (Surefire -Dtest pattern)
 	@test -n "$(TEST)" || (echo "Usage: make test-one TEST=QuoteSubmissionServiceTest" && exit 1)
 	$(MVN) test -Dtest="$(TEST)" -q
 
+test-state: ## Run quote state transition unit tests
+	$(MVN) test -Dtest="com.trustbuddy.api.quote.domain.service.QuoteStateTransitionServiceTest" -q
+
+test-submit: ## Run quote submission application tests
+	$(MVN) test -Dtest="com.trustbuddy.api.quote.application.service.QuoteSubmissionServiceTest" -q
+
 verify: ## Compile, test, and static analysis
 	$(MVN) verify -q
 
