@@ -15,36 +15,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
-import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
-import com.redis.testcontainers.RedisContainer;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
+import com.trustbuddy.api.testsupport.FullInfrastructureTestcontainers;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 
 @Testcontainers
 @SpringBootTest
 @ActiveProfiles("test")
-class KafkaQuoteEventPublisherIT {
-
-	@Container
-	@ServiceConnection
-	static PostgreSQLContainer postgres = new PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"));
-
-	@Container
-	@ServiceConnection
-	static RedisContainer redis = new RedisContainer(DockerImageName.parse("redis:7-alpine"));
-
-	@Container
-	@ServiceConnection
-	static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("apache/kafka:3.9.0"));
+class KafkaQuoteEventPublisherIT extends FullInfrastructureTestcontainers {
 
 	@Autowired
 	private KafkaQuoteEventPublisher quoteEventPublisher;
@@ -77,7 +60,7 @@ class KafkaQuoteEventPublisherIT {
 
 	private KafkaConsumer<String, QuoteSubmittedEvent> createConsumer() {
 		Properties properties = new Properties();
-		properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
+		properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers());
 		properties.put(ConsumerConfig.GROUP_ID_CONFIG, "quote-submitted-it-" + UUID.randomUUID());
 		properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
