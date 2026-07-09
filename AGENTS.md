@@ -328,6 +328,25 @@ assertThat(Circle.calculateArea(radius)).isEqualTo(expectedArea);
 assertThat(Circle.calculateArea(2d)).isEqualTo(12.566370614359172);
 ```
 
+### Test data factories and generators
+
+Use **factories** or **generators** in `src/test/java/.../testsupport/` to build domain objects and DTOs for tests. Keep arrangement logic out of test methods so **Given** blocks show only what differs for the scenario.
+
+- Provide **sensible defaults** for required fields; expose fluent overrides for scenario-specific values.
+- Name generators after the type they build (`QuoteGenerator`, not `TestUtils`).
+- Share generators across unit, application, and adapter tests in the same feature module.
+- Do not put generators in `src/main` — test-only code stays under `src/test`.
+
+```java
+// Given
+Quote quote = QuoteGenerator.coverage(70, CoverageType.STANDARD)
+		.hasPreexistingConditions(true)
+		.conditions(ConditionType.DIABETES)
+		.usesTobacco(true)
+		.needsSpouseCoverage(true)
+		.build();
+```
+
 ## Verification checklist
 
 Before marking work complete:

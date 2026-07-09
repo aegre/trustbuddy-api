@@ -11,7 +11,7 @@ include .env
 export $(shell sed -n 's/=.*//p' .env)
 endif
 
-.PHONY: help compile test verify lint run run-dev infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs
+.PHONY: help compile test test-pricing verify lint run run-dev infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs
 
 help: ## Show available targets
 	@echo "Trustbuddy API — available targets:"
@@ -23,6 +23,9 @@ compile: ## Compile sources
 
 test: ## Run unit and integration tests
 	$(MVN) test -q
+
+test-pricing: ## Run premium calculation unit tests
+	$(MVN) test -Dtest="com.trustbuddy.api.quote.domain.service.*Premium*" -q
 
 verify: ## Compile, test, and static analysis
 	$(MVN) verify -q
