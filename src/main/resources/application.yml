@@ -1,0 +1,53 @@
+# Shared configuration — safe defaults for every environment.
+# Environment-specific hosts and secrets belong in application-{profile}.yml or env vars.
+
+spring:
+  application:
+    name: trustbuddy-api
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:900000}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  quote:
+    draft-expiration-minutes: ${QUOTE_DRAFT_EXPIRATION_MINUTES:30}
+    expiration-job-interval-ms: ${QUOTE_EXPIRATION_JOB_INTERVAL_MS:60000}
+  insurer:
+    gateway:
+      url: ${INSURER_GATEWAY_URL}
+      timeout-ms: ${INSURER_GATEWAY_TIMEOUT_MS:5000}
+  kafka:
+    topic: ${KAFKA_TOPIC:quote-submitted}

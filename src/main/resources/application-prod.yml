@@ -1,0 +1,22 @@
+# Production — all secrets and endpoints must come from the environment.
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    com.trustbuddy: INFO
+    org.springframework: WARN
