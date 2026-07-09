@@ -1,0 +1,23 @@
+# Test profile — infrastructure provided by TestcontainersConfiguration
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  task:
+    scheduling:
+      enabled: false
+
+app:
+  jwt:
+    secret: test-jwt-secret-at-least-32-characters-long
+  cors:
+    allowed-origins: http://localhost:5173
+  insurer:
+    gateway:
+      url: https://httpstat.us/200
+
+logging:
+  level:
+    com.trustbuddy: WARN
+    org.springframework: WARN
