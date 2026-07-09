@@ -1,52 +1,41 @@
 package com.trustbuddy.api.quote.application.dto;
 
-import static com.trustbuddy.api.quote.application.validation.SubmissionValidationGroups.Coverage;
-import static com.trustbuddy.api.quote.application.validation.SubmissionValidationGroups.CoverageAnswers;
-import static com.trustbuddy.api.quote.application.validation.SubmissionValidationGroups.PersonalInfo;
-
 import java.math.BigDecimal;
 
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 
-import jakarta.validation.GroupSequence;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-@GroupSequence({
-		QuoteSubmissionReadiness.class,
-		PersonalInfo.class,
-		Coverage.class,
-		CoverageAnswers.class
-})
 public class QuoteSubmissionReadiness {
 
-	@NotBlank(message = "name is required", groups = PersonalInfo.class)
+	@NotBlank(message = "name is required")
 	private String name;
 
-	@NotBlank(message = "email is required", groups = PersonalInfo.class)
+	@NotBlank(message = "email is required")
 	private String email;
 
-	@Min(value = 1, message = "age is required", groups = PersonalInfo.class)
+	@Min(value = 1, message = "age is required")
 	private int age;
 
-	@NotBlank(message = "zipCode is required", groups = PersonalInfo.class)
+	@NotBlank(message = "zipCode is required")
 	private String zipCode;
 
-	@NotNull(message = "Quote is missing required coverage data", groups = Coverage.class)
+	@NotNull(message = "Quote is missing required coverage data")
 	private CoverageType coverageType;
 
-	@NotNull(message = "Quote is missing required coverage data", groups = Coverage.class)
+	@NotNull(message = "Quote is missing required coverage data")
 	private BigDecimal estimatedMonthlyPremium;
 
-	@NotNull(message = "takesPrescriptionMedication is required", groups = CoverageAnswers.class)
+	@NotNull(message = "takesPrescriptionMedication is required")
 	private Boolean takesPrescriptionMedication;
 
-	@NotNull(message = "usesTobacco is required", groups = CoverageAnswers.class)
+	@NotNull(message = "usesTobacco is required")
 	private Boolean usesTobacco;
 
-	@NotNull(message = "needsSpouseCoverage is required", groups = CoverageAnswers.class)
+	@NotNull(message = "needsSpouseCoverage is required")
 	private Boolean needsSpouseCoverage;
 
 	public static QuoteSubmissionReadiness from(Quote quote) {

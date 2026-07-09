@@ -117,15 +117,16 @@ class QuoteSubmissionServiceTest {
 	}
 
 	@Test
-	void givenCoveredQuoteWithoutHealthAnswers_whenSubmitQuote_thenThrowsQuoteValidationException() {
+	void givenQuoteWithoutTakesPrescriptionMedication_whenSubmitQuote_thenThrowsQuoteValidationException() {
 		// Given
-		Quote draft = QuoteGenerator.coverage(30, CoverageType.STANDARD).build().withStatus(QuoteStatus.DRAFT);
+		Quote draft = QuoteGenerator.readyForSubmissionWithoutTakesPrescriptionMedication(30)
+				.withStatus(QuoteStatus.DRAFT);
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 
 		// When / Then
 		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
 				.isInstanceOf(QuoteValidationException.class)
-				.hasMessageContaining("needsSpouseCoverage is required");
+				.hasMessageContaining("takesPrescriptionMedication is required");
 		verify(insurerGateway, never()).submit(any());
 	}
 
@@ -148,9 +149,9 @@ class QuoteSubmissionServiceTest {
 	}
 
 	@Test
-	void givenDraftWithoutCoverage_whenSubmitQuote_thenThrowsQuoteValidationException() {
+	void givenQuoteWithoutCoverage_whenSubmitQuote_thenThrowsQuoteValidationException() {
 		// Given
-		Quote draft = QuoteGenerator.draft(30);
+		Quote draft = QuoteGenerator.readyForSubmissionWithoutCoverage(30).withStatus(QuoteStatus.DRAFT);
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 
 		// When / Then
@@ -160,11 +161,6 @@ class QuoteSubmissionServiceTest {
 	}
 
 	private static Quote coveredQuote(QuoteStatus status) {
-		return QuoteGenerator.coverage(30, CoverageType.STANDARD)
-				.takesPrescriptionMedication(false)
-				.usesTobacco(false)
-				.needsSpouseCoverage(false)
-				.build()
-				.withStatus(status);
+		return QuoteGenerator.readyForSubmission(30).withStatus(status);
 	}
 }

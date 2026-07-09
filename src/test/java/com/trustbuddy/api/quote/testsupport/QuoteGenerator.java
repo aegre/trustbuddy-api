@@ -30,6 +30,42 @@ public final class QuoteGenerator {
 		return Quote.createDraft(DEFAULT_NAME, DEFAULT_EMAIL, age, DEFAULT_ZIP_CODE);
 	}
 
+	public static Quote readyForSubmission(int age) {
+		return coverage(age, CoverageType.STANDARD)
+				.takesPrescriptionMedication(false)
+				.usesTobacco(false)
+				.needsSpouseCoverage(false)
+				.build();
+	}
+
+	public static Quote readyForSubmissionWithoutCoverage(int age) {
+		Quote draft = draft(age);
+		return Quote.reconstitute(
+				draft.getId(),
+				draft.getName(),
+				draft.getEmail(),
+				draft.getAge(),
+				draft.getZipCode(),
+				null,
+				null,
+				Set.of(),
+				false,
+				false,
+				false,
+				null,
+				draft.getStatus(),
+				draft.getCreatedAt(),
+				draft.getUpdatedAt(),
+				draft.getVersion());
+	}
+
+	public static Quote readyForSubmissionWithoutTakesPrescriptionMedication(int age) {
+		return coverage(age, CoverageType.STANDARD)
+				.usesTobacco(false)
+				.needsSpouseCoverage(false)
+				.build();
+	}
+
 	public static CoverageBuilder coverage(int age, CoverageType coverageType) {
 		return new CoverageBuilder(age, coverageType);
 	}
