@@ -140,9 +140,10 @@ Interactive docs (dev/docker profiles):
 
 ```bash
 make test
-make test-pricing   # premium calculation unit tests
-make test-state     # quote state transition tests
-make test-submit    # quote submission service tests
+
+make test-one TEST=QuoteSubmissionServiceTest   # one class
+make test-one TEST='*Premium*'                  # name pattern
+make test-one TEST='com.trustbuddy.api.quote.domain.service.*'  # package
 make verify         # compile, test, and static analysis
 ```
 

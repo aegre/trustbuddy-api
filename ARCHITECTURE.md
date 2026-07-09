@@ -195,7 +195,7 @@ Tests mirror the capability packages:
 | Infrastructure | `QuotePersistenceAdapterTest` (`@DataJpaTest`), `QuoteControllerTest` (`@WebMvcTest`), `InsurerGatewayHttpAdapterTest` |
 | Support | `testsupport/QuoteGenerator` — test data factory |
 
-Run targeted suites via `make test-pricing`, `make test-state`, `make test-submit`, or full `make verify`.
+Run a subset with Surefire patterns: `make test-one TEST=QuoteSubmissionServiceTest` (class), `TEST='*Premium*'` (wildcard), or `TEST='com.trustbuddy.api.quote.domain.service.*'` (package). Full suite: `make verify`.
 
 ## Adding a new capability
 

@@ -250,6 +250,21 @@ make test
 # or: ./mvnw test
 ```
 
+### Running a subset of tests
+
+Do **not** add a new Makefile target for each test class or suite. Use `make test-one` with Maven Surefire `-Dtest` patterns:
+
+```bash
+make test-one TEST=QuoteSubmissionServiceTest                              # one class
+make test-one TEST='*Premium*'                                             # wildcard on class name
+make test-one TEST='com.trustbuddy.api.quote.domain.service.*'             # package
+make test-one TEST=QuoteServiceTest#givenDraftQuote_whenUpdateCoverage_thenRecalculatesPremiumAndSaves  # one method
+```
+
+Equivalent without Make: `./mvnw test -Dtest='*Premium*'`.
+
+Wrap wildcard patterns in the shell when they contain `*` (e.g. `TEST='*Premium*'`).
+
 Mirror the feature-oriented package structure under `src/test/java/com/trustbuddy/api/`:
 
 - **Domain tests** — pure JUnit, no Spring context (`quote/domain/service/`, `quote/domain/model/`)
@@ -351,7 +366,7 @@ Quote quote = QuoteGenerator.coverage(70, CoverageType.STANDARD)
 
 Before marking work complete:
 
-1. `./mvnw test` passes with no failures.
+1. `make test` or `make verify` passes with no failures.
 2. `./mvnw compile` succeeds (catches missing dependencies and compile errors).
 3. No secrets, credentials, or local-only config in the diff.
 4. No unrelated files changed (formatting-only sweeps, drive-by refactors).
