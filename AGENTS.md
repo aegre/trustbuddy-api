@@ -261,6 +261,73 @@ Mirror the feature-oriented package structure under `src/test/java/com/trustbudd
 - Use Testcontainers only when testing adapter integration (persistence, Kafka, Redis).
 - Every bug fix should include a test that would have caught it.
 
+### Test naming convention
+
+Name every test method in **given_when_then** form so the scenario and expectation are obvious from the name alone:
+
+```
+given<Precondition>_when<Action>_then<ExpectedOutcome>
+```
+
+Example: `givenRadius_whenCalculateArea_thenReturnArea`
+
+Avoid vague names like `testCalculateArea` or `saveAndFindById_roundTripsQuoteFields`.
+
+### Given / When / Then structure
+
+Separate each test method into three blocks with `// Given`, `// When`, and `// Then` comments and a blank line between sections:
+
+| Section | Purpose |
+|---------|---------|
+| **Given** | Arrange — build domain objects, seed data, configure mocks |
+| **When** | Act — invoke the method or operation under test |
+| **Then** | Assert — verify outcomes |
+
+Smoke tests that only verify context startup may combine **When** and **Then**.
+
+```java
+@Test
+void givenRadius_whenCalculateArea_thenReturnArea() {
+	// Given
+	double radius = 2d;
+
+	// When
+	double actualArea = Circle.calculateArea(radius);
+
+	// Then
+	assertThat(actualArea).isEqualTo(12.566370614359172);
+}
+```
+
+### One scenario per test
+
+Each test method should exercise **one specific scenario**. Do not combine unrelated scenarios in a single test. Multiple assertions in the **Then** block are fine when they verify the same outcome.
+
+### Appropriate assertions
+
+Use AssertJ (`assertThat`) or JUnit assertions to compare expected vs actual results. Choose the assertion that matches the check:
+
+- `assertThat(actual).isEqualTo(expected)` — value equality
+- `assertThat(actual).isNotEqualTo(other)` — values differ
+- `assertThat(actual).isNotNull()` — non-null reference
+- `assertThat(condition).isTrue()` / `isFalse()` — boolean conditions
+- `assertThat(actual).isNotSameAs(other)` — different object references
+
+### Simple, production-like tests
+
+- Model **real production scenarios** in test data and method names.
+- Prefer **hard-coded expected values** over reimplementing production logic in the test to derive the expected result.
+- Never duplicate production calculation logic in a test — that produces a tautology and adds no value.
+
+```java
+// BAD — reimplements production logic in the test
+double expectedArea = 3.141592653589793 * radius * radius;
+assertThat(Circle.calculateArea(radius)).isEqualTo(expectedArea);
+
+// GOOD — hard-coded expected value for a known input
+assertThat(Circle.calculateArea(2d)).isEqualTo(12.566370614359172);
+```
+
 ## Verification checklist
 
 Before marking work complete:
