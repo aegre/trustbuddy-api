@@ -31,6 +31,7 @@ app:
   quote:
     draft-expiration-minutes: 30
     expiration-job-interval-ms: 60000
+    cache-ttl-minutes: 30
 
 logging:
   level:

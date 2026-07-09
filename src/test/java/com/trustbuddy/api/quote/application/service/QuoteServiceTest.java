@@ -3,6 +3,7 @@ package com.trustbuddy.api.quote.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import com.trustbuddy.api.quote.application.dto.CreateQuoteCommand;
 import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.application.dto.UpdateCoverageCommand;
+import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
@@ -40,11 +42,14 @@ class QuoteServiceTest {
 	@Mock
 	private QuoteRepositoryPort quoteRepository;
 
+	@Mock
+	private QuoteCachePort quoteCache;
+
 	private QuoteService quoteService;
 
 	@BeforeEach
 	void setUp() {
-		quoteService = new QuoteService(quoteRepository);
+		quoteService = new QuoteService(quoteRepository, quoteCache);
 	}
 
 	@Test
@@ -70,13 +75,14 @@ class QuoteServiceTest {
 		// When / Then
 		assertThatThrownBy(() -> quoteService.createQuote(command))
 				.isInstanceOf(QuoteValidationException.class);
-		verify(quoteRepository, org.mockito.Mockito.never()).save(any());
+		verify(quoteRepository, never()).save(any());
 	}
 
 	@Test
 	void givenDraftQuote_whenUpdateCoverageWithOptionalFieldsOmitted_thenSavesCoverage() {
 		// Given
 		Quote draft = QuoteGenerator.draft(30);
+		when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -95,6 +101,7 @@ class QuoteServiceTest {
 	void givenYoungQuote_whenUpdateCoverageWithTobaccoAnswer_thenRecalculatesPremium() {
 		// Given
 		Quote draft = QuoteGenerator.draft(30);
+		when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		UpdateCoverageCommand command = updateCommand(CoverageType.STANDARD);
@@ -114,6 +121,7 @@ class QuoteServiceTest {
 	void givenDraftQuote_whenUpdateCoverage_thenRecalculatesPremiumAndSaves() {
 		// Given
 		Quote draft = QuoteGenerator.draft(30);
+		when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -129,24 +137,57 @@ class QuoteServiceTest {
 	void givenSubmittedQuote_whenUpdateCoverage_thenThrowsInvalidQuoteStateException() {
 		// Given
 		Quote submitted = QuoteGenerator.draft(30).withStatus(QuoteStatus.SUBMITTED);
-		when(quoteRepository.findById(submitted.getId())).thenReturn(Optional.of(submitted));
+		when(quoteCache.get(submitted.getId())).thenReturn(Optional.of(submitted));
 
 		// When / Then
 		assertThatThrownBy(() -> quoteService.updateCoverage(
 				submitted.getId(),
 				updateCommand(CoverageType.STANDARD)))
 				.isInstanceOf(InvalidQuoteStateException.class);
+		verify(quoteRepository, never()).findById(any());
 	}
 
 	@Test
 	void givenUnknownId_whenGetQuote_thenThrowsQuoteNotFoundException() {
 		// Given
 		UUID id = UUID.randomUUID();
+		when(quoteCache.get(id)).thenReturn(Optional.empty());
 		when(quoteRepository.findById(id)).thenReturn(Optional.empty());
 
 		// When / Then
 		assertThatThrownBy(() -> quoteService.getQuote(id))
 				.isInstanceOf(QuoteNotFoundException.class);
+		verify(quoteCache, never()).put(any());
+	}
+
+	@Test
+	void givenCachedQuote_whenGetQuote_thenReturnsFromCacheWithoutRepositoryLookup() {
+		// Given
+		Quote cached = QuoteGenerator.draft(30);
+		when(quoteCache.get(cached.getId())).thenReturn(Optional.of(cached));
+
+		// When
+		Quote result = quoteService.getQuote(cached.getId());
+
+		// Then
+		assertThat(result).isEqualTo(cached);
+		verify(quoteRepository, never()).findById(any());
+		verify(quoteCache, never()).put(any());
+	}
+
+	@Test
+	void givenUncachedQuote_whenGetQuote_thenLoadsFromRepositoryAndCaches() {
+		// Given
+		Quote draft = QuoteGenerator.draft(30);
+		when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
+		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+
+		// When
+		Quote result = quoteService.getQuote(draft.getId());
+
+		// Then
+		assertThat(result).isEqualTo(draft);
+		verify(quoteCache).put(draft);
 	}
 
 	@Test
@@ -167,6 +208,7 @@ class QuoteServiceTest {
 	void givenSeniorQuote_whenUpdateCoverage_thenAppliesHealthFieldsAndPremium() {
 		// Given
 		Quote draft = QuoteGenerator.draft(70);
+		when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		UpdateCoverageCommand command = updateCommand(CoverageType.STANDARD);
@@ -189,6 +231,7 @@ class QuoteServiceTest {
 	void givenDraftQuote_whenUpdateCoverage_thenPersistsQuoteWithSameId() {
 		// Given
 		Quote draft = QuoteGenerator.draft(30);
+		when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		ArgumentCaptor<Quote> savedQuote = ArgumentCaptor.forClass(Quote.class);

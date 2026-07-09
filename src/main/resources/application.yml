@@ -48,6 +48,7 @@ app:
   quote:
     draft-expiration-minutes: ${QUOTE_DRAFT_EXPIRATION_MINUTES:30}
     expiration-job-interval-ms: ${QUOTE_EXPIRATION_JOB_INTERVAL_MS:60000}
+    cache-ttl-minutes: ${QUOTE_CACHE_TTL_MINUTES:30}
   insurer:
     gateway:
       url: ${INSURER_GATEWAY_URL}

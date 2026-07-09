@@ -28,6 +28,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.service.QuoteService;
 import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
@@ -53,8 +54,16 @@ class QuoteControllerTest {
 		}
 
 		@Bean
-		QuoteService quoteService(QuoteRepositoryPort quoteRepository, CommandValidator commandValidator) {
-			return new QuoteService(quoteRepository, commandValidator);
+		QuoteCachePort quoteCachePort() {
+			return org.mockito.Mockito.mock(QuoteCachePort.class);
+		}
+
+		@Bean
+		QuoteService quoteService(
+				QuoteRepositoryPort quoteRepository,
+				QuoteCachePort quoteCachePort,
+				CommandValidator commandValidator) {
+			return new QuoteService(quoteRepository, quoteCachePort, commandValidator);
 		}
 	}
 
