@@ -1,5 +1,6 @@
 package com.trustbuddy.api.quote.application.validation;
 
+import java.util.Comparator;
 import java.util.Set;
 
 import org.springframework.stereotype.Component;
@@ -23,7 +24,9 @@ public class CommandValidator {
 		if (violations.isEmpty()) {
 			return;
 		}
-		ConstraintViolation<T> first = violations.iterator().next();
+		ConstraintViolation<T> first = violations.stream()
+				.min(Comparator.comparing(violation -> violation.getPropertyPath().toString()))
+				.orElseThrow();
 		String propertyPath = first.getPropertyPath().toString();
 		String message = propertyPath.isEmpty()
 				? first.getMessage()

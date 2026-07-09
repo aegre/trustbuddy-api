@@ -125,7 +125,7 @@ class QuoteSubmissionServiceTest {
 		// When / Then
 		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
 				.isInstanceOf(QuoteValidationException.class)
-				.hasMessageContaining("takesPrescriptionMedication is required");
+				.hasMessageContaining("needsSpouseCoverage is required");
 		verify(insurerGateway, never()).submit(any());
 	}
 
