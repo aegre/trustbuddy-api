@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.trustbuddy.api.quote.application.dto.QuoteSubmissionReadiness;
 import com.trustbuddy.api.quote.application.port.out.InsurerGatewayPort;
 import com.trustbuddy.api.quote.application.port.out.InsurerSubmissionResult;
+import com.trustbuddy.api.quote.application.port.out.QuoteEventPublisherPort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
@@ -27,6 +28,7 @@ public class QuoteSubmissionService {
 
 	private final QuoteRepositoryPort quoteRepository;
 	private final InsurerGatewayPort insurerGateway;
+	private final QuoteEventPublisherPort quoteEventPublisher;
 	private final QuoteStateTransitionService quoteStateTransitionService;
 	private final CoverageHealthPolicy coverageHealthPolicy;
 	private final CommandValidator commandValidator;
@@ -35,10 +37,12 @@ public class QuoteSubmissionService {
 	public QuoteSubmissionService(
 			QuoteRepositoryPort quoteRepository,
 			InsurerGatewayPort insurerGateway,
+			QuoteEventPublisherPort quoteEventPublisher,
 			CommandValidator commandValidator) {
 		this(
 				quoteRepository,
 				insurerGateway,
+				quoteEventPublisher,
 				new QuoteStateTransitionService(),
 				new CoverageHealthPolicy(),
 				commandValidator);
@@ -47,20 +51,26 @@ public class QuoteSubmissionService {
 	QuoteSubmissionService(
 			QuoteRepositoryPort quoteRepository,
 			InsurerGatewayPort insurerGateway,
+			QuoteEventPublisherPort quoteEventPublisher,
 			QuoteStateTransitionService quoteStateTransitionService,
 			CoverageHealthPolicy coverageHealthPolicy,
 			CommandValidator commandValidator) {
 		this.quoteRepository = quoteRepository;
 		this.insurerGateway = insurerGateway;
+		this.quoteEventPublisher = quoteEventPublisher;
 		this.quoteStateTransitionService = quoteStateTransitionService;
 		this.coverageHealthPolicy = coverageHealthPolicy;
 		this.commandValidator = commandValidator;
 	}
 
-	QuoteSubmissionService(QuoteRepositoryPort quoteRepository, InsurerGatewayPort insurerGateway) {
+	QuoteSubmissionService(
+			QuoteRepositoryPort quoteRepository,
+			InsurerGatewayPort insurerGateway,
+			QuoteEventPublisherPort quoteEventPublisher) {
 		this(
 				quoteRepository,
 				insurerGateway,
+				quoteEventPublisher,
 				new QuoteStateTransitionService(),
 				new CoverageHealthPolicy(),
 				new CommandValidator(Validation.buildDefaultValidatorFactory().getValidator()));
@@ -82,7 +92,9 @@ public class QuoteSubmissionService {
 
 		InsurerSubmissionResult result = insurerGateway.submit(quote);
 		if (result.success()) {
-			return quoteRepository.save(quoteStateTransitionService.markSubmitted(quote));
+			Quote submitted = quoteRepository.save(quoteStateTransitionService.markSubmitted(quote));
+			quoteEventPublisher.publishQuoteSubmitted(submitted);
+			return submitted;
 		}
 
 		quoteRepository.save(quoteStateTransitionService.markSubmissionFailed(quote));
