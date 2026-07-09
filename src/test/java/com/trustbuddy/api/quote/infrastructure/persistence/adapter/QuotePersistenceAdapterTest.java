@@ -26,9 +26,12 @@ import org.testcontainers.utility.DockerImageName;
 
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
+import com.trustbuddy.api.quote.domain.model.CoverageDetails;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
+import com.trustbuddy.api.quote.domain.model.PersonalInfo;
 import com.trustbuddy.api.quote.domain.model.Quote;
+import com.trustbuddy.api.quote.domain.model.QuoteAudit;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
 import com.trustbuddy.api.quote.infrastructure.persistence.mapper.QuotePersistenceMapper;
 
@@ -68,14 +71,14 @@ class QuotePersistenceAdapterTest {
 	void givenQuoteWithCoverage_whenSave_thenPersistsCoverageTypeAndPremium() {
 		// Given
 		Quote draft = quoteRepository.save(Quote.createDraft("John", "john@example.com", 70, "90210"));
-		Quote withCoverage = draft.applyCoverage(
+		Quote withCoverage = draft.applyCoverage(new CoverageDetails(
 				CoverageType.STANDARD,
 				true,
 				Set.of(),
 				false,
 				false,
 				false,
-				new BigDecimal("327.60"));
+				new BigDecimal("327.60")));
 
 		// When
 		Quote saved = quoteRepository.save(withCoverage);
@@ -90,14 +93,14 @@ class QuotePersistenceAdapterTest {
 	void givenQuoteWithConditions_whenSave_thenPersistsConditionsAndTobaccoFlag() {
 		// Given
 		Quote draft = quoteRepository.save(Quote.createDraft("John", "john@example.com", 70, "90210"));
-		Quote withCoverage = draft.applyCoverage(
+		Quote withCoverage = draft.applyCoverage(new CoverageDetails(
 				CoverageType.STANDARD,
 				true,
 				Set.of(ConditionType.DIABETES, ConditionType.HYPERTENSION),
 				true,
 				true,
 				true,
-				new BigDecimal("327.60"));
+				new BigDecimal("327.60")));
 
 		// When
 		Quote saved = quoteRepository.save(withCoverage);
@@ -129,21 +132,9 @@ class QuotePersistenceAdapterTest {
 		Instant staleUpdatedAt = Instant.now().minus(Duration.ofMinutes(31));
 		Quote staleDraft = Quote.reconstitute(
 				java.util.UUID.randomUUID(),
-				"Stale",
-				"stale@example.com",
-				40,
-				"33333",
+				new PersonalInfo("Stale", "stale@example.com", 40, "33333"),
 				null,
-				null,
-				Set.of(),
-				null,
-				null,
-				null,
-				null,
-				QuoteStatus.DRAFT,
-				staleUpdatedAt,
-				staleUpdatedAt,
-				0L);
+				new QuoteAudit(QuoteStatus.DRAFT, staleUpdatedAt, staleUpdatedAt, 0L));
 		quoteRepository.save(staleDraft);
 		quoteRepository.save(Quote.createDraft("Fresh", "fresh@example.com", 40, "44444"));
 

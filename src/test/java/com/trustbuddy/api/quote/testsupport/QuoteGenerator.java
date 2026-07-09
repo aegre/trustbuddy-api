@@ -5,8 +5,11 @@ import java.util.Set;
 
 import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
+import com.trustbuddy.api.quote.domain.model.CoverageDetails;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
+import com.trustbuddy.api.quote.domain.model.PersonalInfo;
 import com.trustbuddy.api.quote.domain.model.Quote;
+import com.trustbuddy.api.quote.domain.model.QuoteAudit;
 
 /**
  * Builds {@link Quote} instances for tests with sensible defaults.
@@ -42,21 +45,13 @@ public final class QuoteGenerator {
 		Quote draft = draft(age);
 		return Quote.reconstitute(
 				draft.getId(),
-				draft.getName(),
-				draft.getEmail(),
-				draft.getAge(),
-				draft.getZipCode(),
+				new PersonalInfo(draft.getName(), draft.getEmail(), draft.getAge(), draft.getZipCode()),
 				null,
-				null,
-				Set.of(),
-				false,
-				false,
-				false,
-				null,
-				draft.getStatus(),
-				draft.getCreatedAt(),
-				draft.getUpdatedAt(),
-				draft.getVersion());
+				new QuoteAudit(
+						draft.getStatus(),
+						draft.getCreatedAt(),
+						draft.getUpdatedAt(),
+						draft.getVersion()));
 	}
 
 	public static Quote readyForSubmissionWithoutTakesPrescriptionMedication(int age) {
@@ -116,7 +111,7 @@ public final class QuoteGenerator {
 		}
 
 		public Quote build() {
-			return draft(age).applyCoverage(
+			CoverageDetails coverage = new CoverageDetails(
 					coverageType,
 					hasPreexistingConditions,
 					conditions == null ? Set.of() : conditions,
@@ -124,6 +119,7 @@ public final class QuoteGenerator {
 					usesTobacco,
 					needsSpouseCoverage,
 					PLACEHOLDER_PREMIUM);
+			return draft(age).applyCoverage(coverage);
 		}
 	}
 }

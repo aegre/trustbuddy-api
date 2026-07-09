@@ -10,183 +10,52 @@ import java.util.UUID;
 public class Quote {
 
 	private final UUID id;
-	private final String name;
-	private final String email;
-	private final int age;
-	private final String zipCode;
-	private final CoverageType coverageType;
-	private final Boolean hasPreexistingConditions;
-	private final Set<ConditionType> conditions;
-	private final Boolean takesPrescriptionMedication;
-	private final Boolean usesTobacco;
-	private final Boolean needsSpouseCoverage;
-	private final BigDecimal estimatedMonthlyPremium;
-	private final QuoteStatus status;
-	private final Instant createdAt;
-	private final Instant updatedAt;
-	private final long version;
+	private final PersonalInfo personalInfo;
+	private final CoverageDetails coverage;
+	private final QuoteAudit audit;
 
-	private Quote(
-			UUID id,
-			String name,
-			String email,
-			int age,
-			String zipCode,
-			CoverageType coverageType,
-			Boolean hasPreexistingConditions,
-			Set<ConditionType> conditions,
-			Boolean takesPrescriptionMedication,
-			Boolean usesTobacco,
-			Boolean needsSpouseCoverage,
-			BigDecimal estimatedMonthlyPremium,
-			QuoteStatus status,
-			Instant createdAt,
-			Instant updatedAt,
-			long version) {
+	private Quote(UUID id, PersonalInfo personalInfo, CoverageDetails coverage, QuoteAudit audit) {
 		this.id = Objects.requireNonNull(id, "id");
-		this.name = Objects.requireNonNull(name, "name");
-		this.email = Objects.requireNonNull(email, "email");
-		this.age = age;
-		this.zipCode = Objects.requireNonNull(zipCode, "zipCode");
-		this.coverageType = coverageType;
-		this.hasPreexistingConditions = hasPreexistingConditions;
-		this.conditions = conditions == null ? Set.of() : Set.copyOf(conditions);
-		this.takesPrescriptionMedication = takesPrescriptionMedication;
-		this.usesTobacco = usesTobacco;
-		this.needsSpouseCoverage = needsSpouseCoverage;
-		this.estimatedMonthlyPremium = estimatedMonthlyPremium;
-		this.status = Objects.requireNonNull(status, "status");
-		this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
-		this.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt");
-		this.version = version;
+		this.personalInfo = Objects.requireNonNull(personalInfo, "personalInfo");
+		this.coverage = coverage;
+		this.audit = Objects.requireNonNull(audit, "audit");
 	}
 
 	public static Quote createDraft(String name, String email, int age, String zipCode) {
 		Instant now = Instant.now();
 		return new Quote(
 				UUID.randomUUID(),
-				name,
-				email,
-				age,
-				zipCode,
+				new PersonalInfo(name, email, age, zipCode),
 				null,
-				null,
-				Set.of(),
-				null,
-				null,
-				null,
-				null,
-				QuoteStatus.DRAFT,
-				now,
-				now,
-				0L);
+				new QuoteAudit(QuoteStatus.DRAFT, now, now, 0L));
 	}
 
 	public static Quote reconstitute(
 			UUID id,
-			String name,
-			String email,
-			int age,
-			String zipCode,
-			CoverageType coverageType,
-			Boolean hasPreexistingConditions,
-			Set<ConditionType> conditions,
-			Boolean takesPrescriptionMedication,
-			Boolean usesTobacco,
-			Boolean needsSpouseCoverage,
-			BigDecimal estimatedMonthlyPremium,
-			QuoteStatus status,
-			Instant createdAt,
-			Instant updatedAt,
-			long version) {
-		return new Quote(
-				id,
-				name,
-				email,
-				age,
-				zipCode,
-				coverageType,
-				hasPreexistingConditions,
-				conditions,
-				takesPrescriptionMedication,
-				usesTobacco,
-				needsSpouseCoverage,
-				estimatedMonthlyPremium,
-				status,
-				createdAt,
-				updatedAt,
-				version);
+			PersonalInfo personalInfo,
+			CoverageDetails coverage,
+			QuoteAudit audit) {
+		return new Quote(id, personalInfo, coverage, audit);
 	}
 
-	public Quote applyCoverage(
-			CoverageType coverageType,
-			Boolean hasPreexistingConditions,
-			Set<ConditionType> conditions,
-			Boolean takesPrescriptionMedication,
-			Boolean usesTobacco,
-			Boolean needsSpouseCoverage,
-			BigDecimal estimatedMonthlyPremium) {
+	public Quote applyCoverage(CoverageDetails coverage) {
 		return new Quote(
 				id,
-				name,
-				email,
-				age,
-				zipCode,
-				Objects.requireNonNull(coverageType, "coverageType"),
-				hasPreexistingConditions,
-				conditions,
-				takesPrescriptionMedication,
-				usesTobacco,
-				needsSpouseCoverage,
-				Objects.requireNonNull(estimatedMonthlyPremium, "estimatedMonthlyPremium"),
-				status,
-				createdAt,
-				Instant.now(),
-				version);
+				personalInfo,
+				Objects.requireNonNull(coverage, "coverage"),
+				audit.touch());
 	}
 
 	public Quote withStatus(QuoteStatus status) {
-		return new Quote(
-				id,
-				name,
-				email,
-				age,
-				zipCode,
-				coverageType,
-				hasPreexistingConditions,
-				conditions,
-				takesPrescriptionMedication,
-				usesTobacco,
-				needsSpouseCoverage,
-				estimatedMonthlyPremium,
-				Objects.requireNonNull(status, "status"),
-				createdAt,
-				Instant.now(),
-				version);
+		return new Quote(id, personalInfo, coverage, audit.withStatus(status));
 	}
 
 	public Quote withVersion(long version) {
-		return new Quote(
-				id,
-				name,
-				email,
-				age,
-				zipCode,
-				coverageType,
-				hasPreexistingConditions,
-				conditions,
-				takesPrescriptionMedication,
-				usesTobacco,
-				needsSpouseCoverage,
-				estimatedMonthlyPremium,
-				status,
-				createdAt,
-				updatedAt,
-				version);
+		return new Quote(id, personalInfo, coverage, audit.withVersion(version));
 	}
 
 	public boolean hasCoverage() {
-		return coverageType != null && estimatedMonthlyPremium != null;
+		return coverage != null && coverage.estimatedMonthlyPremium() != null;
 	}
 
 	public UUID getId() {
@@ -194,62 +63,62 @@ public class Quote {
 	}
 
 	public String getName() {
-		return name;
+		return personalInfo.name();
 	}
 
 	public String getEmail() {
-		return email;
+		return personalInfo.email();
 	}
 
 	public int getAge() {
-		return age;
+		return personalInfo.age();
 	}
 
 	public String getZipCode() {
-		return zipCode;
+		return personalInfo.zipCode();
 	}
 
 	public CoverageType getCoverageType() {
-		return coverageType;
+		return coverage == null ? null : coverage.coverageType();
 	}
 
 	public Boolean getHasPreexistingConditions() {
-		return hasPreexistingConditions;
+		return coverage == null ? null : coverage.hasPreexistingConditions();
 	}
 
 	public Set<ConditionType> getConditions() {
-		return Collections.unmodifiableSet(conditions);
+		return coverage == null ? Set.of() : Collections.unmodifiableSet(coverage.conditions());
 	}
 
 	public Boolean getTakesPrescriptionMedication() {
-		return takesPrescriptionMedication;
+		return coverage == null ? null : coverage.takesPrescriptionMedication();
 	}
 
 	public Boolean getUsesTobacco() {
-		return usesTobacco;
+		return coverage == null ? null : coverage.usesTobacco();
 	}
 
 	public Boolean getNeedsSpouseCoverage() {
-		return needsSpouseCoverage;
+		return coverage == null ? null : coverage.needsSpouseCoverage();
 	}
 
 	public BigDecimal getEstimatedMonthlyPremium() {
-		return estimatedMonthlyPremium;
+		return coverage == null ? null : coverage.estimatedMonthlyPremium();
 	}
 
 	public QuoteStatus getStatus() {
-		return status;
+		return audit.status();
 	}
 
 	public Instant getCreatedAt() {
-		return createdAt;
+		return audit.createdAt();
 	}
 
 	public Instant getUpdatedAt() {
-		return updatedAt;
+		return audit.updatedAt();
 	}
 
 	public long getVersion() {
-		return version;
+		return audit.version();
 	}
 }
