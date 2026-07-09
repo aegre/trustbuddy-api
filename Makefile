@@ -38,6 +38,9 @@ test-state: ## Run quote state transition unit tests
 test-submit: ## Run quote submission application tests
 	$(MVN) test -Dtest="com.trustbuddy.api.quote.application.service.QuoteSubmissionServiceTest" -q
 
+test-expiration: ## Run draft expiration unit tests
+	$(MVN) test -Dtest="com.trustbuddy.api.quote.application.service.DraftExpirationServiceTest,com.trustbuddy.api.quote.application.service.QuoteSubmissionServiceTest#givenExpiredQuote_whenSubmitQuote_thenThrowsInvalidQuoteStateException,com.trustbuddy.api.quote.domain.service.QuoteStateTransitionServiceTest#givenDraftQuote_whenMarkExpired_thenReturnsExpiredQuote" -q
+
 verify: ## Compile, test, and static analysis
 	$(MVN) verify -q
 
