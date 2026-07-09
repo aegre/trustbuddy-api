@@ -90,7 +90,7 @@ class QuoteServiceTest {
 	}
 
 	@Test
-	void givenDraftQuote_whenUpdateCoverage_thenRecalculatesPremiumAndSaves() {
+	void givenYoungQuote_whenUpdateCoverageWithTobaccoAnswer_thenRecalculatesPremium() {
 		// Given
 		Quote draft = QuoteGenerator.draft(30);
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
@@ -103,8 +103,30 @@ class QuoteServiceTest {
 				null,
 				null,
 				false,
-				false,
+				true,
 				false);
+
+		// Then
+		assertThat(updated.getUsesTobacco()).isTrue();
+		assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("120.00");
+	}
+
+	@Test
+	void givenDraftQuote_whenUpdateCoverage_thenRecalculatesPremiumAndSaves() {
+		// Given
+		Quote draft = QuoteGenerator.draft(30);
+		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		// When
+		Quote updated = quoteService.updateCoverage(
+				draft.getId(),
+				CoverageType.STANDARD,
+				null,
+				null,
+				null,
+				null,
+				null);
 
 		// Then
 		assertThat(updated.getCoverageType()).isEqualTo(CoverageType.STANDARD);
@@ -123,9 +145,9 @@ class QuoteServiceTest {
 				CoverageType.STANDARD,
 				null,
 				null,
-				false,
-				false,
-				false))
+				null,
+				null,
+				null))
 				.isInstanceOf(InvalidQuoteStateException.class);
 	}
 
@@ -191,9 +213,9 @@ class QuoteServiceTest {
 				CoverageType.BASIC,
 				null,
 				null,
-				false,
-				false,
-				false);
+				null,
+				null,
+				null);
 
 		// Then
 		verify(quoteRepository).save(savedQuote.capture());

@@ -73,14 +73,43 @@ public class QuoteSubmissionService {
 	}
 
 	private void ensureReadyForSubmission(Quote quote) {
+		validatePersonalInformation(quote);
 		if (!quote.hasCoverage()) {
 			throw new QuoteValidationException("Quote is missing required coverage data");
 		}
+		validateRequiredCoverageAnswers(quote);
 
 		Set<ConditionType> conditions = quote.getConditions().isEmpty() ? null : quote.getConditions();
 		coverageHealthPolicy.validateHealthFieldsForAge(
 				quote.getAge(),
 				quote.getHasPreexistingConditions(),
 				conditions);
+	}
+
+	private void validatePersonalInformation(Quote quote) {
+		if (quote.getName() == null || quote.getName().isBlank()) {
+			throw new QuoteValidationException("name is required");
+		}
+		if (quote.getEmail() == null || quote.getEmail().isBlank()) {
+			throw new QuoteValidationException("email is required");
+		}
+		if (quote.getZipCode() == null || quote.getZipCode().isBlank()) {
+			throw new QuoteValidationException("zipCode is required");
+		}
+		if (quote.getAge() < 1) {
+			throw new QuoteValidationException("age is required");
+		}
+	}
+
+	private void validateRequiredCoverageAnswers(Quote quote) {
+		if (quote.getTakesPrescriptionMedication() == null) {
+			throw new QuoteValidationException("takesPrescriptionMedication is required");
+		}
+		if (quote.getUsesTobacco() == null) {
+			throw new QuoteValidationException("usesTobacco is required");
+		}
+		if (quote.getNeedsSpouseCoverage() == null) {
+			throw new QuoteValidationException("needsSpouseCoverage is required");
+		}
 	}
 }

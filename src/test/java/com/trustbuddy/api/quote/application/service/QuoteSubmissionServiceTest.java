@@ -123,21 +123,34 @@ class QuoteSubmissionServiceTest {
 	}
 
 	@Test
-	void givenCoveredQuoteWithoutOptionalHealthAnswers_whenSubmitQuote_thenSubmitsSuccessfully() {
+	void givenCoveredQuoteWithoutHealthAnswers_whenSubmitQuote_thenThrowsQuoteValidationException() {
 		// Given
 		Quote draft = QuoteGenerator.coverage(30, CoverageType.STANDARD).build().withStatus(QuoteStatus.DRAFT);
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
-		when(insurerGateway.submit(draft)).thenReturn(new InsurerSubmissionResult(true, 200, "ok"));
-		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		// When
-		Quote submitted = quoteSubmissionService.submitQuote(draft.getId());
+		// When / Then
+		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
+				.isInstanceOf(QuoteValidationException.class)
+				.hasMessageContaining("takesPrescriptionMedication is required");
+		verify(insurerGateway, never()).submit(any());
+	}
 
-		// Then
-		assertThat(submitted.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
-		assertThat(draft.getTakesPrescriptionMedication()).isNull();
-		assertThat(draft.getUsesTobacco()).isNull();
-		assertThat(draft.getNeedsSpouseCoverage()).isNull();
+	@Test
+	void givenSeniorQuoteWithoutRequiredHealthAnswer_whenSubmitQuote_thenThrowsQuoteValidationException() {
+		// Given
+		Quote draft = QuoteGenerator.coverage(70, CoverageType.STANDARD)
+				.takesPrescriptionMedication(false)
+				.usesTobacco(false)
+				.needsSpouseCoverage(false)
+				.build()
+				.withStatus(QuoteStatus.DRAFT);
+		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+
+		// When / Then
+		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
+				.isInstanceOf(QuoteValidationException.class)
+				.hasMessageContaining("hasPreexistingConditions is required");
+		verify(insurerGateway, never()).submit(any());
 	}
 
 	@Test
@@ -153,6 +166,11 @@ class QuoteSubmissionServiceTest {
 	}
 
 	private static Quote coveredQuote(QuoteStatus status) {
-		return QuoteGenerator.coverage(30, CoverageType.STANDARD).build().withStatus(status);
+		return QuoteGenerator.coverage(30, CoverageType.STANDARD)
+				.takesPrescriptionMedication(false)
+				.usesTobacco(false)
+				.needsSpouseCoverage(false)
+				.build()
+				.withStatus(status);
 	}
 }
