@@ -4,6 +4,7 @@ MVN := ./mvnw
 RUN_PROFILE := dev
 DOCKER_IMAGE := trustbuddy-api:local
 COMPOSE := docker compose
+API_PORT ?= 8080
 
 # Load .env when present; export only .env keys (not Make internals)
 ifneq (,$(wildcard .env))
@@ -11,12 +12,43 @@ include .env
 export $(shell sed -n 's/=.*//p' .env)
 endif
 
-.PHONY: help compile test test-one verify lint run run-dev token infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs kafka-consume coverage verify-all
+.PHONY: help compile test test-one verify lint run run-dev token health swagger-url \
+	infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs \
+	kafka-consume coverage verify-all test-state test-submit
 
 help: ## Show available targets
-	@echo "Trustbuddy API — available targets:"
+	@echo "Trustbuddy API"
 	@echo ""
-	@grep -E '^[a-zA-Z0-9_.-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+	@echo "Build:"
+	@echo "  compile        Compile sources"
+	@echo "  lint           Run Checkstyle and SpotBugs"
+	@echo ""
+	@echo "Test:"
+	@echo "  test           Run unit and integration tests"
+	@echo "  test-one       Run tests matching TEST (Surefire -Dtest pattern)"
+	@echo "  test-state     Run quote state transition unit tests"
+	@echo "  test-submit    Run quote submission application tests"
+	@echo "  verify         Compile, test, and static analysis"
+	@echo "  verify-all     Full verification including JaCoCo report"
+	@echo "  coverage       Run verify and print JaCoCo HTML report path"
+	@echo ""
+	@echo "Infrastructure:"
+	@echo "  infra-up       Start PostgreSQL, Redis, and Kafka (Docker)"
+	@echo "  infra-down     Stop infrastructure containers"
+	@echo "  infra-logs     Tail infrastructure container logs"
+	@echo "  infra-reset    Stop infrastructure and remove volumes"
+	@echo "  docker-build   Build API Docker image"
+	@echo "  stack-up       Build and start full stack (API + infra) in Docker"
+	@echo "  stack-down     Stop full stack including API"
+	@echo "  stack-logs     Tail logs for all services including API"
+	@echo "  kafka-consume  Tail quote-submitted Kafka topic locally"
+	@echo ""
+	@echo "Development:"
+	@echo "  run            Run API locally (dev profile; requires make infra-up)"
+	@echo "  run-dev        Start infra, then run API with dev profile"
+	@echo "  token          Obtain JWT from running API"
+	@echo "  health         Check actuator health endpoint"
+	@echo "  swagger-url    Print local Swagger UI URL"
 
 compile: ## Compile sources
 	$(MVN) compile -q
@@ -56,10 +88,16 @@ run-dev: infra-up ## Start infra, then run API with dev profile
 	$(MVN) spring-boot:run -Dspring-boot.run.profiles=$(RUN_PROFILE)
 
 token: ## Obtain JWT from running API (uses AUTH_USERNAME / AUTH_PASSWORD from .env)
-	@curl -s -X POST http://localhost:8080/auth/token \
+	@curl -s -X POST http://localhost:$(API_PORT)/auth/token \
 		-H "Content-Type: application/json" \
 		-d '{"username":"$${AUTH_USERNAME:-dev-user}","password":"$${AUTH_PASSWORD:-dev-password}"}' \
 		| python3 -m json.tool
+
+health: ## Check actuator health endpoint
+	@curl -sf "http://localhost:$(API_PORT)/actuator/health" | python3 -m json.tool
+
+swagger-url: ## Print local Swagger UI URL
+	@echo "http://localhost:$(API_PORT)/swagger-ui.html"
 
 infra-up: ## Start PostgreSQL, Redis, and Kafka (Docker)
 	$(COMPOSE) up -d postgres redis kafka
