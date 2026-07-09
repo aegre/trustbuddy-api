@@ -4,4 +4,12 @@
 		<Class name="~.*\.entity\..*"/>
 		<Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
 	</Match>
+	<Match>
+		<Class name="com.trustbuddy.api.config.JwtAuthenticationEntryPoint"/>
+		<Bug pattern="EI_EXPOSE_REP2"/>
+	</Match>
+	<Match>
+		<Class name="com.trustbuddy.api.config.SecurityConfig"/>
+		<Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION"/>
+	</Match>
 </FindBugsFilter>

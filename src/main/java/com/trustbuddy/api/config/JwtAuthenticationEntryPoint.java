@@ -3,27 +3,24 @@ package com.trustbuddy.api.config;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trustbuddy.api.quote.infrastructure.web.response.ErrorResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import tools.jackson.databind.json.JsonMapper;
 
-@Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-	private final ObjectMapper objectMapper;
+	private final JsonMapper jsonMapper;
 
-	public JwtAuthenticationEntryPoint(ObjectMapper objectMapper) {
-		this.objectMapper = objectMapper;
+	public JwtAuthenticationEntryPoint(JsonMapper jsonMapper) {
+		this.jsonMapper = jsonMapper;
 	}
 
 	@Override
@@ -40,7 +37,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		objectMapper.writeValue(response.getOutputStream(), body);
+		jsonMapper.writeValue(response.getOutputStream(), body);
 	}
 
 	private String resolveMessage(AuthenticationException authException) {

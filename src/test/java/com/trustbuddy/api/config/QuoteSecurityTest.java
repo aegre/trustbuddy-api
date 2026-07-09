@@ -33,8 +33,6 @@ import com.trustbuddy.api.quote.infrastructure.web.exception.GlobalExceptionHand
 @Import({
 	ApplicationConfig.class,
 	JwtService.class,
-	JwtAuthFilter.class,
-	JwtAuthenticationEntryPoint.class,
 	SecurityConfig.class,
 	GlobalExceptionHandler.class,
 	JacksonAutoConfiguration.class,

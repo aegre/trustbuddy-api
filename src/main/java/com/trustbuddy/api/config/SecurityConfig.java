@@ -11,25 +11,33 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import tools.jackson.databind.json.JsonMapper;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-	private final JwtAuthFilter jwtAuthFilter;
-	private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 	private final Environment environment;
 
-	public SecurityConfig(
-			JwtAuthFilter jwtAuthFilter,
-			JwtAuthenticationEntryPoint authenticationEntryPoint,
-			Environment environment) {
-		this.jwtAuthFilter = jwtAuthFilter;
-		this.authenticationEntryPoint = authenticationEntryPoint;
+	public SecurityConfig(Environment environment) {
 		this.environment = environment;
 	}
 
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	JwtAuthFilter jwtAuthFilter(JwtService jwtService) {
+		return new JwtAuthFilter(jwtService);
+	}
+
+	@Bean
+	JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint(JsonMapper jsonMapper) {
+		return new JwtAuthenticationEntryPoint(jsonMapper);
+	}
+
+	@Bean
+	SecurityFilterChain securityFilterChain(
+			HttpSecurity http,
+			JwtAuthFilter jwtAuthFilter,
+			JwtAuthenticationEntryPoint authenticationEntryPoint) throws Exception {
 		http
 				.csrf(csrf -> csrf.disable())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
