@@ -1,4 +1,4 @@
-package com.trustbuddy.api.adapter.out.persistence;
+package com.trustbuddy.api.quote.infrastructure.persistence.adapter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,14 +24,15 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import com.trustbuddy.api.application.port.out.QuoteRepositoryPort;
-import com.trustbuddy.api.domain.model.ConditionType;
-import com.trustbuddy.api.domain.model.CoverageType;
-import com.trustbuddy.api.domain.model.Quote;
-import com.trustbuddy.api.domain.model.QuoteStatus;
+import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
+import com.trustbuddy.api.quote.domain.model.ConditionType;
+import com.trustbuddy.api.quote.domain.model.CoverageType;
+import com.trustbuddy.api.quote.domain.model.Quote;
+import com.trustbuddy.api.quote.domain.model.QuoteStatus;
+import com.trustbuddy.api.quote.infrastructure.persistence.mapper.QuotePersistenceMapper;
 
 @DataJpaTest
-@Import({ QuotePersistenceAdapter.class, QuotePersistenceAdapterTest.CacheTestConfig.class })
+@Import({ QuotePersistenceAdapter.class, QuotePersistenceMapper.class, QuotePersistenceAdapterTest.CacheTestConfig.class })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
 @ActiveProfiles("test")

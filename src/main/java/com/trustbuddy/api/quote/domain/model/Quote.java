@@ -1,4 +1,4 @@
-package com.trustbuddy.api.domain.model;
+package com.trustbuddy.api.quote.domain.model;
 
 import java.math.BigDecimal;
 import java.time.Instant;
