@@ -3,7 +3,9 @@ package com.trustbuddy.api.config;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -32,6 +34,7 @@ import com.trustbuddy.api.quote.infrastructure.web.exception.GlobalExceptionHand
 @WebMvcTest(controllers = { QuoteController.class, AuthController.class })
 @Import({
 	ApplicationConfig.class,
+	CorsConfig.class,
 	JwtService.class,
 	SecurityConfig.class,
 	GlobalExceptionHandler.class,
@@ -43,7 +46,8 @@ import com.trustbuddy.api.quote.infrastructure.web.exception.GlobalExceptionHand
 		"app.jwt.secret=test-jwt-secret-at-least-32-characters-long",
 		"app.jwt.expiration-ms=900000",
 		"app.auth.username=test-user",
-		"app.auth.password=test-password"
+		"app.auth.password=test-password",
+		"app.cors.allowed-origins=http://localhost:5173"
 })
 class QuoteSecurityTest {
 
@@ -67,6 +71,32 @@ class QuoteSecurityTest {
 
 	@MockitoBean
 	private QuoteSubmissionService quoteSubmissionService;
+
+	@Test
+	void givenAllowedOrigin_whenPreflightQuotes_thenReturnCorsHeaders() throws Exception {
+		// Given
+		// Origin http://localhost:5173 is allowed in test properties
+
+		// When / Then
+		mockMvc.perform(options("/quotes")
+						.header("Origin", "http://localhost:5173")
+						.header("Access-Control-Request-Method", "GET")
+						.header("Access-Control-Request-Headers", "Authorization"))
+				.andExpect(status().isOk())
+				.andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+	}
+
+	@Test
+	void givenDisallowedOrigin_whenPreflightQuotes_thenReturnForbidden() throws Exception {
+		// Given
+		// Origin not in app.cors.allowed-origins
+
+		// When / Then
+		mockMvc.perform(options("/quotes")
+						.header("Origin", "http://evil.example")
+						.header("Access-Control-Request-Method", "GET"))
+				.andExpect(status().isForbidden());
+	}
 
 	@Test
 	void givenNoToken_whenListQuotes_thenReturn401() throws Exception {

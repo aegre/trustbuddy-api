@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import tools.jackson.databind.json.JsonMapper;
 
@@ -37,9 +38,11 @@ public class SecurityConfig {
 	SecurityFilterChain securityFilterChain(
 			HttpSecurity http,
 			JwtAuthFilter jwtAuthFilter,
-			JwtAuthenticationEntryPoint authenticationEntryPoint) {
+			JwtAuthenticationEntryPoint authenticationEntryPoint,
+			CorsConfigurationSource corsConfigurationSource) {
 		try {
 			http
+					.cors(cors -> cors.configurationSource(corsConfigurationSource))
 					.csrf(csrf -> csrf.disable())
 					.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 					.exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint))

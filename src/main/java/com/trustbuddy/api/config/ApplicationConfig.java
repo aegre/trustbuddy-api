@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 
 import com.trustbuddy.api.config.properties.AuthProperties;
+import com.trustbuddy.api.config.properties.CorsProperties;
 import com.trustbuddy.api.config.properties.JwtProperties;
 import com.trustbuddy.api.config.properties.KafkaProperties;
 import com.trustbuddy.api.config.properties.QuoteProperties;
@@ -15,6 +16,7 @@ import com.trustbuddy.api.config.properties.QuoteProperties;
 @EnableConfigurationProperties({
 		JwtProperties.class,
 		AuthProperties.class,
+		CorsProperties.class,
 		QuoteProperties.class,
 		KafkaProperties.class
 })
