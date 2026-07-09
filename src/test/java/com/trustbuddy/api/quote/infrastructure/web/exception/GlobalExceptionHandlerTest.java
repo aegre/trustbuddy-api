@@ -17,8 +17,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.trustbuddy.api.quote.application.validation.CommandValidator;
+
 @WebMvcTest(controllers = ExceptionTestController.class)
-@Import({ GlobalExceptionHandler.class, GlobalExceptionHandlerTest.CacheTestConfig.class })
+@Import({ GlobalExceptionHandler.class, CommandValidator.class, GlobalExceptionHandlerTest.CacheTestConfig.class })
 @AutoConfigureMockMvc(addFilters = false)
 class GlobalExceptionHandlerTest {
 

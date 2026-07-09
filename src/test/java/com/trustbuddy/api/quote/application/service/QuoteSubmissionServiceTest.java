@@ -24,8 +24,6 @@ import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
-import com.trustbuddy.api.quote.domain.service.CoverageHealthPolicy;
-import com.trustbuddy.api.quote.domain.service.QuoteStateTransitionService;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,11 +39,7 @@ class QuoteSubmissionServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		quoteSubmissionService = new QuoteSubmissionService(
-				quoteRepository,
-				insurerGateway,
-				new QuoteStateTransitionService(),
-				new CoverageHealthPolicy());
+		quoteSubmissionService = new QuoteSubmissionService(quoteRepository, insurerGateway);
 	}
 
 	@Test
@@ -123,9 +117,10 @@ class QuoteSubmissionServiceTest {
 	}
 
 	@Test
-	void givenCoveredQuoteWithoutHealthAnswers_whenSubmitQuote_thenThrowsQuoteValidationException() {
+	void givenQuoteWithoutTakesPrescriptionMedication_whenSubmitQuote_thenThrowsQuoteValidationException() {
 		// Given
-		Quote draft = QuoteGenerator.coverage(30, CoverageType.STANDARD).build().withStatus(QuoteStatus.DRAFT);
+		Quote draft = QuoteGenerator.readyForSubmissionWithoutTakesPrescriptionMedication(30)
+				.withStatus(QuoteStatus.DRAFT);
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 
 		// When / Then
@@ -154,9 +149,9 @@ class QuoteSubmissionServiceTest {
 	}
 
 	@Test
-	void givenDraftWithoutCoverage_whenSubmitQuote_thenThrowsQuoteValidationException() {
+	void givenQuoteWithoutCoverage_whenSubmitQuote_thenThrowsQuoteValidationException() {
 		// Given
-		Quote draft = QuoteGenerator.draft(30);
+		Quote draft = QuoteGenerator.readyForSubmissionWithoutCoverage(30).withStatus(QuoteStatus.DRAFT);
 		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 
 		// When / Then
@@ -166,11 +161,6 @@ class QuoteSubmissionServiceTest {
 	}
 
 	private static Quote coveredQuote(QuoteStatus status) {
-		return QuoteGenerator.coverage(30, CoverageType.STANDARD)
-				.takesPrescriptionMedication(false)
-				.usesTobacco(false)
-				.needsSpouseCoverage(false)
-				.build()
-				.withStatus(status);
+		return QuoteGenerator.readyForSubmission(30).withStatus(status);
 	}
 }

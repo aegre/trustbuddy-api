@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 
 import org.junit.jupiter.api.Test;
 
+import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
@@ -28,7 +29,7 @@ class QuoteWebMapperTest {
 		assertThat(response.getName()).isEqualTo("Jane Doe");
 		assertThat(response.getEmail()).isEqualTo("jane@example.com");
 		assertThat(response.getAge()).isEqualTo(30);
-		assertThat(response.getZipCode()).isEqualTo("12345");
+		assertThat(response.getZipCode()).isEqualTo(QuoteFieldConstraints.ZIP_CODE_EXAMPLE);
 		assertThat(response.getStatus()).isEqualTo(QuoteStatus.DRAFT);
 		assertThat(response.getCoverageType()).isNull();
 		assertThat(response.getEstimatedMonthlyPremium()).isNull();

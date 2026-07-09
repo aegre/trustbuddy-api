@@ -2,12 +2,36 @@ package com.trustbuddy.api.quote.infrastructure.web.mapper;
 
 import java.util.LinkedHashSet;
 
+import com.trustbuddy.api.quote.application.dto.CreateQuoteCommand;
+import com.trustbuddy.api.quote.application.dto.UpdateCoverageCommand;
 import com.trustbuddy.api.quote.domain.model.Quote;
+import com.trustbuddy.api.quote.infrastructure.web.request.CreateQuoteRequest;
+import com.trustbuddy.api.quote.infrastructure.web.request.UpdateCoverageRequest;
 import com.trustbuddy.api.quote.infrastructure.web.response.QuoteResponse;
 
 public final class QuoteWebMapper {
 
 	private QuoteWebMapper() {
+	}
+
+	public static CreateQuoteCommand toCommand(CreateQuoteRequest request) {
+		CreateQuoteCommand command = new CreateQuoteCommand();
+		command.setName(request.getName());
+		command.setEmail(request.getEmail());
+		command.setAge(request.getAge());
+		command.setZipCode(request.getZipCode());
+		return command;
+	}
+
+	public static UpdateCoverageCommand toCommand(UpdateCoverageRequest request) {
+		UpdateCoverageCommand command = new UpdateCoverageCommand();
+		command.setCoverageType(request.getCoverageType());
+		command.setHasPreexistingConditions(request.getHasPreexistingConditions());
+		command.setConditions(request.getConditions());
+		command.setTakesPrescriptionMedication(request.getTakesPrescriptionMedication());
+		command.setUsesTobacco(request.getUsesTobacco());
+		command.setNeedsSpouseCoverage(request.getNeedsSpouseCoverage());
+		return command;
 	}
 
 	public static QuoteResponse toResponse(Quote quote) {

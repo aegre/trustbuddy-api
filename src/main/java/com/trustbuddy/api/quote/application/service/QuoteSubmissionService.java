@@ -6,18 +6,21 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.trustbuddy.api.quote.application.dto.QuoteSubmissionReadiness;
 import com.trustbuddy.api.quote.application.port.out.InsurerGatewayPort;
 import com.trustbuddy.api.quote.application.port.out.InsurerSubmissionResult;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
+import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
-import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
 import com.trustbuddy.api.quote.domain.service.CoverageHealthPolicy;
 import com.trustbuddy.api.quote.domain.service.QuoteStateTransitionService;
+
+import jakarta.validation.Validation;
 
 @Service
 public class QuoteSubmissionService {
@@ -26,27 +29,41 @@ public class QuoteSubmissionService {
 	private final InsurerGatewayPort insurerGateway;
 	private final QuoteStateTransitionService quoteStateTransitionService;
 	private final CoverageHealthPolicy coverageHealthPolicy;
+	private final CommandValidator commandValidator;
 
 	@Autowired
 	public QuoteSubmissionService(
 			QuoteRepositoryPort quoteRepository,
-			InsurerGatewayPort insurerGateway) {
+			InsurerGatewayPort insurerGateway,
+			CommandValidator commandValidator) {
 		this(
 				quoteRepository,
 				insurerGateway,
 				new QuoteStateTransitionService(),
-				new CoverageHealthPolicy());
+				new CoverageHealthPolicy(),
+				commandValidator);
 	}
 
 	QuoteSubmissionService(
 			QuoteRepositoryPort quoteRepository,
 			InsurerGatewayPort insurerGateway,
 			QuoteStateTransitionService quoteStateTransitionService,
-			CoverageHealthPolicy coverageHealthPolicy) {
+			CoverageHealthPolicy coverageHealthPolicy,
+			CommandValidator commandValidator) {
 		this.quoteRepository = quoteRepository;
 		this.insurerGateway = insurerGateway;
 		this.quoteStateTransitionService = quoteStateTransitionService;
 		this.coverageHealthPolicy = coverageHealthPolicy;
+		this.commandValidator = commandValidator;
+	}
+
+	QuoteSubmissionService(QuoteRepositoryPort quoteRepository, InsurerGatewayPort insurerGateway) {
+		this(
+				quoteRepository,
+				insurerGateway,
+				new QuoteStateTransitionService(),
+				new CoverageHealthPolicy(),
+				new CommandValidator(Validation.buildDefaultValidatorFactory().getValidator()));
 	}
 
 	public Quote submitQuote(UUID id) {
@@ -73,43 +90,12 @@ public class QuoteSubmissionService {
 	}
 
 	private void ensureReadyForSubmission(Quote quote) {
-		validatePersonalInformation(quote);
-		if (!quote.hasCoverage()) {
-			throw new QuoteValidationException("Quote is missing required coverage data");
-		}
-		validateRequiredCoverageAnswers(quote);
+		commandValidator.validate(QuoteSubmissionReadiness.from(quote));
 
 		Set<ConditionType> conditions = quote.getConditions().isEmpty() ? null : quote.getConditions();
 		coverageHealthPolicy.validateHealthFieldsForAge(
 				quote.getAge(),
 				quote.getHasPreexistingConditions(),
 				conditions);
-	}
-
-	private void validatePersonalInformation(Quote quote) {
-		if (quote.getName() == null || quote.getName().isBlank()) {
-			throw new QuoteValidationException("name is required");
-		}
-		if (quote.getEmail() == null || quote.getEmail().isBlank()) {
-			throw new QuoteValidationException("email is required");
-		}
-		if (quote.getZipCode() == null || quote.getZipCode().isBlank()) {
-			throw new QuoteValidationException("zipCode is required");
-		}
-		if (quote.getAge() < 1) {
-			throw new QuoteValidationException("age is required");
-		}
-	}
-
-	private void validateRequiredCoverageAnswers(Quote quote) {
-		if (quote.getTakesPrescriptionMedication() == null) {
-			throw new QuoteValidationException("takesPrescriptionMedication is required");
-		}
-		if (quote.getUsesTobacco() == null) {
-			throw new QuoteValidationException("usesTobacco is required");
-		}
-		if (quote.getNeedsSpouseCoverage() == null) {
-			throw new QuoteValidationException("needsSpouseCoverage is required");
-		}
 	}
 }

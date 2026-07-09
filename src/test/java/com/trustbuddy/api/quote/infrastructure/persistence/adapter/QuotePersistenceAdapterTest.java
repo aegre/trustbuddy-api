@@ -27,6 +27,7 @@ import org.testcontainers.utility.DockerImageName;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
+import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
 import com.trustbuddy.api.quote.infrastructure.persistence.mapper.QuotePersistenceMapper;
@@ -48,7 +49,8 @@ class QuotePersistenceAdapterTest {
 	@Test
 	void givenDraftQuote_whenSaveAndFindById_thenReturnsPersistedFields() {
 		// Given
-		Quote draft = Quote.createDraft("Jane Doe", "jane@example.com", 30, "12345");
+		Quote draft = Quote.createDraft(
+				"Jane Doe", "jane@example.com", 30, QuoteFieldConstraints.ZIP_CODE_EXAMPLE);
 
 		// When
 		Quote saved = quoteRepository.save(draft);
@@ -58,7 +60,7 @@ class QuotePersistenceAdapterTest {
 		assertThat(found.getName()).isEqualTo("Jane Doe");
 		assertThat(found.getEmail()).isEqualTo("jane@example.com");
 		assertThat(found.getAge()).isEqualTo(30);
-		assertThat(found.getZipCode()).isEqualTo("12345");
+		assertThat(found.getZipCode()).isEqualTo(QuoteFieldConstraints.ZIP_CODE_EXAMPLE);
 		assertThat(found.getStatus()).isEqualTo(QuoteStatus.DRAFT);
 	}
 

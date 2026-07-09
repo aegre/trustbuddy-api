@@ -10,19 +10,25 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.ConditionalFieldRejectedException;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
+import com.trustbuddy.api.quote.infrastructure.web.mapper.QuoteWebMapper;
 import com.trustbuddy.api.quote.infrastructure.web.request.CreateQuoteRequest;
-
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/test/exceptions")
 class ExceptionTestController {
+
+	private final CommandValidator commandValidator;
+
+	ExceptionTestController(CommandValidator commandValidator) {
+		this.commandValidator = commandValidator;
+	}
 
 	@GetMapping("/quote-not-found")
 	void quoteNotFound() {
@@ -61,7 +67,7 @@ class ExceptionTestController {
 	}
 
 	@PostMapping("/validation")
-	void validation(@Valid @RequestBody CreateQuoteRequest request) {
-		// unreachable when validation fails
+	void validation(@RequestBody CreateQuoteRequest request) {
+		commandValidator.validate(QuoteWebMapper.toCommand(request));
 	}
 }

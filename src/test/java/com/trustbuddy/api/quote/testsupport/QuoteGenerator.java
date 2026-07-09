@@ -3,6 +3,7 @@ package com.trustbuddy.api.quote.testsupport;
 import java.math.BigDecimal;
 import java.util.Set;
 
+import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
@@ -15,7 +16,7 @@ public final class QuoteGenerator {
 
 	private static final String DEFAULT_NAME = "Jane Doe";
 	private static final String DEFAULT_EMAIL = "jane@example.com";
-	private static final String DEFAULT_ZIP_CODE = "12345";
+	private static final String DEFAULT_ZIP_CODE = QuoteFieldConstraints.ZIP_CODE_EXAMPLE;
 	private static final BigDecimal PLACEHOLDER_PREMIUM = BigDecimal.ZERO;
 
 	private QuoteGenerator() {
@@ -27,6 +28,42 @@ public final class QuoteGenerator {
 
 	public static Quote draft(int age) {
 		return Quote.createDraft(DEFAULT_NAME, DEFAULT_EMAIL, age, DEFAULT_ZIP_CODE);
+	}
+
+	public static Quote readyForSubmission(int age) {
+		return coverage(age, CoverageType.STANDARD)
+				.takesPrescriptionMedication(false)
+				.usesTobacco(false)
+				.needsSpouseCoverage(false)
+				.build();
+	}
+
+	public static Quote readyForSubmissionWithoutCoverage(int age) {
+		Quote draft = draft(age);
+		return Quote.reconstitute(
+				draft.getId(),
+				draft.getName(),
+				draft.getEmail(),
+				draft.getAge(),
+				draft.getZipCode(),
+				null,
+				null,
+				Set.of(),
+				false,
+				false,
+				false,
+				null,
+				draft.getStatus(),
+				draft.getCreatedAt(),
+				draft.getUpdatedAt(),
+				draft.getVersion());
+	}
+
+	public static Quote readyForSubmissionWithoutTakesPrescriptionMedication(int age) {
+		return coverage(age, CoverageType.STANDARD)
+				.usesTobacco(false)
+				.needsSpouseCoverage(false)
+				.build();
 	}
 
 	public static CoverageBuilder coverage(int age, CoverageType coverageType) {

@@ -1,4 +1,4 @@
-package com.trustbuddy.api.quote.infrastructure.web.request;
+package com.trustbuddy.api.quote.application.dto;
 
 import java.util.Collections;
 import java.util.Set;
@@ -6,30 +6,21 @@ import java.util.Set;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 
-@Schema(description = "Coverage type and supplemental health answers for a quote")
-public class UpdateCoverageRequest {
+public class UpdateCoverageCommand {
 
-	@Schema(
-			description = "Selected coverage tier",
-			example = "STANDARD",
-			requiredMode = Schema.RequiredMode.REQUIRED)
+	@NotNull
 	private CoverageType coverageType;
 
-	@Schema(description = "Whether the applicant has pre-existing conditions (required when age is over 65)")
 	private Boolean hasPreexistingConditions;
 
-	@Schema(description = "Reported pre-existing conditions (required when hasPreexistingConditions is true)")
 	private Set<ConditionType> conditions;
 
-	@Schema(description = "Whether the applicant takes prescription medication")
 	private Boolean takesPrescriptionMedication;
 
-	@Schema(description = "Whether the applicant uses tobacco")
 	private Boolean usesTobacco;
 
-	@Schema(description = "Whether spouse coverage is needed")
 	private Boolean needsSpouseCoverage;
 
 	public CoverageType getCoverageType() {

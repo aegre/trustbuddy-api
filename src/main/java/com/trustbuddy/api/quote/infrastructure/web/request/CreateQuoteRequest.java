@@ -1,31 +1,48 @@
 package com.trustbuddy.api.quote.infrastructure.web.request;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.AGE_EXAMPLE;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.EMAIL_EXAMPLE;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.MAX_AGE_SCHEMA;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.MAX_NAME_LENGTH;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.MIN_AGE_SCHEMA;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.NAME_EXAMPLE;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.ZIP_CODE_DESCRIPTION;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.ZIP_CODE_EXAMPLE;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.ZIP_CODE_PATTERN;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Personal information for creating a draft quote")
 public class CreateQuoteRequest {
 
-	@NotBlank
-	@Size(max = 255)
+	@Schema(
+			description = "Applicant full name",
+			example = NAME_EXAMPLE,
+			requiredMode = Schema.RequiredMode.REQUIRED,
+			maxLength = MAX_NAME_LENGTH)
 	private String name;
 
-	@NotBlank
-	@Email
-	@Size(max = 255)
+	@Schema(
+			description = "Applicant email address",
+			example = EMAIL_EXAMPLE,
+			requiredMode = Schema.RequiredMode.REQUIRED,
+			format = "email",
+			maxLength = MAX_NAME_LENGTH)
 	private String email;
 
-	@NotNull
-	@Min(1)
-	@Max(120)
+	@Schema(
+			description = "Applicant age in years",
+			example = AGE_EXAMPLE,
+			requiredMode = Schema.RequiredMode.REQUIRED,
+			minimum = MIN_AGE_SCHEMA,
+			maximum = MAX_AGE_SCHEMA)
 	private Integer age;
 
-	@NotBlank
-	@Pattern(regexp = "\\d{5}")
+	@Schema(
+			description = ZIP_CODE_DESCRIPTION,
+			example = ZIP_CODE_EXAMPLE,
+			requiredMode = Schema.RequiredMode.REQUIRED,
+			pattern = ZIP_CODE_PATTERN)
 	private String zipCode;
 
 	public String getName() {
