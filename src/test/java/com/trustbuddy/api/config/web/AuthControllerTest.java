@@ -19,6 +19,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.trustbuddy.api.config.ApplicationConfig;
+import com.trustbuddy.api.config.JwtAuthFilter;
+import com.trustbuddy.api.config.JwtAuthenticationEntryPoint;
 import com.trustbuddy.api.config.JwtService;
 import com.trustbuddy.api.config.SecurityConfig;
 import com.trustbuddy.api.quote.infrastructure.web.exception.GlobalExceptionHandler;

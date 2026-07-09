@@ -14,6 +14,7 @@ import com.trustbuddy.api.config.web.request.AuthTokenRequest;
 import com.trustbuddy.api.config.web.response.AuthTokenResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
@@ -34,6 +35,7 @@ public class AuthController {
 
 	@PostMapping("/token")
 	@Operation(summary = "Obtain a JWT access token")
+	@SecurityRequirements
 	public ResponseEntity<AuthTokenResponse> token(@Valid @RequestBody AuthTokenRequest request) {
 		if (!isValidCredentials(request)) {
 			throw new BadCredentialsException("Invalid username or password");
