@@ -37,6 +37,9 @@ management:
       show-details: when-authorized
 
 app:
+  auth:
+    username: ${AUTH_USERNAME}
+    password: ${AUTH_PASSWORD}
   jwt:
     secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:900000}

@@ -11,7 +11,7 @@ include .env
 export $(shell sed -n 's/=.*//p' .env)
 endif
 
-.PHONY: help compile test test-one verify lint run run-dev infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs
+.PHONY: help compile test test-one verify lint run run-dev token infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs
 
 help: ## Show available targets
 	@echo "Trustbuddy API — available targets:"
@@ -49,6 +49,12 @@ run: ## Run API locally (dev profile; requires make infra-up)
 
 run-dev: infra-up ## Start infra, then run API with dev profile
 	$(MVN) spring-boot:run -Dspring-boot.run.profiles=$(RUN_PROFILE)
+
+token: ## Obtain JWT from running API (uses AUTH_USERNAME / AUTH_PASSWORD from .env)
+	@curl -s -X POST http://localhost:8080/auth/token \
+		-H "Content-Type: application/json" \
+		-d '{"username":"$${AUTH_USERNAME:-dev-user}","password":"$${AUTH_PASSWORD:-dev-password}"}' \
+		| python3 -m json.tool
 
 infra-up: ## Start PostgreSQL, Redis, and Kafka (Docker)
 	$(COMPOSE) up -d postgres redis kafka
