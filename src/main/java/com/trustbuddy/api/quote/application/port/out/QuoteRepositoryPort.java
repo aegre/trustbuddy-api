@@ -1,4 +1,4 @@
-package com.trustbuddy.api.application.port.out;
+package com.trustbuddy.api.quote.application.port.out;
 
 import java.time.Instant;
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.trustbuddy.api.domain.model.Quote;
+import com.trustbuddy.api.quote.domain.model.Quote;
 
 public interface QuoteRepositoryPort {
 

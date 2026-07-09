@@ -1,4 +1,4 @@
-package com.trustbuddy.api.adapter.out.persistence.entity;
+package com.trustbuddy.api.quote.infrastructure.persistence.entity;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -6,9 +6,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import com.trustbuddy.api.domain.model.ConditionType;
-import com.trustbuddy.api.domain.model.CoverageType;
-import com.trustbuddy.api.domain.model.QuoteStatus;
+import com.trustbuddy.api.quote.domain.model.ConditionType;
+import com.trustbuddy.api.quote.domain.model.CoverageType;
+import com.trustbuddy.api.quote.domain.model.QuoteStatus;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;

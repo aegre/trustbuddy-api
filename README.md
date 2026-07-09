@@ -90,17 +90,22 @@ Local dev only needs `.env` values documented in `.env.example`. Production must
 
 ## Project layout
 
-Hexagonal structure under `com.trustbuddy.api`:
+Feature-oriented hexagonal architecture under `com.trustbuddy.api` — see [ARCHITECTURE.md](ARCHITECTURE.md) for full detail.
 
 ```
-domain/           # Business rules (pure Java)
-application/      # Use cases + outbound port interfaces
-adapter/in/       # REST controllers, security, schedulers
-adapter/out/      # JPA, HTTP gateway, Kafka, Redis
-config/           # Spring bean wiring
+TrustbuddyApiApplication.java
+config/                          # shared Spring configuration
+
+quote/                           # quote capability
+  application/port/              # use case + outbound port interfaces
+  application/service/           # use case implementations
+  domain/model/                  # Quote, enums (pure Java)
+  infrastructure/web/            # REST (planned)
+  infrastructure/persistence/    # JPA adapters
+  infrastructure/client/         # insurer HTTP client (planned)
 ```
 
-See [AGENTS.md](AGENTS.md) for full conventions.
+See [AGENTS.md](AGENTS.md) for REST conventions and agent instructions.
 
 ## API (planned)
 
