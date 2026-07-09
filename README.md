@@ -4,7 +4,15 @@ Backend REST API for the multi-step insurance quote flow (Onboarding team code c
 
 ## Status
 
-Early development — Phase 1 foundation complete (deps, config, Docker, tests). Quote domain and API endpoints start in Phase 2.
+Quote capability is in progress. Implemented today:
+
+- Domain model, premium calculation, and state transitions
+- PostgreSQL persistence (JPA)
+- REST API under `/quotes` (create, update coverage, submit, get, list)
+- Global error handling and request validation
+- External insurer submission via configurable HTTP gateway ([httpstat.us](https://httpstat.us) by default)
+
+Still planned: JWT authentication, Redis quote cache, Kafka submit events, draft expiration job.
 
 ## Tech stack
 
@@ -51,7 +59,7 @@ make run
 make run-dev
 ```
 
-### Verify foundation (Phase 1)
+### Verify
 
 ```bash
 make verify   # compile + tests (Testcontainers; requires Docker)
@@ -97,37 +105,45 @@ TrustbuddyApiApplication.java
 config/                          # shared Spring configuration
 
 quote/                           # quote capability
-  application/port/              # use case + outbound port interfaces
-  application/service/           # use case implementations
-  domain/model/                  # Quote, enums (pure Java)
-  infrastructure/web/            # REST (planned)
-  infrastructure/persistence/    # JPA adapters
-  infrastructure/client/         # insurer HTTP client (planned)
+  application/port/              # outbound ports (repository, insurer gateway)
+  application/service/           # QuoteService, QuoteSubmissionService
+  domain/model/                  # Quote, enums, premium/state logic
+  infrastructure/web/            # REST controllers, DTOs, exception handling
+  infrastructure/persistence/    # JPA entities, adapters, repositories
+  infrastructure/client/         # InsurerGatewayHttpAdapter (httpstat.us)
 ```
 
 See [AGENTS.md](AGENTS.md) for REST conventions and agent instructions.
 
-## API (planned)
+## API
 
-Challenge contract uses `/quotes` paths:
+Base URL when running locally: `http://localhost:8080`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/quotes` | Create draft quote |
-| `PATCH` | `/quotes/{id}/coverage` | Set coverage + recalculate premium |
-| `POST` | `/quotes/{id}/submit` | Submit to external insurer API |
-| `GET` | `/quotes/{id}` | Get quote (cached) |
-| `GET` | `/quotes` | List all quotes |
+| `POST` | `/quotes` | Create draft quote (name, email, age, zip code) |
+| `PATCH` | `/quotes/{id}/coverage` | Set coverage type and health answers; returns recalculated premium |
+| `POST` | `/quotes/{id}/submit` | Submit completed quote to external insurer gateway |
+| `GET` | `/quotes/{id}` | Get quote by id |
+| `GET` | `/quotes` | List quotes (paginated; `page`, `size`, `sort`) |
 
-Swagger UI (when running): `http://localhost:8080/swagger-ui.html`
+**Submit** requires personal info, coverage selection, and all health answers (`takesPrescriptionMedication`, `usesTobacco`, `needsSpouseCoverage`). For age > 65, pre-existing condition fields are also required. Submit is idempotent when the quote is already `SUBMITTED`. On gateway failure the quote moves to `SUBMISSION_FAILED` and can be resubmitted.
+
+**Insurer gateway** — not a mock. Dev defaults to `https://httpstat.us/200` (`INSURER_GATEWAY_URL` in `.env`). Use paths like `/500` or `/200?sleep=3000` to exercise errors and latency.
+
+Interactive docs (dev/docker profiles):
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
 ## Testing
 
 ```bash
 make test
-# Coverage report (after JaCoCo wiring):
-./mvnw verify
-# open target/site/jacoco/index.html
+make test-pricing   # premium calculation unit tests
+make test-state     # quote state transition tests
+make test-submit    # quote submission service tests
+make verify         # compile, test, and static analysis
 ```
 
 ## Frontend

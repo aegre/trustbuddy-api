@@ -14,12 +14,14 @@ Split by **business capability** (`quote/` today; `policy/`, `customer/` later) 
 
 ## Request flow (quote)
 
+### Create / read / update coverage
+
 ```mermaid
 flowchart TB
     HTTP[HTTP Request] --> Controller[QuoteController]
-    Controller --> UseCase[CreateQuoteUseCase]
-    UseCase --> Service[CreateQuoteService]
+    Controller --> Service[QuoteService]
     Service --> Domain[Quote domain model]
+    Service --> DomainSvc[PremiumCalculator / CoverageHealthPolicy / QuoteStateTransitionService]
     Service --> Port[QuoteRepositoryPort]
     Port --> Adapter[QuotePersistenceAdapter]
     Adapter --> Mapper[QuotePersistenceMapper]
@@ -27,14 +29,30 @@ flowchart TB
     JpaRepo --> DB[(PostgreSQL)]
 ```
 
-The application layer never knows it is talking to PostgreSQL.
+### Submit
+
+```mermaid
+flowchart TB
+    HTTP[POST /quotes/id/submit] --> Controller[QuoteController]
+    Controller --> SubmitSvc[QuoteSubmissionService]
+    SubmitSvc --> DomainSvc[QuoteStateTransitionService / CoverageHealthPolicy]
+    SubmitSvc --> Repo[QuoteRepositoryPort]
+    SubmitSvc --> Gateway[InsurerGatewayPort]
+    Gateway --> HttpAdapter[InsurerGatewayHttpAdapter]
+    HttpAdapter --> External[httpstat.us or configured URL]
+    Repo --> DB[(PostgreSQL)]
+```
+
+Controllers call application services directly today. Inbound port interfaces (`application/port/in/`) are optional and not used yet — add them when a capability grows multiple entry points (REST + scheduler + messaging).
+
+The application layer never knows it is talking to PostgreSQL or a specific HTTP client library.
 
 ## Root layout
 
 ```
 src/main/java/com/trustbuddy/api/
   TrustbuddyApiApplication.java    # Spring Boot entry point
-  config/                          # shared @Configuration (security, OpenAPI, beans)
+  config/                          # shared @Configuration (bean wiring; security/OpenAPI planned)
 
   quote/                           # quote capability (feature module)
     application/
@@ -50,40 +68,50 @@ Mirror tests under `src/test/java/com/trustbuddy/api/quote/`.
 quote/
 ├── application/
 │   ├── port/
-│   │   ├── in/                    # inbound ports (use case interfaces)
-│   │   │   ├── CreateQuoteUseCase.java      (planned)
-│   │   │   └── GetQuoteUseCase.java         (planned)
-│   │   └── out/                   # outbound ports
+│   │   └── out/                         # outbound ports
 │   │       ├── QuoteRepositoryPort.java
-│   │       ├── InsurerGatewayPort.java      (planned)
-│   │       ├── QuoteEventPublisherPort.java (planned)
-│   │       └── QuoteCachePort.java          (planned)
-│   ├── service/                   # use case implementations
-│   │   ├── CreateQuoteService.java          (planned)
-│   │   └── QuoteSubmissionService.java      (planned)
-│   └── dto/                       # application-level commands/queries (optional)
+│   │       ├── InsurerGatewayPort.java
+│   │       └── InsurerSubmissionResult.java
+│   └── service/                         # use case implementations
+│       ├── QuoteService.java            # create, update coverage, get, list
+│       └── QuoteSubmissionService.java  # submit to insurer gateway
 │
 ├── domain/
-│   ├── model/                     # Quote, enums
-│   ├── valueobject/               # Email, Money, etc. (planned)
-│   ├── service/                   # PremiumCalculator, state machine (planned)
-│   └── exception/                 # QuoteNotFoundException, etc. (planned)
+│   ├── model/                           # Quote, QuoteStatus, CoverageType, ConditionType
+│   ├── service/                         # pure domain services
+│   │   ├── PremiumCalculator.java
+│   │   ├── PremiumMultiplier.java       # + Age, Tobacco, Spouse, Conditions, BasePremium
+│   │   ├── CoverageHealthPolicy.java    # age-gated pre-existing condition rules
+│   │   └── QuoteStateTransitionService.java
+│   └── exception/                       # DomainException hierarchy
 │
 └── infrastructure/
     ├── web/
-    │   ├── controller/            # QuoteController (planned)
-    │   ├── request/               # API request DTOs (planned)
-    │   ├── response/              # API response DTOs (planned)
-    │   └── mapper/                # domain ↔ API DTO mappers (planned)
+    │   ├── controller/                  # QuoteController
+    │   ├── request/                     # CreateQuoteRequest, UpdateCoverageRequest
+    │   ├── response/                    # QuoteResponse, ErrorResponse
+    │   ├── mapper/                      # QuoteWebMapper
+    │   └── exception/                   # GlobalExceptionHandler
     ├── persistence/
-    │   ├── entity/                # QuoteEntity (JPA)
-    │   ├── repository/            # QuoteJpaRepository (Spring Data)
-    │   ├── adapter/               # QuotePersistenceAdapter
-    │   └── mapper/                # QuotePersistenceMapper
-    ├── client/                    # InsurerGatewayHttpAdapter (planned)
-    ├── messaging/                 # Kafka producer/consumer (planned)
-    └── scheduler/                 # DraftExpirationJob (planned)
+    │   ├── entity/                      # QuoteEntity
+    │   ├── repository/                  # QuoteJpaRepository
+    │   ├── adapter/                     # QuotePersistenceAdapter
+    │   └── mapper/                      # QuotePersistenceMapper
+    ├── client/                          # InsurerGatewayHttpAdapter
+    ├── messaging/                       # Kafka producer/consumer (planned)
+    └── scheduler/                       # DraftExpirationJob (planned)
 ```
+
+### Still planned
+
+| Area | Package / type |
+|------|----------------|
+| Inbound ports | `application/port/in/*UseCase` (optional) |
+| Value objects | `domain/valueobject/` (`Email`, `Money`, etc.) |
+| Cache | `QuoteCachePort` + Redis adapter |
+| Events | `QuoteEventPublisherPort` + Kafka adapter |
+| Auth | JWT filter, `AuthController` under `config/` or shared `infrastructure/` |
+| Scheduler | draft expiration job |
 
 ## What belongs in each layer
 
@@ -91,10 +119,9 @@ quote/
 
 | Package | Contents |
 |---------|----------|
-| `model/` | Aggregates and enums (`Quote`, `QuoteStatus`, `CoverageType`) |
-| `valueobject/` | Immutable types (`Email`, `Money`) |
-| `service/` | Pure domain services (`PremiumCalculator`) |
-| `exception/` | `QuoteNotFoundException`, `InvalidQuoteStateException` |
+| `model/` | Aggregates and enums (`Quote`, `QuoteStatus`, `CoverageType`, `ConditionType`) |
+| `service/` | Pure domain services (`PremiumCalculator`, `CoverageHealthPolicy`, `QuoteStateTransitionService`) |
+| `exception/` | `DomainException`, `QuoteNotFoundException`, `InvalidQuoteStateException`, `QuoteValidationException`, `ConditionalFieldRejectedException`, `ExternalSubmissionException` |
 
 Must compile in a plain Java project — no framework imports.
 
@@ -102,12 +129,10 @@ Must compile in a plain Java project — no framework imports.
 
 | Package | Contents |
 |---------|----------|
-| `port/in/` | Use case interfaces (`CreateQuoteUseCase`) — what the app can do |
-| `port/out/` | Outbound ports (`QuoteRepositoryPort`) — what the app needs |
+| `port/out/` | Outbound ports — what the app needs from infrastructure |
 | `service/` | Use case implementations; depend on ports and domain only |
-| `dto/` | Immutable command/query objects for use case inputs (optional) |
 
-Application services orchestrate workflow; they do not contain SQL, HTTP, or Kafka code.
+`QuoteService` orchestrates create, coverage update, get, and list. `QuoteSubmissionService` validates quote completeness, calls the insurer gateway, and applies state transitions. Application services do not contain SQL, HTTP, or Kafka code.
 
 ### Infrastructure (`quote/infrastructure/`)
 
@@ -115,9 +140,9 @@ Application services orchestrate workflow; they do not contain SQL, HTTP, or Kaf
 |---------|----------|
 | `web/` | REST controllers, request/response DTOs, API mappers, HTTP exception handling |
 | `persistence/` | JPA entities, Spring Data repos, persistence adapters and mappers |
-| `client/` | HTTP clients to external APIs (insurer gateway) |
-| `messaging/` | Kafka producers/consumers |
-| `scheduler/` | `@Scheduled` jobs |
+| `client/` | HTTP clients to external APIs (insurer gateway via `RestClient`) |
+| `messaging/` | Kafka producers/consumers (planned) |
+| `scheduler/` | `@Scheduled` jobs (planned) |
 
 This layer implements outbound ports and hosts inbound adapters.
 
@@ -127,18 +152,28 @@ This layer implements outbound ports and hosts inbound adapters.
 
 | Adapter | Location | Invokes |
 |---------|----------|---------|
-| REST controller | `infrastructure/web/controller/` | `application/port/in/*UseCase` |
-| Scheduler | `infrastructure/scheduler/` | application services |
-| Kafka consumer | `infrastructure/messaging/` | application services |
+| REST controller | `infrastructure/web/controller/QuoteController` | `QuoteService`, `QuoteSubmissionService` |
+| Scheduler | `infrastructure/scheduler/` (planned) | application services |
+| Kafka consumer | `infrastructure/messaging/` (planned) | application services |
+
+REST surface (challenge contract):
+
+| Method | Path |
+|--------|------|
+| `POST` | `/quotes` |
+| `PATCH` | `/quotes/{id}/coverage` |
+| `POST` | `/quotes/{id}/submit` |
+| `GET` | `/quotes/{id}` |
+| `GET` | `/quotes` |
 
 ### Outbound (driven)
 
-| Port | Adapter | Location |
-|------|---------|----------|
-| `QuoteRepositoryPort` | `QuotePersistenceAdapter` | `infrastructure/persistence/adapter/` |
-| `InsurerGatewayPort` | `InsurerGatewayHttpAdapter` | `infrastructure/client/` |
-| `QuoteEventPublisherPort` | `KafkaQuoteEventPublisher` | `infrastructure/messaging/` |
-| `QuoteCachePort` | `RedisQuoteCacheAdapter` | `infrastructure/persistence/` or dedicated cache package |
+| Port | Adapter | Status |
+|------|---------|--------|
+| `QuoteRepositoryPort` | `QuotePersistenceAdapter` | implemented |
+| `InsurerGatewayPort` | `InsurerGatewayHttpAdapter` | implemented (`app.insurer.gateway.url`, default httpstat.us) |
+| `QuoteEventPublisherPort` | `KafkaQuoteEventPublisher` | planned |
+| `QuoteCachePort` | `RedisQuoteCacheAdapter` | planned |
 
 ## Dependency rules
 
@@ -149,17 +184,30 @@ This layer implements outbound ports and hosts inbound adapters.
 | `quote/infrastructure/` | `quote/application/`, `quote/domain/` | other feature modules directly |
 | `config/` | all layers | business logic |
 
+## Testing layout
+
+Tests mirror the capability packages:
+
+| Layer | Examples |
+|-------|----------|
+| Domain | `PremiumCalculatorTest`, `CoverageHealthPolicyTest`, `QuoteStateTransitionServiceTest` |
+| Application | `QuoteServiceTest`, `QuoteSubmissionServiceTest` (mock outbound ports) |
+| Infrastructure | `QuotePersistenceAdapterTest` (`@DataJpaTest`), `QuoteControllerTest` (`@WebMvcTest`), `InsurerGatewayHttpAdapterTest` |
+| Support | `testsupport/QuoteGenerator` — test data factory |
+
+Run targeted suites via `make test-pricing`, `make test-state`, `make test-submit`, or full `make verify`.
+
 ## Adding a new capability
 
 1. Create `src/main/java/com/trustbuddy/api/<capability>/` with `application/`, `domain/`, `infrastructure/`.
 2. Define domain models and services first.
 3. Add outbound ports in `application/port/out/`.
 4. Implement adapters in `infrastructure/`.
-5. Add inbound use cases in `application/port/in/` and services.
+5. Add application services; introduce `application/port/in/` only when multiple inbound adapters share the same use case.
 6. Expose via `infrastructure/web/` controllers.
 7. Mirror tests under `src/test/java/com/trustbuddy/api/<capability>/`.
 
 ## Related docs
 
 - [AGENTS.md](AGENTS.md) — agent instructions, REST conventions, testing checklist
-- [README.md](README.md) — setup and run instructions
+- [README.md](README.md) — setup, API summary, and run instructions
