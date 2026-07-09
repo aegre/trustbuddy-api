@@ -11,7 +11,7 @@ include .env
 export $(shell sed -n 's/=.*//p' .env)
 endif
 
-.PHONY: help compile test test-one verify lint run run-dev token infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs kafka-consume
+.PHONY: help compile test test-one verify lint run run-dev token infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs kafka-consume coverage verify-all
 
 help: ## Show available targets
 	@echo "Trustbuddy API — available targets:"
@@ -40,6 +40,11 @@ test-submit: ## Run quote submission application tests
 
 verify: ## Compile, test, and static analysis
 	$(MVN) verify -q
+
+coverage: verify ## Run verify and print JaCoCo HTML report path
+	@echo "JaCoCo report: $$(pwd)/target/site/jacoco/index.html"
+
+verify-all: verify ## Full verification including tests, lint, and JaCoCo report
 
 lint: ## Run Checkstyle and SpotBugs (also runs during verify)
 	$(MVN) checkstyle:check spotbugs:check -q
