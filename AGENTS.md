@@ -1,6 +1,6 @@
 # Trustbuddy API — Agent Instructions
 
-Spring Boot 4.1 REST API (Java 17, Maven, PostgreSQL, JPA, Actuator). Uses **hexagonal architecture** (ports and adapters). Keep changes small, focused, and consistent with the layout below.
+Spring Boot 4.1 REST API (Java 17, Maven, PostgreSQL, JPA, Actuator). Uses **feature-oriented hexagonal architecture** — see [ARCHITECTURE.md](ARCHITECTURE.md). Keep changes small, focused, and consistent with the layout below.
 
 ## Repository hygiene
 
@@ -35,123 +35,60 @@ If a new generated or local-only path appears, add it to `.gitignore` in the sam
 
 Business logic lives at the center and must not depend on frameworks. Infrastructure plugs in through **ports** (interfaces) and **adapters** (implementations).
 
-```mermaid
-flowchart TB
-    subgraph adaptersIn [Inbound adapters]
-        Web[REST controllers]
-        Scheduler[Scheduled jobs]
-    end
+**Full layout, flow diagrams, and layer rules:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
-    subgraph application [Application layer]
-        UseCases[Use case services]
-        InPorts[Inbound ports]
-        OutPorts[Outbound ports]
-    end
+### Quick reference
 
-    subgraph domain [Domain layer]
-        Models[Models and value objects]
-        DomainServices[Domain services]
-        DomainExceptions[Domain exceptions]
-    end
+Code is organized by **business capability** under `com.trustbuddy.api.<capability>/` (e.g. `quote/`). Each capability has its own `domain/`, `application/`, and `infrastructure/`.
 
-    subgraph adaptersOut [Outbound adapters]
-        Persistence[JPA persistence]
-        Gateway[HTTP insurer gateway]
-        Messaging[Kafka publisher]
-        Cache[Redis cache]
-    end
+```
+src/main/java/com/trustbuddy/api/
+  TrustbuddyApiApplication.java
+  config/                          # shared Spring config (security, OpenAPI)
 
-    Web --> UseCases
-    Scheduler --> UseCases
-    UseCases --> InPorts
-    UseCases --> OutPorts
-    UseCases --> Models
-    UseCases --> DomainServices
-    OutPorts -.-> Persistence
-    OutPorts -.-> Gateway
-    OutPorts -.-> Messaging
-    OutPorts -.-> Cache
-    Persistence --> Models
+  quote/                           # quote capability
+    application/port/in|out/       # use case + outbound port interfaces
+    application/service/           # use case implementations
+    domain/model|service|exception/
+    infrastructure/web/            # REST controllers, request/response DTOs
+    infrastructure/persistence/    # JPA entity, repository, adapter, mapper
+    infrastructure/client/         # external HTTP adapters
+    infrastructure/messaging/      # Kafka
+    infrastructure/scheduler/      # scheduled jobs
 ```
 
 ### Dependency rule
 
-Dependencies point **inward only**:
-
 | Layer | May depend on | Must not depend on |
 |-------|---------------|-------------------|
-| `domain/` | nothing outside domain | Spring, JPA, Kafka, Redis, HTTP |
-| `application/` | `domain/` | JPA entities, controllers, Kafka templates |
-| `adapter/` | `application/`, `domain/` | other adapters directly |
+| `quote/domain/` | nothing outside domain | Spring, JPA, Kafka, Redis, HTTP |
+| `quote/application/` | `quote/domain/` | JPA entities, controllers, Kafka templates |
+| `quote/infrastructure/` | `quote/application/`, `quote/domain/` | other feature modules directly |
 | `config/` | all layers | business logic |
 
-### Package layout
+### Ports (quote capability)
 
-```
-src/main/java/com/trustbuddy/api/
-  TrustbuddyApiApplication.java      # entry point only
-
-  domain/
-    model/                             # Quote, enums, value objects (pure Java)
-    service/                           # PremiumCalculator, QuoteStateTransitionService
-    exception/                         # QuoteNotFoundException, InvalidQuoteStateException, etc.
-
-  application/
-    port/in/                           # use case interfaces (optional, for large flows)
-    port/out/                          # QuoteRepositoryPort, InsurerGatewayPort, QuoteEventPublisherPort, QuoteCachePort
-    service/                           # QuoteService, QuoteSubmissionService, DraftExpirationService
-
-  adapter/
-    in/web/
-      controller/                      # REST endpoints
-      dto/                             # request/response objects
-      mapper/                          # DTO ↔ domain mappers
-      exception/                       # GlobalExceptionHandler, ErrorResponse
-      security/                        # JwtAuthFilter, JwtService
-    in/scheduler/                      # DraftExpirationJob
-    out/persistence/
-      entity/                          # QuoteEntity (JPA)
-      repository/                      # QuoteJpaRepository
-      QuotePersistenceAdapter.java     # implements QuoteRepositoryPort
-    out/gateway/                       # InsurerGatewayHttpAdapter (httpstat.us)
-    out/messaging/                     # KafkaQuoteEventPublisher
-    out/cache/                         # RedisQuoteCacheAdapter
-
-  config/                              # @Configuration — wires ports to adapters
-```
-
-### Layer responsibilities
-
-- **Domain** — business rules, premium formula, state transitions, domain exceptions. No annotations except maybe validation on value objects if kept pure.
-- **Application** — orchestrates use cases; calls domain services and outbound ports. No HTTP, SQL, or Kafka code.
-- **Inbound adapters** — translate HTTP/scheduling into application calls; map domain errors to HTTP responses.
-- **Outbound adapters** — implement ports: JPA persistence, external HTTP, Kafka, Redis. Map between domain models and infrastructure types here — not in controllers.
-- **Config** — Spring bean wiring only (`@Bean` methods connecting port interfaces to adapter implementations).
-
-### Ports (outbound) for this project
-
-Define interfaces in `application/port/out/`:
-
-| Port | Adapter | Purpose |
-|------|---------|---------|
-| `QuoteRepositoryPort` | `QuotePersistenceAdapter` | CRUD + expiration query |
-| `InsurerGatewayPort` | `InsurerGatewayHttpAdapter` | Real httpstat.us call |
-| `QuoteEventPublisherPort` | `KafkaQuoteEventPublisher` | Post-submit Kafka event |
-| `QuoteCachePort` | `RedisQuoteCacheAdapter` | Cache get/evict for quotes |
+| Port | Adapter | Location |
+|------|---------|----------|
+| `QuoteRepositoryPort` | `QuotePersistenceAdapter` | `quote/infrastructure/persistence/adapter/` |
+| `InsurerGatewayPort` | `InsurerGatewayHttpAdapter` | `quote/infrastructure/client/` |
+| `QuoteEventPublisherPort` | `KafkaQuoteEventPublisher` | `quote/infrastructure/messaging/` |
+| `QuoteCachePort` | `RedisQuoteCacheAdapter` | TBD |
 
 ### Do / don't
 
 ```
-GOOD:  QuoteService(application) → QuoteRepositoryPort → QuotePersistenceAdapter(JPA)
-       PremiumCalculator(domain) — pure Java, unit-tested without Spring
+GOOD:  CreateQuoteService(application) → QuoteRepositoryPort → QuotePersistenceAdapter
+       PremiumCalculator(quote/domain) — pure Java, no Spring
 
-BAD:   @Autowired QuoteJpaRepository in QuoteService
-       @Entity on domain Quote used directly in controllers
+BAD:   @Autowired QuoteJpaRepository in application service
+       @Entity on domain Quote
        KafkaTemplate in application service
 ```
 
-- Controllers stay thin: validate DTO → call application service → map response.
-- JPA entities stay in `adapter/out/persistence/entity/` — map to/from domain models in the persistence adapter.
+- Controllers stay thin: validate request DTO → use case → response DTO.
+- JPA entities stay in `quote/infrastructure/persistence/entity/` — map in persistence mapper/adapter.
+- API request/response DTOs stay in `quote/infrastructure/web/request|response/`.
 - One public class per file; filename matches the class name.
 
 ## REST API conventions
@@ -194,8 +131,8 @@ Return the status that matches the outcome. Do not return `200 OK` for errors.
 ### Exception handling
 
 - Do **not** scatter `try-catch` in controllers.
-- Domain and application code throw **domain exceptions** from `domain/exception/`.
-- Map exceptions to HTTP in `adapter/in/web/exception/GlobalExceptionHandler` (`@ControllerAdvice` + `@ExceptionHandler`).
+- Domain and application code throw **domain exceptions** from `quote/domain/exception/`.
+- Map exceptions to HTTP in a global handler under `quote/infrastructure/web/` or shared `config/` (`@ControllerAdvice` + `@ExceptionHandler`).
 - Return a **consistent JSON error shape** for all failures:
 
 ```json
@@ -278,7 +215,7 @@ GET /api/v1/users?sort=name,asc
 2. Correct HTTP method and status codes
 3. Request DTO with `@Valid` and Bean Validation constraints
 4. Response DTO (not entity)
-5. Global exception mapping in `adapter/in/web/exception/GlobalExceptionHandler`
+5. Global exception mapping in web exception handler
 6. Pagination for list endpoints
 7. OpenAPI annotations
 8. `@Version` on entities if updates are concurrent
@@ -313,12 +250,12 @@ make test
 # or: ./mvnw test
 ```
 
-Mirror the hexagonal package structure under `src/test/java/com/trustbuddy/api/`:
+Mirror the feature-oriented package structure under `src/test/java/com/trustbuddy/api/`:
 
-- **Domain tests** — pure JUnit, no Spring context (`domain/service/`, `domain/model/`)
-- **Application tests** — mock outbound ports (`application/service/`)
-- **Adapter tests** — `@WebMvcTest` for controllers, `@DataJpaTest` for persistence adapter
-- **Integration tests** — `@SpringBootTest` + Testcontainers at `adapter/` or root test package
+- **Domain tests** — pure JUnit, no Spring context (`quote/domain/service/`, `quote/domain/model/`)
+- **Application tests** — mock outbound ports (`quote/application/service/`)
+- **Infrastructure tests** — `@WebMvcTest` for controllers, `@DataJpaTest` for persistence adapter
+- **Integration tests** — `@SpringBootTest` + Testcontainers
 
 - Mock outbound ports in application tests; do not require live PostgreSQL for unit tests.
 - Use Testcontainers only when testing adapter integration (persistence, Kafka, Redis).
@@ -332,7 +269,7 @@ Before marking work complete:
 2. `./mvnw compile` succeeds (catches missing dependencies and compile errors).
 3. No secrets, credentials, or local-only config in the diff.
 4. No unrelated files changed (formatting-only sweeps, drive-by refactors).
-5. New code follows hexagonal layout and REST API conventions above.
+5. New code follows feature-oriented hexagonal layout in [ARCHITECTURE.md](ARCHITECTURE.md) and REST API conventions above.
 6. `.gitignore` updated if new local artifacts were introduced.
 
 ## Git and PR discipline
@@ -344,6 +281,6 @@ Before marking work complete:
 
 ## When unsure
 
-- Read surrounding code and match its patterns before introducing new abstractions.
+- Read [ARCHITECTURE.md](ARCHITECTURE.md) and surrounding code; match existing patterns before introducing new abstractions.
 - Prefer the smallest correct diff over a large refactor.
 - Ask before deleting files, changing public API contracts, or adding new top-level dependencies.

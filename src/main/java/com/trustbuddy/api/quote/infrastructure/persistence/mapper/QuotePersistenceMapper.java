@@ -1,0 +1,51 @@
+package com.trustbuddy.api.quote.infrastructure.persistence.mapper;
+
+import java.util.HashSet;
+
+import org.springframework.stereotype.Component;
+
+import com.trustbuddy.api.quote.domain.model.Quote;
+import com.trustbuddy.api.quote.infrastructure.persistence.entity.QuoteEntity;
+
+@Component
+public class QuotePersistenceMapper {
+
+	public void updateEntity(Quote quote, QuoteEntity entity) {
+		entity.setId(quote.getId());
+		entity.setName(quote.getName());
+		entity.setEmail(quote.getEmail());
+		entity.setAge(quote.getAge());
+		entity.setZipCode(quote.getZipCode());
+		entity.setCoverageType(quote.getCoverageType());
+		entity.setHasPreexistingConditions(quote.getHasPreexistingConditions());
+		entity.setConditions(new HashSet<>(quote.getConditions()));
+		entity.setTakesPrescriptionMedication(quote.getTakesPrescriptionMedication());
+		entity.setUsesTobacco(quote.getUsesTobacco());
+		entity.setNeedsSpouseCoverage(quote.getNeedsSpouseCoverage());
+		entity.setEstimatedMonthlyPremium(quote.getEstimatedMonthlyPremium());
+		entity.setStatus(quote.getStatus());
+		entity.setCreatedAt(quote.getCreatedAt());
+		entity.setUpdatedAt(quote.getUpdatedAt());
+		entity.setVersion(quote.getVersion());
+	}
+
+	public Quote toDomain(QuoteEntity entity) {
+		return Quote.reconstitute(
+				entity.getId(),
+				entity.getName(),
+				entity.getEmail(),
+				entity.getAge(),
+				entity.getZipCode(),
+				entity.getCoverageType(),
+				entity.getHasPreexistingConditions(),
+				entity.getConditions(),
+				entity.getTakesPrescriptionMedication(),
+				entity.getUsesTobacco(),
+				entity.getNeedsSpouseCoverage(),
+				entity.getEstimatedMonthlyPremium(),
+				entity.getStatus(),
+				entity.getCreatedAt(),
+				entity.getUpdatedAt(),
+				entity.getVersion());
+	}
+}
