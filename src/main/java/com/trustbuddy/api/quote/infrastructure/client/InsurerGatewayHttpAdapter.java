@@ -2,6 +2,7 @@ package com.trustbuddy.api.quote.infrastructure.client;
 
 import java.time.Duration;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ public class InsurerGatewayHttpAdapter implements InsurerGatewayPort {
 	private final RestClient restClient;
 	private final String gatewayUrl;
 
+	@Autowired
 	public InsurerGatewayHttpAdapter(
 			@Value("${app.insurer.gateway.url}") String gatewayUrl,
 			@Value("${app.insurer.gateway.timeout-ms}") int timeoutMs) {

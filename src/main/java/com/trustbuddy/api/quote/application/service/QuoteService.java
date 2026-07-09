@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class QuoteService {
 	private final CoverageHealthPolicy coverageHealthPolicy;
 	private final QuoteStateTransitionService quoteStateTransitionService;
 
+	@Autowired
 	public QuoteService(QuoteRepositoryPort quoteRepository) {
 		this(
 				quoteRepository,

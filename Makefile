@@ -30,6 +30,9 @@ test-pricing: ## Run premium calculation unit tests
 test-state: ## Run quote state transition unit tests
 	$(MVN) test -Dtest="com.trustbuddy.api.quote.domain.service.QuoteStateTransitionServiceTest" -q
 
+test-submit: ## Run quote submission application tests
+	$(MVN) test -Dtest="com.trustbuddy.api.quote.application.service.QuoteSubmissionServiceTest" -q
+
 verify: ## Compile, test, and static analysis
 	$(MVN) verify -q
 

@@ -37,11 +37,11 @@ public final class QuoteGenerator {
 
 		private final int age;
 		private final CoverageType coverageType;
-		private boolean hasPreexistingConditions;
-		private Set<ConditionType> conditions = Set.of();
-		private boolean takesPrescriptionMedication;
-		private boolean usesTobacco;
-		private boolean needsSpouseCoverage;
+		private Boolean hasPreexistingConditions;
+		private Set<ConditionType> conditions;
+		private Boolean takesPrescriptionMedication;
+		private Boolean usesTobacco;
+		private Boolean needsSpouseCoverage;
 
 		private CoverageBuilder(int age, CoverageType coverageType) {
 			this.age = age;
@@ -82,10 +82,10 @@ public final class QuoteGenerator {
 			return draft(age).applyCoverage(
 					coverageType,
 					hasPreexistingConditions,
-					conditions,
-					takesPrescriptionMedication,
-					usesTobacco,
-					needsSpouseCoverage,
+					conditions == null ? Set.of() : conditions,
+					takesPrescriptionMedication != null ? takesPrescriptionMedication : false,
+					usesTobacco != null ? usesTobacco : false,
+					needsSpouseCoverage != null ? needsSpouseCoverage : false,
 					PLACEHOLDER_PREMIUM);
 		}
 	}
