@@ -2,7 +2,7 @@
 
 This API was built incrementally in **14 planned phases**, each scoped to a reviewable slice of work. The goal was to grow a production-shaped Spring Boot service without big-bang integration: compile and test after every step, keep hexagonal boundaries clean, and expose a single `make help` surface for local development.
 
-The original plan lives in [`.cursor/plans/phased_backend_build_30b9f7b2.plan.md`](.cursor/plans/phased_backend_build_30b9f7b2.plan.md) (Cursor planning artifact). This document summarizes **what was planned**, **what shipped**, and **how it maps to the codebase today**.
+This document summarizes **what was planned**, **what shipped**, and **how it maps to the codebase today**.
 
 ## Why phases?
 
@@ -71,7 +71,7 @@ Phases **9**, **10**, and **11** were developed in parallel after **8** (separat
 **Achieved:**
 
 - `AgeMultiplier`, `ConditionsMultiplier`, `TobaccoMultiplier`, `SpouseMultiplier`, `BasePremiumResolver`
-- `PremiumCalculator` with challenge example ($327.60) covered in `PremiumCalculatorTest`
+- `PremiumCalculator` with example ($327.60) covered in `PremiumCalculatorTest`
 
 ---
 
@@ -208,8 +208,8 @@ Phases **9**, **10**, and **11** were developed in parallel after **8** (separat
 
 Parts of this codebase were built with **AI coding assistants** (Cursor Agent) under human review:
 
-- Phases were executed from the plan file above; each PR was rebased, CI-verified, and reviewed before merge
-- Agents followed [AGENTS.md](AGENTS.md) (hexagonal layout, test naming, PR discipline, no Cursor branding in PRs)
+- Work was executed phase by phase; each PR was rebased, CI-verified, and reviewed before merge
+- Agents followed [AGENTS.md](AGENTS.md) (hexagonal layout, test naming, PR discipline)
 - Typical workflow: plan sub-phase → implement on a feature branch → `make verify` → open PR → address CI and review
 
 AI accelerated boilerplate, test scaffolding, and conflict resolution during rebases; architecture choices, port boundaries, and merge decisions remained explicit in the plan and PR descriptions.
