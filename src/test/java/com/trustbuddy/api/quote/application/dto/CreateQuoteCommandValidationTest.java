@@ -81,7 +81,7 @@ class CreateQuoteCommandValidationTest {
 		command.setName("Jane Doe");
 		command.setEmail("jane@example.com");
 		command.setAge(30);
-		command.setZipCode("12345");
+		command.setZipCode(QuoteFieldConstraints.ZIP_CODE_EXAMPLE);
 		return command;
 	}
 }

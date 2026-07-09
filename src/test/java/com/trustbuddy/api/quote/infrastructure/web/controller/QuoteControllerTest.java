@@ -32,7 +32,6 @@ import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.service.QuoteService;
 import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
 import com.trustbuddy.api.quote.application.validation.CommandValidator;
-import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
@@ -81,7 +80,7 @@ class QuoteControllerTest {
 								  "name": "Jane Doe",
 								  "email": "jane@example.com",
 								  "age": 30,
-								  "zipCode": "12345"
+								  "zipCode": "06600"
 								}
 								"""))
 				.andExpect(status().isCreated())

@@ -1,5 +1,15 @@
 package com.trustbuddy.api.quote.infrastructure.web.request;
 
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.AGE_EXAMPLE;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.EMAIL_EXAMPLE;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.MAX_AGE_SCHEMA;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.MAX_NAME_LENGTH;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.MIN_AGE_SCHEMA;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.NAME_EXAMPLE;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.ZIP_CODE_DESCRIPTION;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.ZIP_CODE_EXAMPLE;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.ZIP_CODE_PATTERN;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Personal information for creating a draft quote")
@@ -7,32 +17,32 @@ public class CreateQuoteRequest {
 
 	@Schema(
 			description = "Applicant full name",
-			example = "Jane Doe",
+			example = NAME_EXAMPLE,
 			requiredMode = Schema.RequiredMode.REQUIRED,
-			maxLength = 255)
+			maxLength = MAX_NAME_LENGTH)
 	private String name;
 
 	@Schema(
 			description = "Applicant email address",
-			example = "jane@example.com",
+			example = EMAIL_EXAMPLE,
 			requiredMode = Schema.RequiredMode.REQUIRED,
 			format = "email",
-			maxLength = 255)
+			maxLength = MAX_NAME_LENGTH)
 	private String email;
 
 	@Schema(
 			description = "Applicant age in years",
-			example = "30",
+			example = AGE_EXAMPLE,
 			requiredMode = Schema.RequiredMode.REQUIRED,
-			minimum = "1",
-			maximum = "120")
+			minimum = MIN_AGE_SCHEMA,
+			maximum = MAX_AGE_SCHEMA)
 	private Integer age;
 
 	@Schema(
-			description = "5-digit US zip code",
-			example = "12345",
+			description = ZIP_CODE_DESCRIPTION,
+			example = ZIP_CODE_EXAMPLE,
 			requiredMode = Schema.RequiredMode.REQUIRED,
-			pattern = "\\d{5}")
+			pattern = ZIP_CODE_PATTERN)
 	private String zipCode;
 
 	public String getName() {

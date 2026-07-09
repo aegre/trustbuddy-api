@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import com.trustbuddy.api.quote.application.dto.CreateQuoteCommand;
+import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.application.dto.UpdateCoverageCommand;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
@@ -52,7 +53,8 @@ class QuoteServiceTest {
 		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		// When
-		Quote created = quoteService.createQuote(createCommand("Jane Doe", "jane@example.com", 30, "12345"));
+		Quote created = quoteService.createQuote(createCommand(
+				"Jane Doe", "jane@example.com", 30, QuoteFieldConstraints.ZIP_CODE_EXAMPLE));
 
 		// Then
 		assertThat(created.getStatus()).isEqualTo(QuoteStatus.DRAFT);

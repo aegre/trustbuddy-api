@@ -1,5 +1,10 @@
 package com.trustbuddy.api.quote.application.dto;
 
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.MAX_AGE;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.MAX_NAME_LENGTH;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.MIN_AGE;
+import static com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints.ZIP_CODE_PATTERN;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -11,21 +16,21 @@ import jakarta.validation.constraints.Size;
 public class CreateQuoteCommand {
 
 	@NotBlank
-	@Size(max = 255)
+	@Size(max = MAX_NAME_LENGTH)
 	private String name;
 
 	@NotBlank
 	@Email
-	@Size(max = 255)
+	@Size(max = MAX_NAME_LENGTH)
 	private String email;
 
 	@NotNull
-	@Min(1)
-	@Max(120)
+	@Min(MIN_AGE)
+	@Max(MAX_AGE)
 	private Integer age;
 
 	@NotBlank
-	@Pattern(regexp = "\\d{5}")
+	@Pattern(regexp = ZIP_CODE_PATTERN)
 	private String zipCode;
 
 	public String getName() {

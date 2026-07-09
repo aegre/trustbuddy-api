@@ -3,6 +3,7 @@ package com.trustbuddy.api.quote.testsupport;
 import java.math.BigDecimal;
 import java.util.Set;
 
+import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
@@ -15,7 +16,7 @@ public final class QuoteGenerator {
 
 	private static final String DEFAULT_NAME = "Jane Doe";
 	private static final String DEFAULT_EMAIL = "jane@example.com";
-	private static final String DEFAULT_ZIP_CODE = "12345";
+	private static final String DEFAULT_ZIP_CODE = QuoteFieldConstraints.ZIP_CODE_EXAMPLE;
 	private static final BigDecimal PLACEHOLDER_PREMIUM = BigDecimal.ZERO;
 
 	private QuoteGenerator() {
