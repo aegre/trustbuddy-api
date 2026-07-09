@@ -16,6 +16,9 @@ spring:
     bootstrap-servers: localhost:9094
 
 app:
+  auth:
+    username: ${AUTH_USERNAME:dev-user}
+    password: ${AUTH_PASSWORD:dev-password}
   jwt:
     secret: ${JWT_SECRET:dev-secret-change-me-use-at-least-32-characters}
   cors:

@@ -18,6 +18,9 @@ spring:
       enabled: false
 
 app:
+  auth:
+    username: test-user
+    password: test-password
   jwt:
     secret: test-jwt-secret-at-least-32-characters-long
   cors:
