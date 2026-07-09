@@ -10,7 +10,8 @@ import com.trustbuddy.api.quote.domain.model.Quote;
 /**
  * Calculates the estimated monthly premium from coverage and health factors.
  *
- * <p>Formula: {@code basePremium × age × conditions × tobacco × spouse}, rounded
+ * <p>
+ * Formula: {@code basePremium × age × conditions × tobacco × spouse}, rounded
  * {@link RoundingMode#HALF_UP} to two decimal places.
  */
 public class PremiumCalculator {
@@ -36,8 +37,8 @@ public class PremiumCalculator {
 	}
 
 	public BigDecimal calculate(Quote quote) {
-		Objects.requireNonNull(quote, "quote");
-		var coverageType = Objects.requireNonNull(quote.getCoverageType(), "coverageType");
+		Objects.requireNonNull(quote, "quote must not be null");
+		var coverageType = Objects.requireNonNull(quote.getCoverageType(), "coverageType must not be null");
 
 		BigDecimal premium = basePremiumResolver.resolve(coverageType);
 		for (PremiumMultiplier multiplier : multipliers) {
