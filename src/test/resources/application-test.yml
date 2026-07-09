@@ -1,6 +1,15 @@
-# Test profile — infrastructure provided by TestcontainersConfiguration
+# Test profile — infrastructure provided by Testcontainers @ServiceConnection.
+# Placeholder host/port values below are overridden at runtime by container connections.
 
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/test
+    username: test
+    password: test
+  data:
+    redis:
+      host: localhost
+      port: 6379
   jpa:
     hibernate:
       ddl-auto: create-drop
