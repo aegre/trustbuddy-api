@@ -95,7 +95,6 @@ class QuoteServiceTest {
 		assertThat(updated.getUsesTobacco()).isNull();
 		assertThat(updated.getNeedsSpouseCoverage()).isNull();
 		assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("100.00");
-		verify(quoteCache).evict(draft.getId());
 	}
 
 	@Test
@@ -116,7 +115,6 @@ class QuoteServiceTest {
 		// Then
 		assertThat(updated.getUsesTobacco()).isTrue();
 		assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("120.00");
-		verify(quoteCache).evict(draft.getId());
 	}
 
 	@Test
@@ -133,7 +131,6 @@ class QuoteServiceTest {
 		// Then
 		assertThat(updated.getCoverageType()).isEqualTo(CoverageType.STANDARD);
 		assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("100.00");
-		verify(quoteCache).evict(draft.getId());
 	}
 
 	@Test
@@ -228,7 +225,6 @@ class QuoteServiceTest {
 		assertThat(updated.getHasPreexistingConditions()).isTrue();
 		assertThat(updated.getConditions()).containsExactly(ConditionType.DIABETES);
 		assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("327.60");
-		verify(quoteCache).evict(draft.getId());
 	}
 
 	@Test
@@ -247,7 +243,6 @@ class QuoteServiceTest {
 		verify(quoteRepository).save(savedQuote.capture());
 		assertThat(savedQuote.getValue().getId()).isEqualTo(draft.getId());
 		assertThat(savedQuote.getValue().getEstimatedMonthlyPremium()).isEqualByComparingTo(new BigDecimal("50.00"));
-		verify(quoteCache).evict(draft.getId());
 	}
 
 	private static CreateQuoteCommand createCommand(String name, String email, int age, String zipCode) {

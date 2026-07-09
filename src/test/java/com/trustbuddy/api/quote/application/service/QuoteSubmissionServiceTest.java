@@ -17,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.trustbuddy.api.quote.application.port.out.InsurerGatewayPort;
 import com.trustbuddy.api.quote.application.port.out.InsurerSubmissionResult;
-import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
@@ -34,16 +33,13 @@ class QuoteSubmissionServiceTest {
 	private QuoteRepositoryPort quoteRepository;
 
 	@Mock
-	private QuoteCachePort quoteCache;
-
-	@Mock
 	private InsurerGatewayPort insurerGateway;
 
 	private QuoteSubmissionService quoteSubmissionService;
 
 	@BeforeEach
 	void setUp() {
-		quoteSubmissionService = new QuoteSubmissionService(quoteRepository, quoteCache, insurerGateway);
+		quoteSubmissionService = new QuoteSubmissionService(quoteRepository, insurerGateway);
 	}
 
 	@Test
@@ -60,7 +56,6 @@ class QuoteSubmissionServiceTest {
 		// Then
 		assertThat(submitted.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
 		verify(insurerGateway).submit(draft);
-		verify(quoteCache).evict(draft.getId());
 	}
 
 	@Test
@@ -76,7 +71,6 @@ class QuoteSubmissionServiceTest {
 		assertThat(result).isSameAs(submitted);
 		verify(insurerGateway, never()).submit(any());
 		verify(quoteRepository, never()).save(any());
-		verify(quoteCache, never()).evict(any());
 	}
 
 	@Test
@@ -89,7 +83,6 @@ class QuoteSubmissionServiceTest {
 		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(expired.getId()))
 				.isInstanceOf(InvalidQuoteStateException.class);
 		verify(insurerGateway, never()).submit(any());
-		verify(quoteCache, never()).evict(any());
 	}
 
 	@Test
@@ -106,7 +99,6 @@ class QuoteSubmissionServiceTest {
 				.hasMessageContaining("gateway down");
 
 		verify(quoteRepository).save(any(Quote.class));
-		verify(quoteCache).evict(draft.getId());
 	}
 
 	@Test
@@ -122,7 +114,6 @@ class QuoteSubmissionServiceTest {
 
 		// Then
 		assertThat(submitted.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
-		verify(quoteCache).evict(failed.getId());
 	}
 
 	@Test
@@ -137,7 +128,6 @@ class QuoteSubmissionServiceTest {
 				.isInstanceOf(QuoteValidationException.class)
 				.hasMessageContaining("takesPrescriptionMedication is required");
 		verify(insurerGateway, never()).submit(any());
-		verify(quoteCache, never()).evict(any());
 	}
 
 	@Test
@@ -156,7 +146,6 @@ class QuoteSubmissionServiceTest {
 				.isInstanceOf(QuoteValidationException.class)
 				.hasMessageContaining("hasPreexistingConditions is required");
 		verify(insurerGateway, never()).submit(any());
-		verify(quoteCache, never()).evict(any());
 	}
 
 	@Test
@@ -169,7 +158,6 @@ class QuoteSubmissionServiceTest {
 		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
 				.isInstanceOf(QuoteValidationException.class)
 				.hasMessageContaining("coverage data");
-		verify(quoteCache, never()).evict(any());
 	}
 
 	private static Quote coveredQuote(QuoteStatus status) {

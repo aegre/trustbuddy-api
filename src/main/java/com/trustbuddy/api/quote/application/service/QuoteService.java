@@ -111,9 +111,7 @@ public class QuoteService {
 				command.getNeedsSpouseCoverage(),
 				premium);
 
-		Quote saved = quoteRepository.save(withCoverage);
-		quoteCache.evict(id);
-		return saved;
+		return quoteRepository.save(withCoverage);
 	}
 
 	public Quote getQuote(UUID id) {

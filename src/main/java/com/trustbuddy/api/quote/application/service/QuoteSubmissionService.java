@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import com.trustbuddy.api.quote.application.dto.QuoteSubmissionReadiness;
 import com.trustbuddy.api.quote.application.port.out.InsurerGatewayPort;
 import com.trustbuddy.api.quote.application.port.out.InsurerSubmissionResult;
-import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
@@ -27,7 +26,6 @@ import jakarta.validation.Validation;
 public class QuoteSubmissionService {
 
 	private final QuoteRepositoryPort quoteRepository;
-	private final QuoteCachePort quoteCache;
 	private final InsurerGatewayPort insurerGateway;
 	private final QuoteStateTransitionService quoteStateTransitionService;
 	private final CoverageHealthPolicy coverageHealthPolicy;
@@ -36,12 +34,10 @@ public class QuoteSubmissionService {
 	@Autowired
 	public QuoteSubmissionService(
 			QuoteRepositoryPort quoteRepository,
-			QuoteCachePort quoteCache,
 			InsurerGatewayPort insurerGateway,
 			CommandValidator commandValidator) {
 		this(
 				quoteRepository,
-				quoteCache,
 				insurerGateway,
 				new QuoteStateTransitionService(),
 				new CoverageHealthPolicy(),
@@ -50,26 +46,20 @@ public class QuoteSubmissionService {
 
 	QuoteSubmissionService(
 			QuoteRepositoryPort quoteRepository,
-			QuoteCachePort quoteCache,
 			InsurerGatewayPort insurerGateway,
 			QuoteStateTransitionService quoteStateTransitionService,
 			CoverageHealthPolicy coverageHealthPolicy,
 			CommandValidator commandValidator) {
 		this.quoteRepository = quoteRepository;
-		this.quoteCache = quoteCache;
 		this.insurerGateway = insurerGateway;
 		this.quoteStateTransitionService = quoteStateTransitionService;
 		this.coverageHealthPolicy = coverageHealthPolicy;
 		this.commandValidator = commandValidator;
 	}
 
-	QuoteSubmissionService(
-			QuoteRepositoryPort quoteRepository,
-			QuoteCachePort quoteCache,
-			InsurerGatewayPort insurerGateway) {
+	QuoteSubmissionService(QuoteRepositoryPort quoteRepository, InsurerGatewayPort insurerGateway) {
 		this(
 				quoteRepository,
-				quoteCache,
 				insurerGateway,
 				new QuoteStateTransitionService(),
 				new CoverageHealthPolicy(),
@@ -92,13 +82,10 @@ public class QuoteSubmissionService {
 
 		InsurerSubmissionResult result = insurerGateway.submit(quote);
 		if (result.success()) {
-			Quote submitted = quoteRepository.save(quoteStateTransitionService.markSubmitted(quote));
-			quoteCache.evict(id);
-			return submitted;
+			return quoteRepository.save(quoteStateTransitionService.markSubmitted(quote));
 		}
 
 		quoteRepository.save(quoteStateTransitionService.markSubmissionFailed(quote));
-		quoteCache.evict(id);
 		throw new ExternalSubmissionException(result.message());
 	}
 
