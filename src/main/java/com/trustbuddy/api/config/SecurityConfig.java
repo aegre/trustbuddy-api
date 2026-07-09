@@ -11,44 +11,56 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import tools.jackson.databind.json.JsonMapper;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-	private final JwtAuthFilter jwtAuthFilter;
-	private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 	private final Environment environment;
 
-	public SecurityConfig(
-			JwtAuthFilter jwtAuthFilter,
-			JwtAuthenticationEntryPoint authenticationEntryPoint,
-			Environment environment) {
-		this.jwtAuthFilter = jwtAuthFilter;
-		this.authenticationEntryPoint = authenticationEntryPoint;
+	public SecurityConfig(Environment environment) {
 		this.environment = environment;
 	}
 
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
-				.csrf(csrf -> csrf.disable())
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint))
-				.authorizeHttpRequests(auth -> {
-					auth.requestMatchers("/auth/token").permitAll();
-					auth.requestMatchers("/actuator/health", "/actuator/info").permitAll();
-					if (isSwaggerEnabled()) {
-						auth.requestMatchers(
-								"/swagger-ui/**",
-								"/swagger-ui.html",
-								"/v3/api-docs/**")
-								.permitAll();
-					}
-					auth.requestMatchers("/quotes/**").authenticated();
-					auth.anyRequest().denyAll();
-				})
-				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-		return http.build();
+	JwtAuthFilter jwtAuthFilter(JwtService jwtService) {
+		return new JwtAuthFilter(jwtService);
+	}
+
+	@Bean
+	JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint(JsonMapper jsonMapper) {
+		return new JwtAuthenticationEntryPoint(jsonMapper);
+	}
+
+	@Bean
+	SecurityFilterChain securityFilterChain(
+			HttpSecurity http,
+			JwtAuthFilter jwtAuthFilter,
+			JwtAuthenticationEntryPoint authenticationEntryPoint) {
+		try {
+			http
+					.csrf(csrf -> csrf.disable())
+					.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+					.exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint))
+					.authorizeHttpRequests(auth -> {
+						auth.requestMatchers("/auth/token").permitAll();
+						auth.requestMatchers("/actuator/health", "/actuator/info").permitAll();
+						if (isSwaggerEnabled()) {
+							auth.requestMatchers(
+									"/swagger-ui/**",
+									"/swagger-ui.html",
+									"/v3/api-docs/**")
+									.permitAll();
+						}
+						auth.requestMatchers("/quotes/**").authenticated();
+						auth.anyRequest().denyAll();
+					})
+					.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+			return http.build();
+		} catch (Exception exception) {
+			throw new IllegalStateException("Failed to configure security filter chain", exception);
+		}
 	}
 
 	private boolean isSwaggerEnabled() {

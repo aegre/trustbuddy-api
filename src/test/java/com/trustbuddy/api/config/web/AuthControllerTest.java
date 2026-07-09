@@ -19,16 +19,13 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.trustbuddy.api.config.ApplicationConfig;
-import com.trustbuddy.api.config.JwtAuthFilter;
-import com.trustbuddy.api.config.JwtAuthenticationEntryPoint;
 import com.trustbuddy.api.config.JwtService;
 import com.trustbuddy.api.config.SecurityConfig;
 import com.trustbuddy.api.quote.infrastructure.web.exception.GlobalExceptionHandler;
 
 @WebMvcTest(controllers = AuthController.class)
-@Import({ ApplicationConfig.class, JwtService.class, JwtAuthFilter.class, JwtAuthenticationEntryPoint.class,
-		SecurityConfig.class, GlobalExceptionHandler.class, JacksonAutoConfiguration.class,
-		AuthControllerTest.CacheTestConfig.class })
+@Import({ ApplicationConfig.class, JwtService.class, SecurityConfig.class, GlobalExceptionHandler.class,
+		JacksonAutoConfiguration.class, AuthControllerTest.CacheTestConfig.class })
 @AutoConfigureMockMvc(addFilters = false)
 @TestPropertySource(properties = {
 		"app.jwt.secret=test-jwt-secret-at-least-32-characters-long",

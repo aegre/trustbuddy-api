@@ -19,11 +19,10 @@ import io.jsonwebtoken.security.Keys;
 public class JwtService {
 
 	private final JwtProperties jwtProperties;
-	private final SecretKey signingKey;
+	private volatile SecretKey signingKey;
 
 	public JwtService(JwtProperties jwtProperties) {
 		this.jwtProperties = jwtProperties;
-		this.signingKey = Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
 	}
 
 	public String generateToken(String subject) {
@@ -32,7 +31,7 @@ public class JwtService {
 				.subject(subject)
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(now.plusMillis(jwtProperties.expirationMs())))
-				.signWith(signingKey)
+				.signWith(signingKey())
 				.compact();
 	}
 
@@ -51,9 +50,18 @@ public class JwtService {
 
 	private Claims parseClaims(String token) {
 		return Jwts.parser()
-				.verifyWith(signingKey)
+				.verifyWith(signingKey())
 				.build()
 				.parseSignedClaims(token)
 				.getPayload();
+	}
+
+	private SecretKey signingKey() {
+		SecretKey key = signingKey;
+		if (key == null) {
+			key = Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
+			signingKey = key;
+		}
+		return key;
 	}
 }
