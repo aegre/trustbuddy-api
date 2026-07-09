@@ -46,12 +46,15 @@ class QuotePersistenceAdapterTest {
 	private QuoteRepositoryPort quoteRepository;
 
 	@Test
-	void saveAndFindById_roundTripsQuoteFields() {
+	void givenDraftQuote_whenSaveAndFindById_thenReturnsPersistedFields() {
+		// Given
 		Quote draft = Quote.createDraft("Jane Doe", "jane@example.com", 30, "12345");
 
+		// When
 		Quote saved = quoteRepository.save(draft);
-
 		Quote found = quoteRepository.findById(saved.getId()).orElseThrow();
+
+		// Then
 		assertThat(found.getName()).isEqualTo("Jane Doe");
 		assertThat(found.getEmail()).isEqualTo("jane@example.com");
 		assertThat(found.getAge()).isEqualTo(30);
@@ -60,7 +63,30 @@ class QuotePersistenceAdapterTest {
 	}
 
 	@Test
-	void save_persistsCoverageAndConditions() {
+	void givenQuoteWithCoverage_whenSave_thenPersistsCoverageTypeAndPremium() {
+		// Given
+		Quote draft = quoteRepository.save(Quote.createDraft("John", "john@example.com", 70, "90210"));
+		Quote withCoverage = draft.applyCoverage(
+				CoverageType.STANDARD,
+				true,
+				Set.of(),
+				false,
+				false,
+				false,
+				new BigDecimal("327.60"));
+
+		// When
+		Quote saved = quoteRepository.save(withCoverage);
+		Quote found = quoteRepository.findById(saved.getId()).orElseThrow();
+
+		// Then
+		assertThat(found.getCoverageType()).isEqualTo(CoverageType.STANDARD);
+		assertThat(found.getEstimatedMonthlyPremium()).isEqualByComparingTo("327.60");
+	}
+
+	@Test
+	void givenQuoteWithConditions_whenSave_thenPersistsConditionsAndTobaccoFlag() {
+		// Given
 		Quote draft = quoteRepository.save(Quote.createDraft("John", "john@example.com", 70, "90210"));
 		Quote withCoverage = draft.applyCoverage(
 				CoverageType.STANDARD,
@@ -71,11 +97,11 @@ class QuotePersistenceAdapterTest {
 				true,
 				new BigDecimal("327.60"));
 
+		// When
 		Quote saved = quoteRepository.save(withCoverage);
-
 		Quote found = quoteRepository.findById(saved.getId()).orElseThrow();
-		assertThat(found.getCoverageType()).isEqualTo(CoverageType.STANDARD);
-		assertThat(found.getEstimatedMonthlyPremium()).isEqualByComparingTo("327.60");
+
+		// Then
 		assertThat(found.getConditions()).containsExactlyInAnyOrder(
 				ConditionType.DIABETES,
 				ConditionType.HYPERTENSION);
@@ -83,17 +109,21 @@ class QuotePersistenceAdapterTest {
 	}
 
 	@Test
-	void findAll_returnsPagedQuotes() {
+	void givenTwoSavedQuotes_whenFindAll_thenReturnsPagedResults() {
+		// Given
 		quoteRepository.save(Quote.createDraft("A", "a@example.com", 25, "11111"));
 		quoteRepository.save(Quote.createDraft("B", "b@example.com", 35, "22222"));
 
+		// When
 		var page = quoteRepository.findAll(PageRequest.of(0, 10));
 
+		// Then
 		assertThat(page.getTotalElements()).isEqualTo(2);
 	}
 
 	@Test
-	void findStaleDrafts_returnsDraftsOlderThanCutoff() {
+	void givenStaleAndFreshDrafts_whenFindStaleDrafts_thenReturnsOnlyStaleDraft() {
+		// Given
 		Instant staleUpdatedAt = Instant.now().minus(Duration.ofMinutes(31));
 		Quote staleDraft = Quote.reconstitute(
 				java.util.UUID.randomUUID(),
@@ -115,8 +145,10 @@ class QuotePersistenceAdapterTest {
 		quoteRepository.save(staleDraft);
 		quoteRepository.save(Quote.createDraft("Fresh", "fresh@example.com", 40, "44444"));
 
+		// When
 		var staleDrafts = quoteRepository.findStaleDrafts(Instant.now().minus(Duration.ofMinutes(30)));
 
+		// Then
 		assertThat(staleDrafts).extracting(Quote::getEmail).containsExactly("stale@example.com");
 	}
 

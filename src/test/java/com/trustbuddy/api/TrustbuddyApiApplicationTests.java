@@ -25,7 +25,9 @@ class TrustbuddyApiApplicationTests {
 	static RedisContainer redis = new RedisContainer(DockerImageName.parse("redis:7-alpine"));
 
 	@Test
-	void contextLoads() {
+	void givenApplicationContext_whenStartup_thenContextLoadsSuccessfully() {
+		// Given — full application context with PostgreSQL and Redis (see class annotations)
+		// When / Then — context starts without failure
 	}
 
 }
