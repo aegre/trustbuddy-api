@@ -1,8 +1,6 @@
 package com.trustbuddy.api.quote.infrastructure.cache;
 
 import java.time.Duration;
-import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

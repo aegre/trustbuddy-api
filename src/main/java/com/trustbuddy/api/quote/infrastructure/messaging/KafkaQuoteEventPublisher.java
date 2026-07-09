@@ -1,25 +1,28 @@
 package com.trustbuddy.api.quote.infrastructure.messaging;
 
+import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.stereotype.Component;
 
 import com.trustbuddy.api.quote.application.port.out.QuoteEventPublisherPort;
 import com.trustbuddy.api.quote.domain.model.Quote;
 
 @Component
-@ConditionalOnBean(name = "quoteSubmittedKafkaTemplate")
+@ConditionalOnBean(name = "quoteSubmittedProducerFactory")
 public class KafkaQuoteEventPublisher implements QuoteEventPublisherPort {
 
 	private final KafkaTemplate<String, QuoteSubmittedEvent> kafkaTemplate;
 	private final String topic;
 
 	public KafkaQuoteEventPublisher(
-			KafkaTemplate<String, QuoteSubmittedEvent> kafkaTemplate,
+			ProducerFactory<String, QuoteSubmittedEvent> quoteSubmittedProducerFactory,
 			@Value("${app.kafka.topic}") String topic) {
-		this.kafkaTemplate = kafkaTemplate;
-		this.topic = topic;
+		this.kafkaTemplate = new KafkaTemplate<>(quoteSubmittedProducerFactory);
+		this.topic = Objects.requireNonNull(topic, "topic");
 	}
 
 	@Override
