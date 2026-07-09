@@ -11,7 +11,7 @@ include .env
 export $(shell sed -n 's/=.*//p' .env)
 endif
 
-.PHONY: help compile test verify run run-dev infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs
+.PHONY: help compile test verify lint run run-dev infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs
 
 help: ## Show available targets
 	@echo "Trustbuddy API — available targets:"
@@ -24,7 +24,11 @@ compile: ## Compile sources
 test: ## Run unit and integration tests
 	$(MVN) test -q
 
-verify: compile test ## Compile and run tests
+verify: ## Compile, test, and static analysis
+	$(MVN) verify -q
+
+lint: ## Run Checkstyle and SpotBugs (also runs during verify)
+	$(MVN) checkstyle:check spotbugs:check -q
 
 run: ## Run API locally (dev profile; requires make infra-up)
 	$(MVN) spring-boot:run -Dspring-boot.run.profiles=$(RUN_PROFILE)

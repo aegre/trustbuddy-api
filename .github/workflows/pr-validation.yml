@@ -33,7 +33,7 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-      - name: Verify (compile, test, JaCoCo)
+      - name: Verify (compile, test, static analysis, JaCoCo)
         run: ./mvnw verify -B
 
   docker:
