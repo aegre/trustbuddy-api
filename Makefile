@@ -12,7 +12,7 @@ include .env
 export $(shell sed -n 's/=.*//p' .env)
 endif
 
-.PHONY: help compile test test-one verify lint format run run-dev token health swagger-url \
+.PHONY: help compile test test-one verify lint format precommit run run-dev token health swagger-url \
 	infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs \
 	kafka-consume coverage test-state test-submit
 
@@ -22,6 +22,7 @@ help: ## Show available targets
 	@echo "Build:"
 	@echo "  compile        Compile sources"
 	@echo "  format         Apply Spotless formatting to Java sources"
+	@echo "  precommit      Format staged Java files and re-stage them"
 	@echo "  lint           Run Checkstyle and SpotBugs"
 	@echo ""
 	@echo "Test:"
@@ -55,6 +56,9 @@ compile: ## Compile sources
 
 format: ## Apply Spotless formatting to Java sources
 	$(MVN) spotless:apply -q
+
+precommit: ## Format staged Java files and re-stage them (same as pre-commit hook)
+	@bash .githooks/pre-commit
 
 test: ## Run unit and integration tests
 	$(MVN) test -q

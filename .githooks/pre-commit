@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+cd "$root"
+
+staged_java="$(git diff --cached --name-only --diff-filter=ACM -- '*.java' || true)"
+
+if [ -z "$staged_java" ]; then
+	exit 0
+fi
+
+file_count="$(printf '%s\n' "$staged_java" | wc -l | tr -d ' ')"
+files_csv="$(printf '%s\n' "$staged_java" | tr '\n' ',' | sed 's/,$//')"
+
+echo "Formatting ${file_count} staged Java file(s)..."
+./mvnw spotless:apply -DspotlessFiles="$files_csv" -q
+
+printf '%s\n' "$staged_java" | xargs git add --

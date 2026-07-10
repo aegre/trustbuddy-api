@@ -35,6 +35,7 @@
 		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
 		<spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
 		<spotless.version>2.44.4</spotless.version>
+		<git-build-hook.version>3.6.0</git-build-hook.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -237,6 +238,24 @@
 						</indent>
 					</java>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.rudikershaw.gitbuildhook</groupId>
+				<artifactId>git-build-hook-maven-plugin</artifactId>
+				<version>${git-build-hook.version}</version>
+				<configuration>
+					<installHooks>
+						<pre-commit>.githooks/pre-commit</pre-commit>
+					</installHooks>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>install</goal>
+						</goals>
+						<phase>initialize</phase>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>

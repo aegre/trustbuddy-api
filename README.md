@@ -55,6 +55,7 @@ make swagger-url              # print Swagger UI URL
 ```bash
 make test          # unit and integration tests (Docker required for Testcontainers)
 make format        # apply Spotless formatting (Java sources)
+make precommit     # format staged Java files only and re-stage
 make verify        # compile + test + Checkstyle + SpotBugs (+ JaCoCo report)
 make coverage      # tests + JaCoCo report only (skips Checkstyle/SpotBugs)
 ```
@@ -176,6 +177,7 @@ Code quality is enforced with Maven plugins bound to the **`verify`** lifecycle 
 ```bash
 make lint          # Checkstyle + SpotBugs only (skips tests)
 make format        # apply Spotless formatting (Java sources)
+make precommit     # format staged Java files only and re-stage
 make verify        # compile + test + Checkstyle + SpotBugs (+ JaCoCo report)
 make coverage      # tests + JaCoCo report only (skips Checkstyle/SpotBugs)
 ```
@@ -191,7 +193,9 @@ Equivalent Maven invocations:
 ./mvnw compile                             # includes Error Prone
 ```
 
-Run `make format` before committing Java changes; use `make lint` for a faster feedback loop when fixing style or SpotBugs findings; use `make coverage` when you only need a coverage report; run `make verify` before opening a PR.
+Run `make format` to format the whole tree, or `make precommit` to format **staged Java files only** (same logic as the git pre-commit hook). Hooks are installed automatically on the first Maven build (`make compile`, `make test`, etc.) via [git-build-hook-maven-plugin](https://github.com/rudikershaw/git-build-hook). Hook script: [`.githooks/pre-commit`](.githooks/pre-commit).
+
+Use `make lint` for a faster feedback loop when fixing style or SpotBugs findings; use `make coverage` when you only need a coverage report; run `make verify` before opening a PR.
 
 ### Spotless (formatting)
 
