@@ -193,7 +193,7 @@ Equivalent Maven invocations:
 ./mvnw compile                             # includes Error Prone
 ```
 
-Run `make format` to format the whole tree, or `make precommit` to format **staged Java files only** (same logic as the git pre-commit hook). Hooks are installed automatically on the first Maven build (`make compile`, `make test`, etc.) via [git-build-hook-maven-plugin](https://github.com/rudikershaw/git-build-hook). Hook script: [`.githooks/pre-commit`](.githooks/pre-commit).
+Run `make format` to format the whole tree, or `make precommit` to format **staged Java files only** (same logic as the git pre-commit hook). On a local git checkout (not CI or Docker builds), hooks are installed automatically on the first Maven build via [git-build-hook-maven-plugin](https://github.com/rudikershaw/git-build-hook). Hook script: [`.githooks/pre-commit`](.githooks/pre-commit).
 
 Use `make lint` for a faster feedback loop when fixing style or SpotBugs findings; use `make coverage` when you only need a coverage report; run `make verify` before opening a PR.
 
