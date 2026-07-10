@@ -37,7 +37,7 @@ jobs:
         run: ./mvnw test -Dtest=OpenApiSpecDriftTest -Dsurefire.exitTimeout=5 -B
 
       - name: Verify (compile, test, static analysis, JaCoCo)
-        run: ./mvnw verify -B -Dtest='!OpenApiSpecDriftTest'
+        run: ./mvnw verify -B
 
   docker:
     name: Docker build
