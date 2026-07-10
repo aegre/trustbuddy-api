@@ -4,14 +4,14 @@ import java.util.UUID;
 
 public class QuoteNotFoundException extends DomainException {
 
-	private final UUID quoteId;
+		private final UUID quoteId;
 
-	public QuoteNotFoundException(UUID quoteId) {
-		super("Quote not found with id " + quoteId);
-		this.quoteId = quoteId;
-	}
+		public QuoteNotFoundException(UUID quoteId) {
+				super("Quote not found with id " + quoteId);
+				this.quoteId = quoteId;
+		}
 
-	public UUID getQuoteId() {
-		return quoteId;
-	}
+		public UUID getQuoteId() {
+				return quoteId;
+		}
 }

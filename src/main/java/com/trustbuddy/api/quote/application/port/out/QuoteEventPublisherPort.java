@@ -4,5 +4,5 @@ import com.trustbuddy.api.quote.domain.model.Quote;
 
 public interface QuoteEventPublisherPort {
 
-	void publishQuoteSubmitted(Quote quote);
+		void publishQuoteSubmitted(Quote quote);
 }

@@ -12,8 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableKafka
 public class TrustbuddyApiApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(TrustbuddyApiApplication.class, args);
-	}
-
+		public static void main(String[] args) {
+				SpringApplication.run(TrustbuddyApiApplication.class, args);
+		}
 }

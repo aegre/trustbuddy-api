@@ -15,53 +15,53 @@ import jakarta.validation.constraints.Size;
 
 public class CreateQuoteCommand {
 
-	@NotBlank
-	@Size(max = MAX_NAME_LENGTH)
-	private String name;
+		@NotBlank
+		@Size(max = MAX_NAME_LENGTH)
+		private String name;
 
-	@NotBlank
-	@Email
-	@Size(max = MAX_NAME_LENGTH)
-	private String email;
+		@NotBlank
+		@Email
+		@Size(max = MAX_NAME_LENGTH)
+		private String email;
 
-	@NotNull
-	@Min(MIN_AGE)
-	@Max(MAX_AGE)
-	private Integer age;
+		@NotNull
+		@Min(MIN_AGE)
+		@Max(MAX_AGE)
+		private Integer age;
 
-	@NotBlank
-	@Pattern(regexp = ZIP_CODE_PATTERN)
-	private String zipCode;
+		@NotBlank
+		@Pattern(regexp = ZIP_CODE_PATTERN)
+		private String zipCode;
 
-	public String getName() {
-		return name;
-	}
+		public String getName() {
+				return name;
+		}
 
-	public void setName(String name) {
-		this.name = name;
-	}
+		public void setName(String name) {
+				this.name = name;
+		}
 
-	public String getEmail() {
-		return email;
-	}
+		public String getEmail() {
+				return email;
+		}
 
-	public void setEmail(String email) {
-		this.email = email;
-	}
+		public void setEmail(String email) {
+				this.email = email;
+		}
 
-	public Integer getAge() {
-		return age;
-	}
+		public Integer getAge() {
+				return age;
+		}
 
-	public void setAge(Integer age) {
-		this.age = age;
-	}
+		public void setAge(Integer age) {
+				this.age = age;
+		}
 
-	public String getZipCode() {
-		return zipCode;
-	}
+		public String getZipCode() {
+				return zipCode;
+		}
 
-	public void setZipCode(String zipCode) {
-		this.zipCode = zipCode;
-	}
+		public void setZipCode(String zipCode) {
+				this.zipCode = zipCode;
+		}
 }

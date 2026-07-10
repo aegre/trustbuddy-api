@@ -4,5 +4,5 @@ import com.trustbuddy.api.quote.domain.model.Quote;
 
 public interface InsurerGatewayPort {
 
-	InsurerSubmissionResult submit(Quote quote);
+		InsurerSubmissionResult submit(Quote quote);
 }

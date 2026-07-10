@@ -187,7 +187,7 @@ Phases **9**, **10**, and **11** were developed in parallel after **8** (separat
 
 - `QuoteSubmitIT` — end-to-end create → coverage → submit (Postgres + Redis + JWT)
 - `PostgresRedisTestcontainers`, `FullInfrastructureTestcontainers`
-- `make coverage`, `make verify-all`; JaCoCo report on `verify`
+- `make coverage` (tests + JaCoCo only); JaCoCo report also on `make verify`
 
 ---
 

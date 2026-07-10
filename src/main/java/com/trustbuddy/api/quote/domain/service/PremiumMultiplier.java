@@ -1,13 +1,10 @@
 package com.trustbuddy.api.quote.domain.service;
 
+import com.trustbuddy.api.quote.domain.model.Quote;
 import java.math.BigDecimal;
 
-import com.trustbuddy.api.quote.domain.model.Quote;
-
-/**
- * Applies one factor of the monthly premium formula.
- */
+/** Applies one factor of the monthly premium formula. */
 public interface PremiumMultiplier {
 
-	BigDecimal multiplierFor(Quote quote);
+		BigDecimal multiplierFor(Quote quote);
 }

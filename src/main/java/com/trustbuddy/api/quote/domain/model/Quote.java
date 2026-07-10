@@ -9,116 +9,110 @@ import java.util.UUID;
 
 public class Quote {
 
-	private final UUID id;
-	private final PersonalInfo personalInfo;
-	private final CoverageDetails coverage;
-	private final QuoteAudit audit;
+		private final UUID id;
+		private final PersonalInfo personalInfo;
+		private final CoverageDetails coverage;
+		private final QuoteAudit audit;
 
-	private Quote(UUID id, PersonalInfo personalInfo, CoverageDetails coverage, QuoteAudit audit) {
-		this.id = Objects.requireNonNull(id, "id");
-		this.personalInfo = Objects.requireNonNull(personalInfo, "personalInfo");
-		this.coverage = coverage;
-		this.audit = Objects.requireNonNull(audit, "audit");
-	}
+		private Quote(UUID id, PersonalInfo personalInfo, CoverageDetails coverage, QuoteAudit audit) {
+				this.id = Objects.requireNonNull(id, "id");
+				this.personalInfo = Objects.requireNonNull(personalInfo, "personalInfo");
+				this.coverage = coverage;
+				this.audit = Objects.requireNonNull(audit, "audit");
+		}
 
-	public static Quote createDraft(String name, String email, int age, String zipCode) {
-		Instant now = Instant.now();
-		return new Quote(
-				UUID.randomUUID(),
-				new PersonalInfo(name, email, age, zipCode),
-				null,
-				new QuoteAudit(QuoteStatus.DRAFT, now, now, 0L));
-	}
+		public static Quote createDraft(String name, String email, int age, String zipCode) {
+				Instant now = Instant.now();
+				return new Quote(
+								UUID.randomUUID(),
+								new PersonalInfo(name, email, age, zipCode),
+								null,
+								new QuoteAudit(QuoteStatus.DRAFT, now, now, 0L));
+		}
 
-	public static Quote reconstitute(
-			UUID id,
-			PersonalInfo personalInfo,
-			CoverageDetails coverage,
-			QuoteAudit audit) {
-		return new Quote(id, personalInfo, coverage, audit);
-	}
+		public static Quote reconstitute(
+						UUID id, PersonalInfo personalInfo, CoverageDetails coverage, QuoteAudit audit) {
+				return new Quote(id, personalInfo, coverage, audit);
+		}
 
-	public Quote applyCoverage(CoverageDetails coverage) {
-		return new Quote(
-				id,
-				personalInfo,
-				Objects.requireNonNull(coverage, "coverage"),
-				audit.touch());
-	}
+		public Quote applyCoverage(CoverageDetails coverage) {
+				return new Quote(
+								id, personalInfo, Objects.requireNonNull(coverage, "coverage"), audit.touch());
+		}
 
-	public Quote withStatus(QuoteStatus status) {
-		return new Quote(id, personalInfo, coverage, audit.withStatus(status));
-	}
+		public Quote withStatus(QuoteStatus status) {
+				return new Quote(id, personalInfo, coverage, audit.withStatus(status));
+		}
 
-	public Quote withVersion(long version) {
-		return new Quote(id, personalInfo, coverage, audit.withVersion(version));
-	}
+		public Quote withVersion(long version) {
+				return new Quote(id, personalInfo, coverage, audit.withVersion(version));
+		}
 
-	public boolean hasCoverage() {
-		return coverage != null && coverage.estimatedMonthlyPremium() != null;
-	}
+		public boolean hasCoverage() {
+				return coverage != null && coverage.estimatedMonthlyPremium() != null;
+		}
 
-	public UUID getId() {
-		return id;
-	}
+		public UUID getId() {
+				return id;
+		}
 
-	public String getName() {
-		return personalInfo.name();
-	}
+		public String getName() {
+				return personalInfo.name();
+		}
 
-	public String getEmail() {
-		return personalInfo.email();
-	}
+		public String getEmail() {
+				return personalInfo.email();
+		}
 
-	public int getAge() {
-		return personalInfo.age();
-	}
+		public int getAge() {
+				return personalInfo.age();
+		}
 
-	public String getZipCode() {
-		return personalInfo.zipCode();
-	}
+		public String getZipCode() {
+				return personalInfo.zipCode();
+		}
 
-	public CoverageType getCoverageType() {
-		return coverage == null ? null : coverage.coverageType();
-	}
+		public CoverageType getCoverageType() {
+				return coverage == null ? null : coverage.coverageType();
+		}
 
-	public Boolean getHasPreexistingConditions() {
-		return coverage == null ? null : coverage.hasPreexistingConditions();
-	}
+		public Boolean getHasPreexistingConditions() {
+				return coverage == null ? null : coverage.hasPreexistingConditions();
+		}
 
-	public Set<ConditionType> getConditions() {
-		return coverage == null ? Set.of() : Collections.unmodifiableSet(coverage.conditions());
-	}
+		public Set<ConditionType> getConditions() {
+				return coverage == null ? Set.of() : Collections.unmodifiableSet(coverage.conditions());
+		}
 
-	public Boolean getTakesPrescriptionMedication() {
-		return coverage == null ? null : coverage.takesPrescriptionMedication();
-	}
+		public Boolean getTakesPrescriptionMedication() {
+				return coverage == null ? null : coverage.takesPrescriptionMedication();
+		}
 
-	public Boolean getUsesTobacco() {
-		return coverage == null ? null : coverage.usesTobacco();
-	}
+		public Boolean getUsesTobacco() {
+				return coverage == null ? null : coverage.usesTobacco();
+		}
 
-	public Boolean getNeedsSpouseCoverage() {
-		return coverage == null ? null : coverage.needsSpouseCoverage();
-	}
+		public Boolean getNeedsSpouseCoverage() {
+				return coverage == null ? null : coverage.needsSpouseCoverage();
+		}
 
-	public BigDecimal getEstimatedMonthlyPremium() {
-		return coverage == null ? null : coverage.estimatedMonthlyPremium();
-	}
+		public BigDecimal getEstimatedMonthlyPremium() {
+				return coverage == null ? null : coverage.estimatedMonthlyPremium();
+		}
 
-	public QuoteStatus getStatus() {
-		return audit.status();
-	}
+		public QuoteStatus getStatus() {
+				return audit.status();
+		}
 
-	public Instant getCreatedAt() {
-		return audit.createdAt();
-	}
+		public Instant getCreatedAt() {
+				return audit.createdAt();
+		}
 
-	public Instant getUpdatedAt() {
-		return audit.updatedAt();
-	}
+		public Instant getUpdatedAt() {
+				return audit.updatedAt();
+		}
 
-	public long getVersion() {
-		return audit.version();
-	}
+		public long getVersion() {
+				return audit.version();
+		}
 }
