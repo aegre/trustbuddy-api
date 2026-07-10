@@ -33,8 +33,11 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x mvnw
 
+      - name: OpenAPI spec drift check
+        run: ./mvnw test -Dtest=OpenApiSpecDriftTest -B
+
       - name: Verify (compile, test, static analysis, JaCoCo)
-        run: ./mvnw verify -B
+        run: ./mvnw verify -B -Dtest='!OpenApiSpecDriftTest'
 
   docker:
     name: Docker build

@@ -138,7 +138,7 @@ Interactive docs (dev/docker profiles):
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
-Committed contract export for frontend codegen: [`openapi/openapi.json`](openapi/openapi.json). Regenerate with `make openapi-export` while the API is running (`make run-dev`).
+Committed contract export for frontend codegen: [`openapi/openapi.json`](openapi/openapi.json). Regenerate with `make openapi-export` while the API is running (`make run-dev`). Drift is checked by `OpenApiSpecDriftTest` in CI (`make openapi-drift` locally).
 
 ### Metrics
 

@@ -12,7 +12,7 @@ include .env
 export $(shell sed -n 's/=.*//p' .env)
 endif
 
-.PHONY: help compile test test-one verify lint format precommit openapi-export run run-dev token health swagger-url \
+.PHONY: help compile test test-one verify lint format precommit openapi-export openapi-drift run run-dev token health swagger-url \
 	infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs \
 	kafka-consume coverage test-state test-submit
 
@@ -24,6 +24,7 @@ help: ## Show available targets
 	@echo "  format         Apply Spotless formatting to Java sources"
 	@echo "  precommit      Format staged Java files and re-stage them"
 	@echo "  openapi-export Write openapi/openapi.json from running API"
+	@echo "  openapi-drift  Check committed OpenAPI spec matches springdoc"
 	@echo "  lint           Run Checkstyle and SpotBugs"
 	@echo ""
 	@echo "Test:"
@@ -65,6 +66,9 @@ openapi-export: ## Write openapi/openapi.json from running API (requires API on 
 	@mkdir -p openapi
 	@curl -sf "http://localhost:$(API_PORT)/v3/api-docs" | python3 -m json.tool > openapi/openapi.json
 	@echo "OpenAPI spec: $$(pwd)/openapi/openapi.json"
+
+openapi-drift: ## Check committed OpenAPI spec matches springdoc (requires Docker)
+	$(MVN) test -Dtest=OpenApiSpecDriftTest -q
 
 test: ## Run unit and integration tests
 	$(MVN) test -q
