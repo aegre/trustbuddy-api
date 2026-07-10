@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.trustbuddy.api.config.QuoteMetrics;
 import com.trustbuddy.api.quote.application.dto.QuoteSubmissionReadiness;
 import com.trustbuddy.api.quote.application.port.out.InsurerGatewayPort;
 import com.trustbuddy.api.quote.application.port.out.InsurerSubmissionResult;
@@ -32,20 +33,23 @@ public class QuoteSubmissionService {
 	private final QuoteStateTransitionService quoteStateTransitionService;
 	private final CoverageHealthPolicy coverageHealthPolicy;
 	private final CommandValidator commandValidator;
+	private final QuoteMetrics quoteMetrics;
 
 	@Autowired
 	public QuoteSubmissionService(
 			QuoteRepositoryPort quoteRepository,
 			InsurerGatewayPort insurerGateway,
 			QuoteEventPublisherPort quoteEventPublisher,
-			CommandValidator commandValidator) {
+			CommandValidator commandValidator,
+			QuoteMetrics quoteMetrics) {
 		this(
 				quoteRepository,
 				insurerGateway,
 				quoteEventPublisher,
 				new QuoteStateTransitionService(),
 				new CoverageHealthPolicy(),
-				commandValidator);
+				commandValidator,
+				quoteMetrics);
 	}
 
 	QuoteSubmissionService(
@@ -54,13 +58,15 @@ public class QuoteSubmissionService {
 			QuoteEventPublisherPort quoteEventPublisher,
 			QuoteStateTransitionService quoteStateTransitionService,
 			CoverageHealthPolicy coverageHealthPolicy,
-			CommandValidator commandValidator) {
+			CommandValidator commandValidator,
+			QuoteMetrics quoteMetrics) {
 		this.quoteRepository = quoteRepository;
 		this.insurerGateway = insurerGateway;
 		this.quoteEventPublisher = quoteEventPublisher;
 		this.quoteStateTransitionService = quoteStateTransitionService;
 		this.coverageHealthPolicy = coverageHealthPolicy;
 		this.commandValidator = commandValidator;
+		this.quoteMetrics = quoteMetrics;
 	}
 
 	QuoteSubmissionService(
@@ -73,7 +79,8 @@ public class QuoteSubmissionService {
 				quoteEventPublisher,
 				new QuoteStateTransitionService(),
 				new CoverageHealthPolicy(),
-				new CommandValidator(Validation.buildDefaultValidatorFactory().getValidator()));
+				new CommandValidator(Validation.buildDefaultValidatorFactory().getValidator()),
+				QuoteMetrics.noop());
 	}
 
 	public Quote submitQuote(UUID id) {
@@ -94,10 +101,12 @@ public class QuoteSubmissionService {
 		if (result.success()) {
 			Quote submitted = quoteRepository.save(quoteStateTransitionService.markSubmitted(quote));
 			quoteEventPublisher.publishQuoteSubmitted(submitted);
+			quoteMetrics.recordSubmission();
 			return submitted;
 		}
 
 		quoteRepository.save(quoteStateTransitionService.markSubmissionFailed(quote));
+		quoteMetrics.recordSubmissionFailed();
 		throw new ExternalSubmissionException(result.message());
 	}
 

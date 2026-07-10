@@ -4,15 +4,19 @@ Backend REST API for the multi-step insurance quote flow (Onboarding team code c
 
 ## Status
 
-Quote capability is in progress. Implemented today:
+The quote capability is **feature-complete** for the challenge scope:
 
 - Domain model, premium calculation, and state transitions
-- PostgreSQL persistence (JPA)
+- PostgreSQL persistence (JPA) with optimistic locking
 - REST API under `/quotes` (create, update coverage, submit, get, list)
-- Global error handling and request validation
-- External insurer submission via configurable HTTP gateway ([httpstat.us](https://httpstat.us) by default)
+- JWT authentication (`POST /auth/token`) on all quote endpoints
+- Redis quote cache (read-through get, eviction on save)
+- Kafka `quote-submitted` events on first successful submit
+- Scheduled draft expiration (`DRAFT` → `EXPIRED`)
+- CORS for the React frontend origin
+- Global error handling, Bean Validation, Checkstyle, SpotBugs, JaCoCo
 
-Still planned: JWT authentication, Redis quote cache, Kafka submit events, draft expiration job.
+See [BUILD_JOURNEY.md](BUILD_JOURNEY.md) for how this was delivered in **14 incremental phases** (plan, timeline, and what each phase produced).
 
 ## Tech stack
 
@@ -24,9 +28,10 @@ Still planned: JWT authentication, Redis quote cache, Kafka submit events, draft
 | Persistence | Spring Data JPA + PostgreSQL |
 | Cache | Redis |
 | Messaging | Kafka |
-| Auth | JWT |
+| Auth | JWT (stateless) |
 | API docs | springdoc OpenAPI (Swagger UI) |
 | Architecture | Hexagonal (ports & adapters) |
+| Observability | Spring Actuator + Micrometer |
 
 ## Prerequisites
 
@@ -37,32 +42,21 @@ Still planned: JWT authentication, Redis quote cache, Kafka submit events, draft
 ## Quick start
 
 ```bash
-# Copy environment template (optional — dev profile has defaults)
-cp .env.example .env
-
-# Start infrastructure (PostgreSQL, Redis, Kafka)
-make infra-up
-
-# List available commands
-make help
-
-# Compile
-make compile
-
-# Run tests
-make test
-
-# Run API (dev profile; requires make infra-up)
-make run
-
-# Or start infra and API together
-make run-dev
+cp .env.example .env          # optional — dev profile has defaults
+make infra-up                 # PostgreSQL, Redis, Kafka
+make run-dev                  # infra + API (dev profile)
+make token                    # obtain JWT for API calls
+make health                   # check actuator health
+make swagger-url              # print Swagger UI URL
 ```
 
 ### Verify
 
 ```bash
-make verify   # compile + tests (Testcontainers; requires Docker)
+make test          # unit and integration tests (Docker required for Testcontainers)
+make verify        # compile + test + Checkstyle + SpotBugs
+make verify-all    # same as verify (includes JaCoCo report)
+make coverage      # verify + print path to JaCoCo HTML report
 ```
 
 ### Docker infrastructure
@@ -83,6 +77,7 @@ make infra-logs    # tail infra logs
 make infra-down    # stop infra containers
 make infra-reset   # stop and wipe volumes
 make docker-build  # build API image only (trustbuddy-api:local)
+make kafka-consume # tail quote-submitted topic (local Docker Kafka)
 ```
 
 ### Configuration
@@ -94,59 +89,79 @@ make docker-build  # build API image only (trustbuddy-api:local)
 | `application-docker.yml` | Compose service hostnames (`make stack-up`) |
 | `application-prod.yml` | Strict production settings; Swagger disabled |
 
-Local dev only needs `.env` values documented in `.env.example`. Production must set `DATABASE_URL`, `REDIS_HOST`, `KAFKA_BOOTSTRAP_SERVERS`, `JWT_SECRET`, etc.
+Local dev only needs `.env` values documented in `.env.example`. Production must set `DATABASE_URL`, `REDIS_HOST`, `KAFKA_BOOTSTRAP_SERVERS`, `JWT_SECRET`, `CORS_ALLOWED_ORIGINS`, etc.
 
-## Project layout
+## Architecture
 
-Feature-oriented hexagonal architecture under `com.trustbuddy.api` — see [ARCHITECTURE.md](ARCHITECTURE.md) for full detail.
+Feature-oriented **hexagonal architecture** under `com.trustbuddy.api` — domain at the center, infrastructure via ports and adapters.
 
 ```
-TrustbuddyApiApplication.java
-config/                          # shared Spring configuration
-
-quote/                           # quote capability
-  application/port/              # outbound ports (repository, insurer gateway)
-  application/service/           # QuoteService, QuoteSubmissionService
-  domain/model/                  # Quote, enums, premium/state logic
-  infrastructure/web/            # REST controllers, DTOs, exception handling
-  infrastructure/persistence/    # JPA entities, adapters, repositories
-  infrastructure/client/         # InsurerGatewayHttpAdapter (httpstat.us)
+quote/
+  domain/           # Quote, premium/state logic (no Spring/JPA)
+  application/      # QuoteService, QuoteSubmissionService, ports
+  infrastructure/   # REST, JPA, Redis, Kafka, HTTP gateway, scheduler
+config/             # security, CORS, OpenAPI, metrics, shared beans
 ```
 
-See [AGENTS.md](AGENTS.md) for REST conventions and agent instructions.
+Full diagrams, port table, and layer rules: [ARCHITECTURE.md](ARCHITECTURE.md).
+
+**Design choices:**
+
+- **Immutable `Quote`** with value objects (`PersonalInfo`, `CoverageDetails`, `QuoteAudit`) for clarity and safe state transitions
+- **Repository decorator** (`CachingQuoteRepositoryAdapter`) centralizes cache eviction on every persist
+- **Idempotent submit** when quote is already `SUBMITTED`; Kafka event only on first success
+- **Real insurer gateway** HTTP client (default `https://httpstat.us/200`), not an in-memory mock
+- API paths at `/quotes` per challenge spec (documented deviation from `/api/v1/...` internal convention)
 
 ## API
 
 Base URL when running locally: `http://localhost:8080`
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/quotes` | Create draft quote (name, email, age, zip code) |
-| `PATCH` | `/quotes/{id}/coverage` | Set coverage type and health answers; returns recalculated premium |
-| `POST` | `/quotes/{id}/submit` | Submit completed quote to external insurer gateway |
-| `GET` | `/quotes/{id}` | Get quote by id |
-| `GET` | `/quotes` | List quotes (paginated; `page`, `size`, `sort`) |
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/auth/token` | — | Obtain JWT (`username`, `password`) |
+| `POST` | `/quotes` | Bearer | Create draft quote |
+| `PATCH` | `/quotes/{id}/coverage` | Bearer | Set coverage and health answers; recalculates premium |
+| `POST` | `/quotes/{id}/submit` | Bearer | Submit to external insurer gateway |
+| `GET` | `/quotes/{id}` | Bearer | Get quote by id |
+| `GET` | `/quotes` | Bearer | List quotes (`page`, `size`, `sort`) |
 
-**Submit** requires personal info, coverage selection, and all health answers (`takesPrescriptionMedication`, `usesTobacco`, `needsSpouseCoverage`). For age > 65, pre-existing condition fields are also required. Submit is idempotent when the quote is already `SUBMITTED`. On gateway failure the quote moves to `SUBMISSION_FAILED` and can be resubmitted.
+**Submit** requires personal info, coverage, and health answers. For age > 65, pre-existing condition fields are required. On gateway failure the quote becomes `SUBMISSION_FAILED` and can be resubmitted. **Expired** drafts return **409** on submit.
 
-**Insurer gateway** — not a mock. Dev defaults to `https://httpstat.us/200` (`INSURER_GATEWAY_URL` in `.env`). Use paths like `/500` or `/200?sleep=3000` to exercise errors and latency.
+**Insurer gateway** — configure with `INSURER_GATEWAY_URL` (dev default `https://httpstat.us/200`).
 
 Interactive docs (dev/docker profiles):
 
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
+### Metrics
+
+Actuator exposes health, info, and metrics. Custom counters (Micrometer):
+
+| Metric | When incremented |
+|--------|------------------|
+| `quote.submissions.total` | First successful submit |
+| `quote.submissions.failed` | Insurer gateway failure |
+| `quote.expired.total` | Drafts expired by scheduled job |
+
+Example: `GET /actuator/metrics/quote.submissions.total` (when API is running).
+
 ## Testing
 
 ```bash
 make test
-
-make test-one TEST=QuoteSubmissionServiceTest   # one class
-make test-one TEST='*Premium*'                  # name pattern
-make test-one TEST='com.trustbuddy.api.quote.domain.service.*'  # package
-make verify         # compile, test, and static analysis
+make test-one TEST=QuoteSubmissionServiceTest
+make test-one TEST='*Premium*'
+make verify-all
 ```
+
+Tests use **given_when_then** naming and Given/When/Then structure — see [AGENTS.md](AGENTS.md).
 
 ## Frontend
 
-This API is designed to pair with a separate React frontend repository. Link to the sibling repo will be added here once available.
+This API pairs with a separate React frontend repository. Add the sibling repo link here when available.
+
+## AI-assisted development
+
+Built with human-reviewed AI assistance (Cursor Agent). Phase plan, conventions, and delivery narrative: [BUILD_JOURNEY.md](BUILD_JOURNEY.md). Contributor rules: [AGENTS.md](AGENTS.md).
