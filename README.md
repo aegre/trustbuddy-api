@@ -54,10 +54,12 @@ make swagger-url              # print Swagger UI URL
 
 ```bash
 make test          # unit and integration tests (Docker required for Testcontainers)
-make verify        # compile + test + Checkstyle + SpotBugs
-make verify-all    # same as verify (includes JaCoCo report)
-make coverage      # verify + print path to JaCoCo HTML report
+make format        # apply Spotless formatting (Java sources)
+make verify        # compile + test + Checkstyle + SpotBugs (+ JaCoCo report)
+make coverage      # tests + JaCoCo report only (skips Checkstyle/SpotBugs)
 ```
+
+See [Static analysis](#static-analysis) for tool configuration, individual commands, and CI integration.
 
 ### Docker infrastructure
 
@@ -153,10 +155,82 @@ Example: `GET /actuator/metrics/quote.submissions.total` (when API is running).
 make test
 make test-one TEST=QuoteSubmissionServiceTest
 make test-one TEST='*Premium*'
-make verify-all
+make coverage
 ```
 
 Tests use **given_when_then** naming and Given/When/Then structure — see [AGENTS.md](AGENTS.md).
+
+## Static analysis
+
+Code quality is enforced with Maven plugins bound to the **`verify`** lifecycle phase. GitHub Actions runs `./mvnw verify` on every push and pull request to `main` (see `.github/workflows/pr-validation.yml`).
+
+| Tool | What it checks | When it runs |
+|------|----------------|--------------|
+| [Checkstyle](https://checkstyle.org/) | Style, naming, imports, complexity | `verify` |
+| [SpotBugs](https://spotbugs.github.io/) | Bug patterns in compiled bytecode | `verify` |
+| [Error Prone](https://errorprone.info/) | Likely bugs and bad idioms at compile time | `compile` |
+| [JaCoCo](https://www.jacoco.org/) | Test coverage report (not static analysis) | `make coverage` or `verify` |
+
+### Commands
+
+```bash
+make lint          # Checkstyle + SpotBugs only (skips tests)
+make format        # apply Spotless formatting (Java sources)
+make verify        # compile + test + Checkstyle + SpotBugs (+ JaCoCo report)
+make coverage      # tests + JaCoCo report only (skips Checkstyle/SpotBugs)
+```
+
+Equivalent Maven invocations:
+
+```bash
+./mvnw spotless:apply                      # format Java sources
+./mvnw spotless:check                      # check formatting (no changes)
+./mvnw checkstyle:check spotbugs:check   # lint only
+./mvnw verify                              # full gate
+./mvnw test jacoco:report                  # coverage only
+./mvnw compile                             # includes Error Prone
+```
+
+Run `make format` before committing Java changes; use `make lint` for a faster feedback loop when fixing style or SpotBugs findings; use `make coverage` when you only need a coverage report; run `make verify` before opening a PR.
+
+### Spotless (formatting)
+
+Configuration: [`pom.xml`](pom.xml) (`spotless-maven-plugin`).
+
+Formats **main and test** Java sources with Google Java Format (AOSP style), then converts indentation to **tabs** to match project conventions. Also removes unused imports, trims trailing whitespace, and ensures a final newline.
+
+Not enforced in CI or `verify` — run `make format` locally (or `./mvnw spotless:check` to verify without applying).
+
+### Checkstyle
+
+Configuration: [`config/checkstyle/checkstyle.xml`](config/checkstyle/checkstyle.xml) (Checkstyle 10.x via `maven-checkstyle-plugin`).
+
+Applies to **main and test** sources. Notable rules:
+
+- **Imports** — no unused, redundant, star, or illegal imports
+- **Naming** — package, type, method, parameter, member, and constant conventions
+- **Structure** — one public type per file (`OuterTypeFilename`), braces required, one statement per line, no empty catch blocks
+- **Complexity** — cyclomatic complexity ≤ 10; methods ≤ 100 lines; ≤ 7 parameters
+
+Violations fail the build (`failsOnError=true`).
+
+### SpotBugs
+
+Configuration: [`config/spotbugs/exclude-filter.xml`](config/spotbugs/exclude-filter.xml) (`spotbugs-maven-plugin`, effort **Max**, threshold **Low**).
+
+Analyzes compiled classes for common defect patterns (null dereferences, resource leaks, bad equality, etc.). The exclude filter suppresses `EI_EXPOSE_REP` / `EI_EXPOSE_REP2` on JPA entities under `*.entity.*`, where mutable collection/date exposure is accepted for persistence mapping.
+
+HTML report (when generated): `target/spotbugs.html`.
+
+### Error Prone
+
+Configured on `maven-compiler-plugin` in [`pom.xml`](pom.xml) as a compiler annotation processor (`error_prone_core` 2.42.x). Runs on every **`compile`** — including IDE builds that invoke the Maven compiler — and flags issues such as ambiguous overloads, ignored return values, and discouraged APIs.
+
+There is no separate `make` target; fix Error Prone warnings during compilation before they reach `verify`.
+
+### JaCoCo (coverage)
+
+JaCoCo instruments tests via the `prepare-agent` goal and writes an HTML report to `target/site/jacoco/index.html`. Use `make coverage` to run **tests only** (no Checkstyle or SpotBugs) and print the report path. A report is also generated during `make verify`. Coverage is reported for visibility; there is no enforced minimum threshold in the build.
 
 ## Frontend
 

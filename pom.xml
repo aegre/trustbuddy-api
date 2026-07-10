@@ -34,6 +34,7 @@
 		<checkstyle.version>10.21.4</checkstyle.version>
 		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
 		<spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
+		<spotless.version>2.44.4</spotless.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -212,6 +213,30 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>${spotless.version}</version>
+				<configuration>
+					<java>
+						<includes>
+							<include>src/main/java/**/*.java</include>
+							<include>src/test/java/**/*.java</include>
+						</includes>
+						<removeUnusedImports/>
+						<trimTrailingWhitespace/>
+						<endWithNewline/>
+						<googleJavaFormat>
+							<version>1.26.0</version>
+							<style>AOSP</style>
+						</googleJavaFormat>
+						<indent>
+							<tabs>true</tabs>
+							<spacesPerTab>2</spacesPerTab>
+						</indent>
+					</java>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>

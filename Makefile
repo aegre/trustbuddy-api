@@ -12,15 +12,16 @@ include .env
 export $(shell sed -n 's/=.*//p' .env)
 endif
 
-.PHONY: help compile test test-one verify lint run run-dev token health swagger-url \
+.PHONY: help compile test test-one verify lint format run run-dev token health swagger-url \
 	infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs \
-	kafka-consume coverage verify-all test-state test-submit
+	kafka-consume coverage test-state test-submit
 
 help: ## Show available targets
 	@echo "Trustbuddy API"
 	@echo ""
 	@echo "Build:"
 	@echo "  compile        Compile sources"
+	@echo "  format         Apply Spotless formatting to Java sources"
 	@echo "  lint           Run Checkstyle and SpotBugs"
 	@echo ""
 	@echo "Test:"
@@ -29,8 +30,7 @@ help: ## Show available targets
 	@echo "  test-state     Run quote state transition unit tests"
 	@echo "  test-submit    Run quote submission application tests"
 	@echo "  verify         Compile, test, and static analysis"
-	@echo "  verify-all     Full verification including JaCoCo report"
-	@echo "  coverage       Run verify and print JaCoCo HTML report path"
+	@echo "  coverage       Run tests + JaCoCo report (skips Checkstyle/SpotBugs)"
 	@echo ""
 	@echo "Infrastructure:"
 	@echo "  infra-up       Start PostgreSQL, Redis, and Kafka (Docker)"
@@ -53,6 +53,9 @@ help: ## Show available targets
 compile: ## Compile sources
 	$(MVN) compile -q
 
+format: ## Apply Spotless formatting to Java sources
+	$(MVN) spotless:apply -q
+
 test: ## Run unit and integration tests
 	$(MVN) test -q
 
@@ -73,10 +76,9 @@ test-submit: ## Run quote submission application tests
 verify: ## Compile, test, and static analysis
 	$(MVN) verify -q
 
-coverage: verify ## Run verify and print JaCoCo HTML report path
+coverage: ## Run tests + JaCoCo report (skips Checkstyle/SpotBugs)
+	$(MVN) test jacoco:report -q
 	@echo "JaCoCo report: $$(pwd)/target/site/jacoco/index.html"
-
-verify-all: verify ## Full verification including tests, lint, and JaCoCo report
 
 lint: ## Run Checkstyle and SpotBugs (also runs during verify)
 	$(MVN) checkstyle:check spotbugs:check -q
