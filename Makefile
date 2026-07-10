@@ -68,7 +68,8 @@ openapi-export: ## Write openapi/openapi.json from running API (requires API on 
 	@echo "OpenAPI spec: $$(pwd)/openapi/openapi.json"
 
 openapi-drift: ## Check committed OpenAPI spec matches springdoc (requires Docker)
-	$(MVN) test -Dtest=OpenApiSpecDriftTest -q
+	$(MVN) test -Dtest=OpenApiSpecDriftTest -Dsurefire.exitTimeout=5 -q
+	@echo "OpenAPI spec drift check passed (openapi/openapi.json matches springdoc)"
 
 test: ## Run unit and integration tests
 	$(MVN) test -q

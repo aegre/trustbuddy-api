@@ -8,63 +8,74 @@ import java.util.Set;
 
 public class UpdateCoverageCommand {
 
-		@NotNull private CoverageType coverageType;
+	@NotNull
+	private CoverageType coverageType;
 
-		private Boolean hasPreexistingConditions;
+	private Boolean hasPreexistingConditions;
 
-		private Set<ConditionType> conditions;
+	private Set<ConditionType> conditions;
 
-		private Boolean takesPrescriptionMedication;
+	private Boolean takesPrescriptionMedication;
 
-		private Boolean usesTobacco;
+	private Boolean usesTobacco;
 
-		private Boolean needsSpouseCoverage;
+	private Boolean needsSpouseCoverage;
 
-		public CoverageType getCoverageType() {
-				return coverageType;
-		}
+	private Boolean hasSpouse;
 
-		public void setCoverageType(CoverageType coverageType) {
-				this.coverageType = coverageType;
-		}
+	public CoverageType getCoverageType() {
+		return coverageType;
+	}
 
-		public Boolean getHasPreexistingConditions() {
-				return hasPreexistingConditions;
-		}
+	public Boolean getHasSpouse() {
+		return hasSpouse;
+	}
 
-		public void setHasPreexistingConditions(Boolean hasPreexistingConditions) {
-				this.hasPreexistingConditions = hasPreexistingConditions;
-		}
+	public void setHasSpouse(Boolean hasSpouse) {
+		this.hasSpouse = hasSpouse;
+	}
 
-		public Set<ConditionType> getConditions() {
-				return conditions == null ? null : Collections.unmodifiableSet(conditions);
-		}
+	public void setCoverageType(CoverageType coverageType) {
+		this.coverageType = coverageType;
+	}
 
-		public void setConditions(Set<ConditionType> conditions) {
-				this.conditions = conditions == null ? null : Set.copyOf(conditions);
-		}
+	public Boolean getHasPreexistingConditions() {
+		return hasPreexistingConditions;
+	}
 
-		public Boolean getTakesPrescriptionMedication() {
-				return takesPrescriptionMedication;
-		}
+	public void setHasPreexistingConditions(Boolean hasPreexistingConditions) {
+		this.hasPreexistingConditions = hasPreexistingConditions;
+	}
 
-		public void setTakesPrescriptionMedication(Boolean takesPrescriptionMedication) {
-				this.takesPrescriptionMedication = takesPrescriptionMedication;
-		}
+	public Set<ConditionType> getConditions() {
+		return conditions == null ? null : Collections.unmodifiableSet(conditions);
+	}
 
-		public Boolean getUsesTobacco() {
-				return usesTobacco;
-		}
+	public void setConditions(Set<ConditionType> conditions) {
+		this.conditions = conditions == null ? null : Set.copyOf(conditions);
+	}
 
-		public void setUsesTobacco(Boolean usesTobacco) {
-				this.usesTobacco = usesTobacco;
-		}
+	public Boolean getTakesPrescriptionMedication() {
+		return takesPrescriptionMedication;
+	}
 
-		public Boolean getNeedsSpouseCoverage() {
-				return needsSpouseCoverage;
-		}
+	public void setTakesPrescriptionMedication(Boolean takesPrescriptionMedication) {
+		this.takesPrescriptionMedication = takesPrescriptionMedication;
+	}
 
-		public void setNeedsSpouseCoverage(Boolean needsSpouseCoverage) {
-				this.needsSpouseCoverage = needsSpouseCoverage;
-		}
+	public Boolean getUsesTobacco() {
+		return usesTobacco;
+	}
+
+	public void setUsesTobacco(Boolean usesTobacco) {
+		this.usesTobacco = usesTobacco;
+	}
+
+	public Boolean getNeedsSpouseCoverage() {
+		return needsSpouseCoverage;
+	}
+
+	public void setNeedsSpouseCoverage(Boolean needsSpouseCoverage) {
+		this.needsSpouseCoverage = needsSpouseCoverage;
+	}
 }
