@@ -1,4 +1,4 @@
-package com.trustbuddy.api.quote.infrastructure.web.response;
+package com.trustbuddy.api.config.web.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.LocalDateTime;

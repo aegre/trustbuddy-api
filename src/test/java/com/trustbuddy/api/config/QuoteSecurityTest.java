@@ -13,7 +13,8 @@ import com.trustbuddy.api.config.web.AuthController;
 import com.trustbuddy.api.quote.application.service.QuoteService;
 import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
 import com.trustbuddy.api.quote.infrastructure.web.controller.QuoteController;
-import com.trustbuddy.api.quote.infrastructure.web.exception.GlobalExceptionHandler;
+import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
+import com.trustbuddy.api.quote.infrastructure.web.exception.QuoteExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
@@ -37,6 +38,7 @@ import org.springframework.test.web.servlet.MockMvc;
 		JwtService.class,
 		SecurityConfig.class,
 		GlobalExceptionHandler.class,
+		QuoteExceptionHandler.class,
 		JacksonAutoConfiguration.class,
 		QuoteSecurityTest.CacheTestConfig.class
 })
