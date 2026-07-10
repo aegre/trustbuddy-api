@@ -9,10 +9,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.trustbuddy.api.config.web.AuthController;
+import com.trustbuddy.api.quote.application.service.QuoteService;
+import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
+import com.trustbuddy.api.quote.infrastructure.web.controller.QuoteController;
+import com.trustbuddy.api.quote.infrastructure.web.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.cache.CacheManager;
@@ -25,128 +30,118 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.trustbuddy.api.config.web.AuthController;
-import com.trustbuddy.api.quote.application.service.QuoteService;
-import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
-import com.trustbuddy.api.quote.infrastructure.web.controller.QuoteController;
-import com.trustbuddy.api.quote.infrastructure.web.exception.GlobalExceptionHandler;
-
-@WebMvcTest(controllers = { QuoteController.class, AuthController.class })
+@WebMvcTest(controllers = {QuoteController.class, AuthController.class})
 @Import({
-	ApplicationConfig.class,
-	CorsConfig.class,
-	JwtService.class,
-	SecurityConfig.class,
-	GlobalExceptionHandler.class,
-	JacksonAutoConfiguration.class,
-	QuoteSecurityTest.CacheTestConfig.class
+		ApplicationConfig.class,
+		CorsConfig.class,
+		JwtService.class,
+		SecurityConfig.class,
+		GlobalExceptionHandler.class,
+		JacksonAutoConfiguration.class,
+		QuoteSecurityTest.CacheTestConfig.class
 })
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {
-		"app.jwt.secret=test-jwt-secret-at-least-32-characters-long",
-		"app.jwt.expiration-ms=900000",
-		"app.auth.username=test-user",
-		"app.auth.password=test-password",
-		"app.cors.allowed-origins=http://localhost:5173"
-})
+@TestPropertySource(
+				properties = {
+						"app.jwt.secret=test-jwt-secret-at-least-32-characters-long",
+						"app.jwt.expiration-ms=900000",
+						"app.auth.username=test-user",
+						"app.auth.password=test-password",
+						"app.cors.allowed-origins=http://localhost:5173"
+				})
 class QuoteSecurityTest {
 
-	@TestConfiguration
-	static class CacheTestConfig {
+		@TestConfiguration
+		static class CacheTestConfig {
 
-		@Bean
-		CacheManager cacheManager() {
-			return new ConcurrentMapCacheManager();
+				@Bean
+				CacheManager cacheManager() {
+						return new ConcurrentMapCacheManager();
+				}
 		}
-	}
 
-	@Autowired
-	private MockMvc mockMvc;
+		@Autowired private MockMvc mockMvc;
 
-	@Autowired
-	private JwtService jwtService;
+		@Autowired private JwtService jwtService;
 
-	@MockitoBean
-	private QuoteService quoteService;
+		@MockitoBean private QuoteService quoteService;
 
-	@MockitoBean
-	private QuoteSubmissionService quoteSubmissionService;
+		@MockitoBean private QuoteSubmissionService quoteSubmissionService;
 
-	@Test
-	void givenAllowedOrigin_whenPreflightQuotes_thenReturnCorsHeaders() throws Exception {
-		// Given
-		// Origin http://localhost:5173 is allowed in test properties
+		@Test
+		void givenAllowedOrigin_whenPreflightQuotes_thenReturnCorsHeaders() throws Exception {
+				// Given
+				// Origin http://localhost:5173 is allowed in test properties
 
-		// When / Then
-		mockMvc.perform(options("/quotes")
-						.header("Origin", "http://localhost:5173")
-						.header("Access-Control-Request-Method", "GET")
-						.header("Access-Control-Request-Headers", "Authorization"))
-				.andExpect(status().isOk())
-				.andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
-	}
+				// When / Then
+				mockMvc.perform(
+												options("/quotes")
+																.header("Origin", "http://localhost:5173")
+																.header("Access-Control-Request-Method", "GET")
+																.header("Access-Control-Request-Headers", "Authorization"))
+								.andExpect(status().isOk())
+								.andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+		}
 
-	@Test
-	void givenDisallowedOrigin_whenPreflightQuotes_thenReturnForbidden() throws Exception {
-		// Given
-		// Origin not in app.cors.allowed-origins
+		@Test
+		void givenDisallowedOrigin_whenPreflightQuotes_thenReturnForbidden() throws Exception {
+				// Given
+				// Origin not in app.cors.allowed-origins
 
-		// When / Then
-		mockMvc.perform(options("/quotes")
-						.header("Origin", "http://evil.example")
-						.header("Access-Control-Request-Method", "GET"))
-				.andExpect(status().isForbidden());
-	}
+				// When / Then
+				mockMvc.perform(
+												options("/quotes")
+																.header("Origin", "http://evil.example")
+																.header("Access-Control-Request-Method", "GET"))
+								.andExpect(status().isForbidden());
+		}
 
-	@Test
-	void givenNoToken_whenListQuotes_thenReturn401() throws Exception {
-		// Given — no Authorization header
+		@Test
+		void givenNoToken_whenListQuotes_thenReturn401() throws Exception {
+				// Given — no Authorization header
 
-		// When / Then
-		mockMvc.perform(get("/quotes"))
-				.andExpect(status().isUnauthorized())
-				.andExpect(jsonPath("$.status").value(401))
-				.andExpect(jsonPath("$.path").value("/quotes"));
-	}
+				// When / Then
+				mockMvc.perform(get("/quotes"))
+								.andExpect(status().isUnauthorized())
+								.andExpect(jsonPath("$.status").value(401))
+								.andExpect(jsonPath("$.path").value("/quotes"));
+		}
 
-	@Test
-	void givenValidToken_whenListQuotes_thenReturn200() throws Exception {
-		// Given
-		String token = jwtService.generateToken("test-user");
-		when(quoteService.listQuotes(any())).thenReturn(new PageImpl<>(java.util.List.of()));
+		@Test
+		void givenValidToken_whenListQuotes_thenReturn200() throws Exception {
+				// Given
+				String token = jwtService.generateToken("test-user");
+				when(quoteService.listQuotes(any())).thenReturn(new PageImpl<>(java.util.List.of()));
 
-		// When / Then
-		mockMvc.perform(get("/quotes")
-						.header("Authorization", "Bearer " + token))
-				.andExpect(status().isOk());
-	}
+				// When / Then
+				mockMvc.perform(get("/quotes").header("Authorization", "Bearer " + token))
+								.andExpect(status().isOk());
+		}
 
-	@Test
-	void givenInvalidToken_whenListQuotes_thenReturn401() throws Exception {
-		// Given
-		String token = jwtService.generateToken("test-user") + "invalid";
+		@Test
+		void givenInvalidToken_whenListQuotes_thenReturn401() throws Exception {
+				// Given
+				String token = jwtService.generateToken("test-user") + "invalid";
 
-		// When / Then
-		mockMvc.perform(get("/quotes")
-						.header("Authorization", "Bearer " + token))
-				.andExpect(status().isUnauthorized());
-	}
+				// When / Then
+				mockMvc.perform(get("/quotes").header("Authorization", "Bearer " + token))
+								.andExpect(status().isUnauthorized());
+		}
 
-	@Test
-	void givenNoToken_whenAuthToken_thenReturn200() throws Exception {
-		// Given
-		String body = """
+		@Test
+		void givenNoToken_whenAuthToken_thenReturn200() throws Exception {
+				// Given
+				String body =
+								"""
 				{
-				  "username": "test-user",
-				  "password": "test-password"
+					"username": "test-user",
+					"password": "test-password"
 				}
 				""";
 
-		// When / Then
-		mockMvc.perform(post("/auth/token")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(body))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.accessToken").isNotEmpty());
-	}
+				// When / Then
+				mockMvc.perform(post("/auth/token").contentType(MediaType.APPLICATION_JSON).content(body))
+								.andExpect(status().isOk())
+								.andExpect(jsonPath("$.accessToken").isNotEmpty());
+		}
 }

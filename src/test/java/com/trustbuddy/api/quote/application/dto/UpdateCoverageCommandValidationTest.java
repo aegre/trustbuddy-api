@@ -2,51 +2,49 @@ package com.trustbuddy.api.quote.application.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Set;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import com.trustbuddy.api.quote.domain.model.CoverageType;
-
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
+import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class UpdateCoverageCommandValidationTest {
 
-	private Validator validator;
+		private Validator validator;
 
-	@BeforeEach
-	void setUp() {
-		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-		validator = factory.getValidator();
-	}
+		@BeforeEach
+		void setUp() {
+				ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+				validator = factory.getValidator();
+		}
 
-	@Test
-	void givenValidCommand_whenValidate_thenHasNoViolations() {
-		// Given
-		UpdateCoverageCommand command = new UpdateCoverageCommand();
-		command.setCoverageType(CoverageType.STANDARD);
+		@Test
+		void givenValidCommand_whenValidate_thenHasNoViolations() {
+				// Given
+				UpdateCoverageCommand command = new UpdateCoverageCommand();
+				command.setCoverageType(CoverageType.STANDARD);
 
-		// When
-		Set<ConstraintViolation<UpdateCoverageCommand>> violations = validator.validate(command);
+				// When
+				Set<ConstraintViolation<UpdateCoverageCommand>> violations = validator.validate(command);
 
-		// Then
-		assertThat(violations).isEmpty();
-	}
+				// Then
+				assertThat(violations).isEmpty();
+		}
 
-	@Test
-	void givenMissingCoverageType_whenValidate_thenReportsCoverageTypeViolation() {
-		// Given
-		UpdateCoverageCommand command = new UpdateCoverageCommand();
+		@Test
+		void givenMissingCoverageType_whenValidate_thenReportsCoverageTypeViolation() {
+				// Given
+				UpdateCoverageCommand command = new UpdateCoverageCommand();
 
-		// When
-		Set<ConstraintViolation<UpdateCoverageCommand>> violations = validator.validate(command);
+				// When
+				Set<ConstraintViolation<UpdateCoverageCommand>> violations = validator.validate(command);
 
-		// Then
-		assertThat(violations).extracting(violation -> violation.getPropertyPath().toString())
-				.contains("coverageType");
-	}
+				// Then
+				assertThat(violations)
+								.extracting(violation -> violation.getPropertyPath().toString())
+								.contains("coverageType");
+		}
 }

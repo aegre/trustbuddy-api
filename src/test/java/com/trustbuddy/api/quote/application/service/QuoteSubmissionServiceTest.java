@@ -7,14 +7,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Optional;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import com.trustbuddy.api.quote.application.port.out.InsurerGatewayPort;
 import com.trustbuddy.api.quote.application.port.out.InsurerSubmissionResult;
 import com.trustbuddy.api.quote.application.port.out.QuoteEventPublisherPort;
@@ -26,149 +18,164 @@ import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class QuoteSubmissionServiceTest {
 
-	@Mock
-	private QuoteRepositoryPort quoteRepository;
+		@Mock private QuoteRepositoryPort quoteRepository;
 
-	@Mock
-	private InsurerGatewayPort insurerGateway;
+		@Mock private InsurerGatewayPort insurerGateway;
 
-	@Mock
-	private QuoteEventPublisherPort quoteEventPublisher;
+		@Mock private QuoteEventPublisherPort quoteEventPublisher;
 
-	private QuoteSubmissionService quoteSubmissionService;
+		private QuoteSubmissionService quoteSubmissionService;
 
-	@BeforeEach
-	void setUp() {
-		quoteSubmissionService = new QuoteSubmissionService(quoteRepository, insurerGateway, quoteEventPublisher);
-	}
+		@BeforeEach
+		void setUp() {
+				quoteSubmissionService =
+								new QuoteSubmissionService(quoteRepository, insurerGateway, quoteEventPublisher);
+		}
 
-	@Test
-	void givenCoveredDraftQuote_whenSubmitQuote_thenMarksSubmittedAndReturnsQuote() {
-		// Given
-		Quote draft = coveredQuote(QuoteStatus.DRAFT);
-		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
-		when(insurerGateway.submit(draft)).thenReturn(new InsurerSubmissionResult(true, 200, "ok"));
-		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		@Test
+		void givenCoveredDraftQuote_whenSubmitQuote_thenMarksSubmittedAndReturnsQuote() {
+				// Given
+				Quote draft = coveredQuote(QuoteStatus.DRAFT);
+				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+				when(insurerGateway.submit(draft)).thenReturn(new InsurerSubmissionResult(true, 200, "ok"));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
 
-		// When
-		Quote submitted = quoteSubmissionService.submitQuote(draft.getId());
+				// When
+				Quote submitted = quoteSubmissionService.submitQuote(draft.getId());
 
-		// Then
-		assertThat(submitted.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
-		verify(insurerGateway).submit(draft);
-		verify(quoteEventPublisher).publishQuoteSubmitted(submitted);
-	}
+				// Then
+				assertThat(submitted.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
+				verify(insurerGateway).submit(draft);
+				verify(quoteEventPublisher).publishQuoteSubmitted(submitted);
+		}
 
-	@Test
-	void givenSubmittedQuote_whenSubmitQuote_thenReturnsSameQuoteWithoutCallingGateway() {
-		// Given
-		Quote submitted = coveredQuote(QuoteStatus.SUBMITTED);
-		when(quoteRepository.findById(submitted.getId())).thenReturn(Optional.of(submitted));
+		@Test
+		void givenSubmittedQuote_whenSubmitQuote_thenReturnsSameQuoteWithoutCallingGateway() {
+				// Given
+				Quote submitted = coveredQuote(QuoteStatus.SUBMITTED);
+				when(quoteRepository.findById(submitted.getId())).thenReturn(Optional.of(submitted));
 
-		// When
-		Quote result = quoteSubmissionService.submitQuote(submitted.getId());
+				// When
+				Quote result = quoteSubmissionService.submitQuote(submitted.getId());
 
-		// Then
-		assertThat(result).isSameAs(submitted);
-		verify(insurerGateway, never()).submit(any());
-		verify(quoteRepository, never()).save(any());
-		verify(quoteEventPublisher, never()).publishQuoteSubmitted(any());
-	}
+				// Then
+				assertThat(result).isSameAs(submitted);
+				verify(insurerGateway, never()).submit(any());
+				verify(quoteRepository, never()).save(any());
+				verify(quoteEventPublisher, never()).publishQuoteSubmitted(any());
+		}
 
-	@Test
-	void givenExpiredQuote_whenSubmitQuote_thenThrowsInvalidQuoteStateException() {
-		// Given
-		Quote expired = coveredQuote(QuoteStatus.EXPIRED);
-		when(quoteRepository.findById(expired.getId())).thenReturn(Optional.of(expired));
+		@Test
+		void givenExpiredQuote_whenSubmitQuote_thenThrowsInvalidQuoteStateException() {
+				// Given
+				Quote expired = coveredQuote(QuoteStatus.EXPIRED);
+				when(quoteRepository.findById(expired.getId())).thenReturn(Optional.of(expired));
 
-		// When / Then
-		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(expired.getId()))
-				.isInstanceOf(InvalidQuoteStateException.class);
-		verify(insurerGateway, never()).submit(any());
-	}
+				// When / Then
+				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(expired.getId()))
+								.isInstanceOf(InvalidQuoteStateException.class);
+				verify(insurerGateway, never()).submit(any());
+		}
 
-	@Test
-	void givenGatewayFailure_whenSubmitQuote_thenMarksSubmissionFailedAndThrowsExternalSubmissionException() {
-		// Given
-		Quote draft = coveredQuote(QuoteStatus.DRAFT);
-		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
-		when(insurerGateway.submit(draft)).thenReturn(new InsurerSubmissionResult(false, 500, "gateway down"));
-		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		@Test
+		void
+						givenGatewayFailure_whenSubmitQuote_thenMarksSubmissionFailedAndThrowsExternalSubmissionException() {
+				// Given
+				Quote draft = coveredQuote(QuoteStatus.DRAFT);
+				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+				when(insurerGateway.submit(draft))
+								.thenReturn(new InsurerSubmissionResult(false, 500, "gateway down"));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
 
-		// When / Then
-		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
-				.isInstanceOf(ExternalSubmissionException.class)
-				.hasMessageContaining("gateway down");
+				// When / Then
+				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
+								.isInstanceOf(ExternalSubmissionException.class)
+								.hasMessageContaining("gateway down");
 
-		verify(quoteRepository).save(any(Quote.class));
-		verify(quoteEventPublisher, never()).publishQuoteSubmitted(any());
-	}
+				verify(quoteRepository).save(any(Quote.class));
+				verify(quoteEventPublisher, never()).publishQuoteSubmitted(any());
+		}
 
-	@Test
-	void givenSubmissionFailedQuote_whenSubmitQuote_thenCanResubmitSuccessfully() {
-		// Given
-		Quote failed = coveredQuote(QuoteStatus.SUBMISSION_FAILED);
-		when(quoteRepository.findById(failed.getId())).thenReturn(Optional.of(failed));
-		when(insurerGateway.submit(failed)).thenReturn(new InsurerSubmissionResult(true, 200, "ok"));
-		when(quoteRepository.save(any(Quote.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		@Test
+		void givenSubmissionFailedQuote_whenSubmitQuote_thenCanResubmitSuccessfully() {
+				// Given
+				Quote failed = coveredQuote(QuoteStatus.SUBMISSION_FAILED);
+				when(quoteRepository.findById(failed.getId())).thenReturn(Optional.of(failed));
+				when(insurerGateway.submit(failed))
+								.thenReturn(new InsurerSubmissionResult(true, 200, "ok"));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
 
-		// When
-		Quote submitted = quoteSubmissionService.submitQuote(failed.getId());
+				// When
+				Quote submitted = quoteSubmissionService.submitQuote(failed.getId());
 
-		// Then
-		assertThat(submitted.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
-		verify(quoteEventPublisher).publishQuoteSubmitted(submitted);
-	}
+				// Then
+				assertThat(submitted.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
+				verify(quoteEventPublisher).publishQuoteSubmitted(submitted);
+		}
 
-	@Test
-	void givenQuoteWithoutTakesPrescriptionMedication_whenSubmitQuote_thenThrowsQuoteValidationException() {
-		// Given
-		Quote draft = QuoteGenerator.readyForSubmissionWithoutTakesPrescriptionMedication(30)
-				.withStatus(QuoteStatus.DRAFT);
-		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+		@Test
+		void
+						givenQuoteWithoutTakesPrescriptionMedication_whenSubmitQuote_thenThrowsQuoteValidationException() {
+				// Given
+				Quote draft =
+								QuoteGenerator.readyForSubmissionWithoutTakesPrescriptionMedication(30)
+												.withStatus(QuoteStatus.DRAFT);
+				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 
-		// When / Then
-		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
-				.isInstanceOf(QuoteValidationException.class)
-				.hasMessageContaining("takesPrescriptionMedication is required");
-		verify(insurerGateway, never()).submit(any());
-	}
+				// When / Then
+				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
+								.isInstanceOf(QuoteValidationException.class)
+								.hasMessageContaining("takesPrescriptionMedication is required");
+				verify(insurerGateway, never()).submit(any());
+		}
 
-	@Test
-	void givenSeniorQuoteWithoutRequiredHealthAnswer_whenSubmitQuote_thenThrowsQuoteValidationException() {
-		// Given
-		Quote draft = QuoteGenerator.coverage(70, CoverageType.STANDARD)
-				.takesPrescriptionMedication(false)
-				.usesTobacco(false)
-				.needsSpouseCoverage(false)
-				.build()
-				.withStatus(QuoteStatus.DRAFT);
-		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+		@Test
+		void
+						givenSeniorQuoteWithoutRequiredHealthAnswer_whenSubmitQuote_thenThrowsQuoteValidationException() {
+				// Given
+				Quote draft =
+								QuoteGenerator.coverage(70, CoverageType.STANDARD)
+												.takesPrescriptionMedication(false)
+												.usesTobacco(false)
+												.needsSpouseCoverage(false)
+												.build()
+												.withStatus(QuoteStatus.DRAFT);
+				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 
-		// When / Then
-		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
-				.isInstanceOf(QuoteValidationException.class)
-				.hasMessageContaining("hasPreexistingConditions is required");
-		verify(insurerGateway, never()).submit(any());
-	}
+				// When / Then
+				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
+								.isInstanceOf(QuoteValidationException.class)
+								.hasMessageContaining("hasPreexistingConditions is required");
+				verify(insurerGateway, never()).submit(any());
+		}
 
-	@Test
-	void givenQuoteWithoutCoverage_whenSubmitQuote_thenThrowsQuoteValidationException() {
-		// Given
-		Quote draft = QuoteGenerator.readyForSubmissionWithoutCoverage(30).withStatus(QuoteStatus.DRAFT);
-		when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+		@Test
+		void givenQuoteWithoutCoverage_whenSubmitQuote_thenThrowsQuoteValidationException() {
+				// Given
+				Quote draft =
+								QuoteGenerator.readyForSubmissionWithoutCoverage(30).withStatus(QuoteStatus.DRAFT);
+				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 
-		// When / Then
-		assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
-				.isInstanceOf(QuoteValidationException.class)
-				.hasMessageContaining("coverage data");
-	}
+				// When / Then
+				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
+								.isInstanceOf(QuoteValidationException.class)
+								.hasMessageContaining("coverage data");
+		}
 
-	private static Quote coveredQuote(QuoteStatus status) {
-		return QuoteGenerator.readyForSubmission(30).withStatus(status);
-	}
+		private static Quote coveredQuote(QuoteStatus status) {
+				return QuoteGenerator.readyForSubmission(30).withStatus(status);
+		}
 }
