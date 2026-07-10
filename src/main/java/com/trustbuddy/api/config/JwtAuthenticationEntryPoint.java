@@ -1,11 +1,10 @@
 package com.trustbuddy.api.config;
 
-import com.trustbuddy.api.quote.infrastructure.web.response.ErrorResponse;
+import com.trustbuddy.api.config.web.exception.ErrorResponseFactory;
+import com.trustbuddy.api.config.web.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
@@ -26,12 +25,11 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 						HttpServletResponse response,
 						AuthenticationException authException)
 						throws IOException {
-				ErrorResponse body = new ErrorResponse();
-				body.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
-				body.setStatus(HttpStatus.UNAUTHORIZED.value());
-				body.setError(HttpStatus.UNAUTHORIZED.getReasonPhrase());
-				body.setMessage(resolveMessage(authException));
-				body.setPath(request.getRequestURI());
+				ErrorResponse body =
+								ErrorResponseFactory.create(
+												HttpStatus.UNAUTHORIZED,
+												resolveMessage(authException),
+												request.getRequestURI());
 
 				response.setStatus(HttpStatus.UNAUTHORIZED.value());
 				response.setContentType(MediaType.APPLICATION_JSON_VALUE);

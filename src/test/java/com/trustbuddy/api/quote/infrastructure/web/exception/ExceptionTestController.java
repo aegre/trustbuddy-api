@@ -1,32 +1,19 @@
 package com.trustbuddy.api.quote.infrastructure.web.exception;
 
-import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.ConditionalFieldRejectedException;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
-import com.trustbuddy.api.quote.infrastructure.web.mapper.QuoteWebMapper;
-import com.trustbuddy.api.quote.infrastructure.web.request.CreateQuoteRequest;
 import java.util.UUID;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/test/exceptions")
 class ExceptionTestController {
-
-		private final CommandValidator commandValidator;
-
-		ExceptionTestController(CommandValidator commandValidator) {
-				this.commandValidator = commandValidator;
-		}
 
 		@GetMapping("/quote-not-found")
 		void quoteNotFound() {
@@ -53,20 +40,5 @@ class ExceptionTestController {
 		@GetMapping("/external-submission")
 		void externalSubmission() {
 				throw new ExternalSubmissionException("Insurer gateway returned an error");
-		}
-
-		@GetMapping("/authentication")
-		void authentication() {
-				throw new BadCredentialsException("Invalid or missing token");
-		}
-
-		@GetMapping("/access-denied")
-		void accessDenied() {
-				throw new AccessDeniedException("Access is denied");
-		}
-
-		@PostMapping("/validation")
-		void validation(@RequestBody CreateQuoteRequest request) {
-				commandValidator.validate(QuoteWebMapper.toCommand(request));
 		}
 }
