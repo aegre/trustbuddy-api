@@ -231,6 +231,46 @@
                         }
                     }
                 }
+            },
+            "patch": {
+                "tags": [
+                    "Quotes"
+                ],
+                "summary": "Update personal information on a draft quote",
+                "operationId": "updatePersonalInfo",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePersonalInfoRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QuoteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     },
@@ -393,6 +433,45 @@
                         "example": 900000
                     }
                 }
+            },
+            "UpdatePersonalInfoRequest": {
+                "type": "object",
+                "description": "Personal information for updating an existing draft quote",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Applicant full name",
+                        "example": "Jane Doe",
+                        "maxLength": 255
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "description": "Applicant email address",
+                        "example": "jane@example.com",
+                        "maxLength": 255
+                    },
+                    "age": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Applicant age in years",
+                        "example": 30,
+                        "maximum": 120,
+                        "minimum": 1
+                    },
+                    "zipCode": {
+                        "type": "string",
+                        "description": "5-digit Mexican postal code (c\u00f3digo postal)",
+                        "example": "06600",
+                        "pattern": "\\d{5}"
+                    }
+                },
+                "required": [
+                    "age",
+                    "email",
+                    "name",
+                    "zipCode"
+                ]
             },
             "UpdateCoverageRequest": {
                 "type": "object",
