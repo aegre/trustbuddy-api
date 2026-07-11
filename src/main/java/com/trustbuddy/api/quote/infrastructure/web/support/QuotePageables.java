@@ -33,10 +33,7 @@ public final class QuotePageables {
 						if (!ALLOWED_SORT_PROPERTIES.contains(order.getProperty())) {
 								throw new QuoteValidationException(
 												QuoteErrorCodes.QUOTE_INVALID_QUERY,
-												"Invalid sort field '"
-																+ order.getProperty()
-																+ "'. Allowed: "
-																+ allowedSortFields());
+												invalidSortFieldMessage(order.getProperty()));
 						}
 				}
 				return normalized;
@@ -51,5 +48,12 @@ public final class QuotePageables {
 
 		public static String allowedSortFields() {
 				return String.join(", ", new TreeSet<>(ALLOWED_SORT_PROPERTIES));
+		}
+
+		public static String invalidSortFieldMessage(String field) {
+				return "Invalid sort field '"
+								+ field
+								+ "'. Use sort=<field>,asc|desc. Allowed fields: "
+								+ allowedSortFields();
 		}
 }

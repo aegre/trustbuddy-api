@@ -32,7 +32,8 @@ class QuotePageablesTest {
 				// When / Then
 				assertThatThrownBy(() -> QuotePageables.requireValid(pageable))
 								.isInstanceOf(QuoteValidationException.class)
-								.hasMessageContaining("Invalid sort field 'unknownField'")
+								.hasMessage(
+												"Invalid sort field 'unknownField'. Use sort=<field>,asc|desc. Allowed fields: age, createdAt, email, name, status, updatedAt")
 								.extracting("errorCode")
 								.isEqualTo(QuoteErrorCodes.QUOTE_INVALID_QUERY);
 		}

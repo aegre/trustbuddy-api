@@ -234,7 +234,7 @@ class QuoteControllerTest {
 								.andExpect(
 												jsonPath("$.message")
 																.value(
-																				"Invalid sort field 'unknownField'. Allowed: age, createdAt, email, name, status, updatedAt"));
+																				"Invalid sort field 'unknownField'. Use sort=<field>,asc|desc. Allowed fields: age, createdAt, email, name, status, updatedAt"));
 
 				verify(quoteRepository, never()).findAll(any());
 		}
