@@ -20,6 +20,7 @@ import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
+import com.trustbuddy.api.config.ErrorReportingConfig;
 import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.quote.infrastructure.web.exception.QuoteExceptionHandler;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
@@ -43,6 +44,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @Import({
 		GlobalExceptionHandler.class,
 		QuoteExceptionHandler.class,
+		ErrorReportingConfig.class,
 		CommandValidator.class,
 		QuoteControllerTest.TestConfig.class
 })

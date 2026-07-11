@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.trustbuddy.api.config.ApplicationConfig;
 import com.trustbuddy.api.config.CorsConfig;
 import com.trustbuddy.api.config.JwtService;
+import com.trustbuddy.api.config.ErrorReportingConfig;
 import com.trustbuddy.api.config.SecurityConfig;
 import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 		JwtService.class,
 		SecurityConfig.class,
 		GlobalExceptionHandler.class,
+		ErrorReportingConfig.class,
 		JacksonAutoConfiguration.class,
 		AuthControllerTest.CacheTestConfig.class
 })

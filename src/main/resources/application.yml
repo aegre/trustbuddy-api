@@ -55,3 +55,18 @@ app:
       timeout-ms: ${INSURER_GATEWAY_TIMEOUT_MS:5000}
   kafka:
     topic: ${KAFKA_TOPIC:quote-submitted}
+
+sentry:
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENVIRONMENT:local}
+  enabled: ${SENTRY_ENABLED:false}
+  send-default-pii: false
+  traces-sample-rate: 0.0
+  ignored-exceptions-for-type:
+    - com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException
+    - com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException
+    - com.trustbuddy.api.quote.domain.exception.QuoteValidationException
+    - com.trustbuddy.api.quote.domain.exception.ConditionalFieldRejectedException
+    - org.springframework.security.core.AuthenticationException
+    - org.springframework.security.access.AccessDeniedException
+    - org.springframework.web.bind.MethodArgumentNotValidException

@@ -36,6 +36,7 @@
 		<spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
 		<spotless.version>2.44.4</spotless.version>
 		<git-build-hook.version>3.6.0</git-build-hook.version>
+		<sentry.version>8.48.0</sentry.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -91,6 +92,11 @@
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry-spring-boot-4</artifactId>
+			<version>${sentry.version}</version>
 		</dependency>
 
 		<dependency>
