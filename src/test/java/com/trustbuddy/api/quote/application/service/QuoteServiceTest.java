@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.trustbuddy.api.quote.application.dto.CreateQuoteCommand;
 import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.application.dto.UpdateCoverageCommand;
+import com.trustbuddy.api.quote.application.dto.UpdatePersonalInfoCommand;
 import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
@@ -77,6 +78,75 @@ class QuoteServiceTest {
 				// When / Then
 				assertThatThrownBy(() -> quoteService.createQuote(command))
 								.isInstanceOf(QuoteValidationException.class);
+				verify(quoteRepository, never()).save(any());
+		}
+
+		@Test
+		void givenDraftQuote_whenUpdatePersonalInfo_thenSavesUpdatedFields() {
+				// Given
+				Quote draft = QuoteGenerator.draft(30);
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
+				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+
+				// When
+				Quote updated =
+								quoteService.updatePersonalInfo(
+												draft.getId(),
+												updatePersonalInfoCommand(
+																"Jane Updated", "updated@example.com", 35, "90210"));
+
+				// Then
+				assertThat(updated.getId()).isEqualTo(draft.getId());
+				assertThat(updated.getName()).isEqualTo("Jane Updated");
+				assertThat(updated.getEmail()).isEqualTo("updated@example.com");
+				assertThat(updated.getAge()).isEqualTo(35);
+				assertThat(updated.getZipCode()).isEqualTo("90210");
+		}
+
+		@Test
+		void givenQuoteWithCoverage_whenUpdatePersonalInfo_thenRecalculatesPremium() {
+				// Given
+				Quote draft =
+								QuoteGenerator.coverage(30, CoverageType.STANDARD)
+												.usesTobacco(false)
+												.needsSpouseCoverage(false)
+												.build();
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
+				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+
+				// When
+				Quote updated =
+								quoteService.updatePersonalInfo(
+												draft.getId(),
+												updatePersonalInfoCommand(
+																draft.getName(), draft.getEmail(), 70, draft.getZipCode()));
+
+				// Then
+				assertThat(updated.getAge()).isEqualTo(70);
+				assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("150.00");
+		}
+
+		@Test
+		void givenSubmittedQuote_whenUpdatePersonalInfo_thenThrowsInvalidQuoteStateException() {
+				// Given
+				Quote submitted = QuoteGenerator.draft(30).withStatus(QuoteStatus.SUBMITTED);
+				when(quoteCache.get(submitted.getId())).thenReturn(Optional.of(submitted));
+
+				// When / Then
+				assertThatThrownBy(
+												() ->
+																quoteService.updatePersonalInfo(
+																				submitted.getId(),
+																				updatePersonalInfoCommand(
+																								"Jane Doe",
+																								"jane@example.com",
+																								30,
+																								QuoteFieldConstraints.ZIP_CODE_EXAMPLE)))
+								.isInstanceOf(InvalidQuoteStateException.class);
 				verify(quoteRepository, never()).save(any());
 		}
 
@@ -325,6 +395,16 @@ class QuoteServiceTest {
 		private static UpdateCoverageCommand updateCommand(CoverageType coverageType) {
 				UpdateCoverageCommand command = new UpdateCoverageCommand();
 				command.setCoverageType(coverageType);
+				return command;
+		}
+
+		private static UpdatePersonalInfoCommand updatePersonalInfoCommand(
+						String name, String email, int age, String zipCode) {
+				UpdatePersonalInfoCommand command = new UpdatePersonalInfoCommand();
+				command.setName(name);
+				command.setEmail(email);
+				command.setAge(age);
+				command.setZipCode(zipCode);
 				return command;
 		}
 }

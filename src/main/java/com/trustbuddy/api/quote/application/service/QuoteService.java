@@ -2,6 +2,7 @@ package com.trustbuddy.api.quote.application.service;
 
 import com.trustbuddy.api.quote.application.dto.CreateQuoteCommand;
 import com.trustbuddy.api.quote.application.dto.UpdateCoverageCommand;
+import com.trustbuddy.api.quote.application.dto.UpdatePersonalInfoCommand;
 import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.validation.CommandValidator;
@@ -83,6 +84,19 @@ public class QuoteService {
 												command.getZipCode()));
 		}
 
+		public Quote updatePersonalInfo(UUID id, UpdatePersonalInfoCommand command) {
+				commandValidator.validate(command);
+				Quote quote = getQuote(id);
+				quoteStateTransitionService.ensureCanUpdatePersonalInfo(quote);
+				Quote updated =
+								quote.withPersonalInfo(
+												command.getName(),
+												command.getEmail(),
+												command.getAge(),
+												command.getZipCode());
+				return saveWithRecalculatedPremium(updated);
+		}
+
 		public Quote updateCoverage(UUID id, UpdateCoverageCommand command) {
 				commandValidator.validate(command);
 				Quote quote = getQuote(id);
@@ -147,5 +161,23 @@ public class QuoteService {
 
 		private static <T> T coalesce(T value, T fallback) {
 				return value != null ? value : fallback;
+		}
+
+		private Quote saveWithRecalculatedPremium(Quote quote) {
+				if (quote.getCoverageType() == null) {
+						return quoteRepository.save(quote);
+				}
+
+				CoverageDetails coverageDetails =
+								new CoverageDetails(
+												quote.getCoverageType(),
+												quote.getHasPreexistingConditions(),
+												quote.getConditions(),
+												quote.getTakesPrescriptionMedication(),
+												quote.getUsesTobacco(),
+												quote.getNeedsSpouseCoverage(),
+												BigDecimal.ZERO);
+				BigDecimal premium = premiumCalculator.calculate(quote.applyCoverage(coverageDetails));
+				return quoteRepository.save(quote.applyCoverage(coverageDetails.withPremium(premium)));
 		}
 }
