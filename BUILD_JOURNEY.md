@@ -2,7 +2,89 @@
 
 This API was built incrementally in **14 planned phases**, each scoped to a reviewable slice of work. The goal was to grow a production-shaped Spring Boot service without big-bang integration: compile and test after every step, keep hexagonal boundaries clean, and expose a single `make help` surface for local development.
 
-This document summarizes **what was planned**, **what shipped**, and **how it maps to the codebase today**.
+This document summarizes **what happened before any feature code**, **what was planned**, **what shipped**, and **how it maps to the codebase today**.
+
+## Before the plan and the code
+
+Nothing in the repo appeared fully formed. The first useful step was **reading the Onboarding team challenge** and treating it as a contract: a multi-step insurance quote flow (create draft → set coverage and health answers → submit to an external insurer), with JWT-protected REST endpoints, PostgreSQL persistence, Redis caching, and a Kafka event on successful submit.
+
+### Discovery (no implementation yet)
+
+Before opening the IDE on domain classes or controllers, the work was entirely clarifying:
+
+| Question | Outcome |
+|----------|---------|
+| What must the API expose? | CRUD-ish quote lifecycle under `/quotes`, plus `POST /auth/token` — paths fixed by the challenge spec |
+| What does “done” look like? | End-to-end flow works locally with Docker infra, tests pass, errors are consistent, README explains how to run it |
+| What should production-shaped mean? | Hexagonal boundaries, env-based config, cache and messaging ports, scheduled expiration, observability hooks — not a single-layer demo |
+
+This phase was conversations and notes, not commits. The deliverable was **shared understanding** of constraints and acceptance criteria.
+
+### Architecture and conventions (still no feature code)
+
+With requirements stable, a few decisions were locked in **before** writing quote logic:
+
+- **Hexagonal, feature-oriented layout** — `quote/domain` stays pure Java; Spring, JPA, Redis, Kafka, and HTTP live in `quote/infrastructure` behind ports. See [ARCHITECTURE.md](ARCHITECTURE.md).
+- **Makefile as the developer contract** — one entry point (`make help`, `make run-dev`, `make test`) so infra and the API are repeatable for reviewers and CI.
+- **Verify gate from the start** — compile, tests, Checkstyle, SpotBugs (and later Error Prone, Spotless, JaCoCo) so quality does not get bolted on after the fact.
+
+These choices did not require a running quote API — only agreement on *how* the code would be organized once it existed.
+
+#### Researching Java and Spring Boot practices → [AGENTS.md](AGENTS.md)
+
+Before feature code, time went into **better practices and conventions** for Java and Spring Boot — REST API design, validation at the DTO boundary, constructor injection, profile-based config, actuator usage, consistent error responses, and test structure.
+
+The outcome of that research is mostly captured in **[AGENTS.md](AGENTS.md)**: repository hygiene, hexagonal layer rules, REST conventions, testing standards (given/when/then), and the verify checklist. That file became the single reference for human contributors and AI-assisted edits, so rules learned from Spring Boot guides and team preferences did not have to be re-explained in every PR. It shipped in the first commit alongside the bootstrap, before the quote domain existed.
+
+#### Why hexagonal instead of the classic Spring layers?
+
+Spring Boot tutorials often describe a **four-layer** stack — presentation (controllers), application/service, domain/persistence, and infrastructure (database). That works for CRUD apps, but it tends to **couple business logic to the stack**: services `@Autowired` with JPA repositories, `KafkaTemplate` in use cases, HTTP clients wired directly into submission flow.
+
+This project talks to several **external integrations** that are stable for now but **might** be replaced later — without rewriting quote rules:
+
+| External | Today | Might become (future) |
+|----------|-------|------------------------|
+| Database | PostgreSQL + JPA | another store or ORM |
+| Insurer submission | HTTP gateway adapter | a different vendor API or message-based handoff |
+| Events | Kafka publisher | SNS, RabbitMQ, or outbox + relay |
+| Cache | Redis | in-memory or disabled |
+
+Hexagonal architecture keeps those behind **ports** (`QuoteRepositoryPort`, `InsurerGatewayPort`, `QuoteEventPublisherPort`, `QuoteCachePort`). Application services depend on interfaces; if an adapter changes, premium calculation and state transitions stay untouched. Spring stays at the edges — controllers, JPA entities, Kafka templates — not in the domain center.
+
+That was the main reason to explore ports and adapters here: **integrations are not expected to churn, but the layout avoids coupling the app to them if they do.**
+
+### The 14-phase roadmap (plan before features)
+
+Only after discovery and architecture did the **phased plan** appear. The intent was deliberate:
+
+1. **No big-bang PR** — each phase compiles, tests, and merges independently.
+2. **Inside-out delivery** — domain and ports before adapters; REST and security after use cases work.
+3. **Parallel-friendly tail** — Redis (9), Kafka (10), and draft expiration (11) could branch after JWT (8) without blocking each other.
+
+The phase list (foundation → domain → premium → DTOs → exceptions → services → REST → auth → cache/events/expiration → CORS → testing polish → metrics/docs) was the **schedule**, not the first commit.
+
+### First commit: bootstrap only
+
+The initial commit (`First commit`) shipped **Phase 1 foundation** — not business logic:
+
+- Spring Boot 4.1 app shell, Maven wrapper, profiles (`dev` / `docker` / `prod` / `test`)
+- Docker Compose for PostgreSQL, Redis, and Kafka; `Dockerfile` and `.env.example`
+- Makefile with `help`, `compile`, `test`, `infra-up`, `run`
+- Smoke test (`TrustbuddyApiApplicationTests`) proving the context starts
+- [AGENTS.md](AGENTS.md) and a minimal [README.md](README.md) stating *“Quote domain and API endpoints start in Phase 2”*
+
+There was **no** `Quote` aggregate, premium calculator, or controller yet. That separation — runnable skeleton first, feature code second — is what made the phased plan credible: every later phase had a green baseline to build on.
+
+```mermaid
+flowchart LR
+    brief[Challenge brief] --> discovery[Discovery and scope]
+    discovery --> decisions[Architecture and conventions]
+    decisions --> roadmap[14-phase roadmap]
+    roadmap --> bootstrap[Phase 1 bootstrap commit]
+    bootstrap --> features[Phases 2–14 feature work]
+```
+
+---
 
 ## Why phases?
 
