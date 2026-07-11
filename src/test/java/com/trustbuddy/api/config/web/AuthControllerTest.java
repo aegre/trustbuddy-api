@@ -76,7 +76,10 @@ class AuthControllerTest {
 				""";
 
 				// When / Then
-				mockMvc.perform(post("/auth/token").contentType(MediaType.APPLICATION_JSON).content(body))
+				mockMvc.perform(
+												post(ApiPaths.AUTH + "/token")
+																.contentType(MediaType.APPLICATION_JSON)
+																.content(body))
 								.andExpect(status().isOk())
 								.andExpect(jsonPath("$.accessToken").isNotEmpty())
 								.andExpect(jsonPath("$.tokenType").value("Bearer"))
@@ -89,7 +92,7 @@ class AuthControllerTest {
 		@Test
 		void givenAuthenticatedSession_whenLogout_thenClearsAccessTokenCookie() throws Exception {
 				// When / Then
-				mockMvc.perform(post("/auth/logout"))
+				mockMvc.perform(post(ApiPaths.AUTH + "/logout"))
 								.andExpect(status().isNoContent())
 								.andExpect(header().string("Set-Cookie", containsString("access_token=")))
 								.andExpect(header().string("Set-Cookie", containsString("Max-Age=0")));
@@ -107,7 +110,10 @@ class AuthControllerTest {
 				""";
 
 				// When / Then
-				mockMvc.perform(post("/auth/token").contentType(MediaType.APPLICATION_JSON).content(body))
+				mockMvc.perform(
+												post(ApiPaths.AUTH + "/token")
+																.contentType(MediaType.APPLICATION_JSON)
+																.content(body))
 								.andExpect(status().isUnauthorized())
 								.andExpect(jsonPath("$.status").value(401))
 								.andExpect(jsonPath("$.message").value("Invalid username or password"));
@@ -125,7 +131,10 @@ class AuthControllerTest {
 				""";
 
 				// When / Then
-				mockMvc.perform(post("/auth/token").contentType(MediaType.APPLICATION_JSON).content(body))
+				mockMvc.perform(
+												post(ApiPaths.AUTH + "/token")
+																.contentType(MediaType.APPLICATION_JSON)
+																.content(body))
 								.andExpect(status().isBadRequest())
 								.andExpect(jsonPath("$.status").value(400));
 		}

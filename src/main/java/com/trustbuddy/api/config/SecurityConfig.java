@@ -1,5 +1,6 @@
 package com.trustbuddy.api.config;
 
+import com.trustbuddy.api.config.web.ApiPaths;
 import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,7 +51,9 @@ public class SecurityConfig {
 																		exception.authenticationEntryPoint(authenticationEntryPoint))
 										.authorizeHttpRequests(
 														auth -> {
-																auth.requestMatchers("/auth/token", "/auth/logout").permitAll();
+																auth.requestMatchers(
+																								ApiPaths.AUTH + "/token", ApiPaths.AUTH + "/logout")
+																				.permitAll();
 																auth.requestMatchers("/actuator/health", "/actuator/info")
 																				.permitAll();
 																if (isSwaggerEnabled()) {
@@ -60,7 +63,7 @@ public class SecurityConfig {
 																										"/v3/api-docs/**")
 																						.permitAll();
 																}
-																auth.requestMatchers("/quotes/**").authenticated();
+																auth.requestMatchers(ApiPaths.QUOTES + "/**").authenticated();
 																auth.anyRequest().denyAll();
 														})
 										.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
