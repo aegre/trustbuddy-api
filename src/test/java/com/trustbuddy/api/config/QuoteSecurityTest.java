@@ -39,7 +39,7 @@ import org.springframework.test.web.servlet.MockMvc;
 		SecurityConfig.class,
 		GlobalExceptionHandler.class,
 		QuoteExceptionHandler.class,
-		SentryErrorReporter.class,
+		ErrorReportingConfig.class,
 		JacksonAutoConfiguration.class,
 		QuoteSecurityTest.CacheTestConfig.class
 })

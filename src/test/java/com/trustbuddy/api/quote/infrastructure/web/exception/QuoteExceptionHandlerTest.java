@@ -15,12 +15,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.trustbuddy.api.config.SentryErrorReporter;
+import com.trustbuddy.api.config.ErrorReportingConfig;
 
 @WebMvcTest(controllers = ExceptionTestController.class)
 @Import({
 		QuoteExceptionHandler.class,
-		SentryErrorReporter.class,
+		ErrorReportingConfig.class,
 		QuoteExceptionHandlerTest.CacheTestConfig.class
 })
 @AutoConfigureMockMvc(addFilters = false)

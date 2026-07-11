@@ -17,12 +17,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.trustbuddy.api.config.SentryErrorReporter;
+import com.trustbuddy.api.config.ErrorReportingConfig;
 
 @WebMvcTest(controllers = GlobalExceptionTestController.class)
 @Import({
 		GlobalExceptionHandler.class,
-		SentryErrorReporter.class,
+		ErrorReportingConfig.class,
 		GlobalExceptionHandlerTest.CacheTestConfig.class
 })
 @AutoConfigureMockMvc(addFilters = false)

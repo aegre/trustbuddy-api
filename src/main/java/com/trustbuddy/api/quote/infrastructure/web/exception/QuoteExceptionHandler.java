@@ -1,6 +1,6 @@
 package com.trustbuddy.api.quote.infrastructure.web.exception;
 
-import com.trustbuddy.api.config.SentryErrorReporter;
+import com.trustbuddy.api.config.port.ErrorReporterPort;
 import com.trustbuddy.api.config.web.exception.ErrorResponseFactory;
 import com.trustbuddy.api.config.web.response.ErrorResponse;
 import com.trustbuddy.api.quote.domain.exception.ConditionalFieldRejectedException;
@@ -21,10 +21,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice(basePackages = "com.trustbuddy.api.quote.infrastructure.web")
 public class QuoteExceptionHandler {
 
-		private final SentryErrorReporter sentryErrorReporter;
+		private final ErrorReporterPort errorReporter;
 
-		public QuoteExceptionHandler(SentryErrorReporter sentryErrorReporter) {
-				this.sentryErrorReporter = sentryErrorReporter;
+		public QuoteExceptionHandler(ErrorReporterPort errorReporter) {
+				this.errorReporter = errorReporter;
 		}
 
 		@ExceptionHandler(QuoteNotFoundException.class)
@@ -51,7 +51,7 @@ public class QuoteExceptionHandler {
 		@ExceptionHandler(ExternalSubmissionException.class)
 		public ResponseEntity<ErrorResponse> handleExternalSubmission(
 						ExternalSubmissionException exception, HttpServletRequest request) {
-				sentryErrorReporter.reportOperational(exception, request);
+				errorReporter.reportOperational(exception, request.getRequestURI());
 				return ErrorResponseFactory.toResponseEntity(
 								HttpStatus.BAD_GATEWAY, exception.getMessage(), request);
 		}

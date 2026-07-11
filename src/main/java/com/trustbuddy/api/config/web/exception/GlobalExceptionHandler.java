@@ -1,6 +1,6 @@
 package com.trustbuddy.api.config.web.exception;
 
-import com.trustbuddy.api.config.SentryErrorReporter;
+import com.trustbuddy.api.config.port.ErrorReporterPort;
 import com.trustbuddy.api.config.web.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -21,10 +21,10 @@ public class GlobalExceptionHandler {
 
 		private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-		private final SentryErrorReporter sentryErrorReporter;
+		private final ErrorReporterPort errorReporter;
 
-		public GlobalExceptionHandler(SentryErrorReporter sentryErrorReporter) {
-				this.sentryErrorReporter = sentryErrorReporter;
+		public GlobalExceptionHandler(ErrorReporterPort errorReporter) {
+				this.errorReporter = errorReporter;
 		}
 
 		@ExceptionHandler(MethodArgumentNotValidException.class)
@@ -60,7 +60,7 @@ public class GlobalExceptionHandler {
 								request.getMethod(),
 								request.getRequestURI(),
 								exception);
-				sentryErrorReporter.reportUnexpected(exception, request);
+				errorReporter.reportUnexpected(exception, request.getRequestURI());
 				return ErrorResponseFactory.toResponseEntity(
 								HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request);
 		}
