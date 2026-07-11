@@ -248,7 +248,7 @@ Violations fail the build (`failsOnError=true`).
 
 Configuration: [`config/spotbugs/exclude-filter.xml`](config/spotbugs/exclude-filter.xml) (`spotbugs-maven-plugin`, effort **Max**, threshold **Low**).
 
-Analyzes compiled classes for common defect patterns (null dereferences, resource leaks, bad equality, etc.). The exclude filter suppresses `EI_EXPOSE_REP` / `EI_EXPOSE_REP2` on JPA entities under `*.entity.*`, where mutable collection/date exposure is accepted for persistence mapping.
+Analyzes compiled classes for common defect patterns (null dereferences, resource leaks, bad equality, etc.). The exclude filter suppresses `EI_EXPOSE_REP` / `EI_EXPOSE_REP2` on JPA entities under `*.entity.*` (mutable collection/date exposure for persistence mapping) and on Spring-managed packages (`config`, `*.application`, `*.infrastructure`), where constructor injection stores container-owned singletons.
 
 HTML report (when generated): `target/spotbugs.html`.
 
