@@ -2,9 +2,11 @@ package com.trustbuddy.api.config.web.exception;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,4 +34,7 @@ class GlobalExceptionTestController {
 
 		@PostMapping("/validation")
 		void validation(@Valid @RequestBody ValidationTestRequest request) {}
+
+		@GetMapping("/type-mismatch/{id}")
+		void typeMismatch(@PathVariable UUID id) {}
 }

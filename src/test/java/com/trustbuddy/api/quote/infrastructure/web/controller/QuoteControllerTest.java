@@ -1,5 +1,6 @@
 package com.trustbuddy.api.quote.infrastructure.web.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,7 +14,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.trustbuddy.api.config.ErrorReportingConfig;
 import com.trustbuddy.api.config.web.ApiPaths;
+import com.trustbuddy.api.config.web.exception.ClientRequestExceptionHandler;
 import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
+import com.trustbuddy.api.config.web.response.ApiErrorCodes;
 import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.service.QuoteService;
@@ -28,6 +31,7 @@ import com.trustbuddy.api.quote.infrastructure.web.exception.QuoteExceptionHandl
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -37,7 +41,8 @@ import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -45,6 +50,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(controllers = QuoteController.class)
 @Import({
 		GlobalExceptionHandler.class,
+		ClientRequestExceptionHandler.class,
 		QuoteExceptionHandler.class,
 		ErrorReportingConfig.class,
 		CommandValidator.class,
@@ -161,6 +167,18 @@ class QuoteControllerTest {
 		}
 
 		@Test
+		void givenInvalidUuid_whenGetQuote_thenReturns400() throws Exception {
+				// When / Then
+				mockMvc.perform(get(ApiPaths.QUOTES + "/{id}", "not-a-uuid"))
+								.andExpect(status().isBadRequest())
+								.andExpect(jsonPath("$.status").value(400))
+								.andExpect(jsonPath("$.code").value(ApiErrorCodes.INVALID_REQUEST))
+								.andExpect(jsonPath("$.message").value("id must be a valid UUID"));
+
+				verify(quoteRepository, never()).findById(any());
+		}
+
+		@Test
 		void givenUnknownQuote_whenGetQuote_thenReturns404() throws Exception {
 				// Given
 				UUID id = UUID.randomUUID();
@@ -198,12 +216,89 @@ class QuoteControllerTest {
 		void givenQuotes_whenListQuotes_thenReturnsPage() throws Exception {
 				// Given
 				var quote = QuoteGenerator.draft(30);
-				when(quoteRepository.findAll(PageRequest.of(0, 20)))
-								.thenReturn(new PageImpl<>(java.util.List.of(quote)));
+				when(quoteRepository.findAll(any())).thenReturn(new PageImpl<>(java.util.List.of(quote)));
 
 				// When / Then
 				mockMvc.perform(get(ApiPaths.QUOTES))
 								.andExpect(status().isOk())
 								.andExpect(jsonPath("$.content[0].id").value(quote.getId().toString()));
+		}
+
+		@Test
+		void givenInvalidSortField_whenListQuotes_thenReturns400() throws Exception {
+				// When / Then
+				mockMvc.perform(get(ApiPaths.QUOTES).param("sort", "unknownField,asc"))
+								.andExpect(status().isBadRequest())
+								.andExpect(jsonPath("$.status").value(400))
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_QUERY))
+								.andExpect(
+												jsonPath("$.message")
+																.value(
+																				"Invalid sort field 'unknownField'. Use sort=<field>,asc|desc. Allowed fields: age, createdAt, email, name, status, updatedAt"));
+
+				verify(quoteRepository, never()).findAll(any());
+		}
+
+		@Test
+		void givenInvalidSortFormat_whenListQuotes_thenReturns400() throws Exception {
+				// When / Then
+				mockMvc.perform(get(ApiPaths.QUOTES).param("sort", "age,createdAt"))
+								.andExpect(status().isBadRequest())
+								.andExpect(jsonPath("$.status").value(400))
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_QUERY))
+								.andExpect(
+												jsonPath("$.message")
+																.value(
+																				"Invalid sort format 'age,createdAt'. Use sort=<field>,asc|desc for each sort parameter. Allowed fields: age, createdAt, email, name, status, updatedAt"));
+
+				verify(quoteRepository, never()).findAll(any());
+		}
+
+		@Test
+		void givenDirectionFirstSortFormat_whenListQuotes_thenReturns400() throws Exception {
+				// When / Then
+				mockMvc.perform(get(ApiPaths.QUOTES).param("sort", "asc,age,createdAt"))
+								.andExpect(status().isBadRequest())
+								.andExpect(jsonPath("$.status").value(400))
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_QUERY))
+								.andExpect(
+												jsonPath("$.message")
+																.value(
+																				"Invalid sort format 'asc,age,createdAt'. Use sort=<field>,asc|desc for each sort parameter. Allowed fields: age, createdAt, email, name, status, updatedAt"));
+
+				verify(quoteRepository, never()).findAll(any());
+		}
+
+		@Test
+		void givenMultipleSortParams_whenListQuotes_thenReturn200() throws Exception {
+				// Given
+				var quote = QuoteGenerator.draft(30);
+				when(quoteRepository.findAll(any())).thenReturn(new PageImpl<>(java.util.List.of(quote)));
+
+				// When / Then
+				mockMvc.perform(
+												get(ApiPaths.QUOTES)
+																.param("sort", "status,asc")
+																.param("sort", "createdAt,desc"))
+								.andExpect(status().isOk());
+
+				ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+				verify(quoteRepository).findAll(pageableCaptor.capture());
+				assertThat(pageableCaptor.getValue().getSort().toList())
+								.containsExactly(Sort.Order.asc("status"), Sort.Order.desc("createdAt"));
+		}
+
+		@Test
+		void givenExcessivePageSize_whenListQuotes_thenClampSizeTo100() throws Exception {
+				// Given
+				var quote = QuoteGenerator.draft(30);
+				when(quoteRepository.findAll(any())).thenReturn(new PageImpl<>(java.util.List.of(quote)));
+
+				// When / Then
+				mockMvc.perform(get(ApiPaths.QUOTES).param("size", "101")).andExpect(status().isOk());
+
+				ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+				verify(quoteRepository).findAll(pageableCaptor.capture());
+				assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(100);
 		}
 }

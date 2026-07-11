@@ -128,7 +128,7 @@ Base URL when running locally: `http://localhost:8080`
 | `PATCH` | `/api/v1/quotes/{id}/coverage` | JWT | Set coverage and health answers; recalculates premium |
 | `POST` | `/api/v1/quotes/{id}/submit` | JWT | Submit to external insurer gateway |
 | `GET` | `/api/v1/quotes/{id}` | JWT | Get quote by id |
-| `GET` | `/api/v1/quotes` | JWT | List quotes (`page`, `size`, `sort`) |
+| `GET` | `/api/v1/quotes` | JWT | List quotes — `page` (0-based), `size` (values above 100 are capped to 100), `sort=<field>,asc\|desc` (repeat `sort` for multiple fields, e.g. `sort=status,asc&sort=createdAt,desc`; allowed fields: `createdAt`, `updatedAt`, `status`, `name`, `email`, `age`; default `createdAt,desc`) |
 
 **Authentication** — same JWT, two carriers:
 

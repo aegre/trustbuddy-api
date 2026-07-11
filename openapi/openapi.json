@@ -23,6 +23,7 @@
           "Quotes"
         ],
         "summary": "List quotes with pagination",
+        "description": "Query params: page (0-based), size (capped at 100), sort (<field>,asc|desc \u2014 repeat sort for multiple fields). Allowed fields: age, createdAt, email, name, status, updatedAt. One sort per query param: sort=<field>,asc|desc. Example: sort=status,asc&sort=createdAt,desc. Do not put multiple fields in one value (sort=age,createdAt is not two fields). Default: createdAt,desc.",
         "operationId": "listQuotes",
         "parameters": [
           {
@@ -482,10 +483,10 @@
           "pageable": {
             "$ref": "#/components/schemas/PageableObject"
           },
-          "first": {
+          "last": {
             "type": "boolean"
           },
-          "last": {
+          "first": {
             "type": "boolean"
           },
           "size": {
@@ -513,9 +514,6 @@
       "PageableObject": {
         "type": "object",
         "properties": {
-          "unpaged": {
-            "type": "boolean"
-          },
           "paged": {
             "type": "boolean"
           },
@@ -526,6 +524,9 @@
           "pageSize": {
             "type": "integer",
             "format": "int32"
+          },
+          "unpaged": {
+            "type": "boolean"
           },
           "offset": {
             "type": "integer",
