@@ -14,6 +14,7 @@ import com.trustbuddy.api.quote.application.port.out.InsurerGatewayPort;
 import com.trustbuddy.api.quote.application.port.out.InsurerSubmissionResult;
 import com.trustbuddy.api.quote.application.port.out.QuoteEventPublisherPort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
+import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 import com.trustbuddy.api.testsupport.PostgresRedisTestcontainers;
@@ -81,6 +82,7 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 																.header("Authorization", bearerAuthHeader(token)))
 								.andExpect(status().isConflict())
 								.andExpect(jsonPath("$.status").value(409))
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_MISSING_COVERAGE))
 								.andExpect(
 												jsonPath("$.message")
 																.value("Quote is missing required coverage data"));
@@ -100,6 +102,7 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 																.header("Authorization", bearerAuthHeader(token)))
 								.andExpect(status().isConflict())
 								.andExpect(jsonPath("$.status").value(409))
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_EXPIRED))
 								.andExpect(
 												jsonPath("$.message")
 																.value("Cannot submit while quote is in status EXPIRED"));

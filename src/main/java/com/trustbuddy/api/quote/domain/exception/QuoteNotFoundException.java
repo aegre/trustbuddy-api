@@ -7,7 +7,7 @@ public class QuoteNotFoundException extends DomainException {
 		private final UUID quoteId;
 
 		public QuoteNotFoundException(UUID quoteId) {
-				super("Quote not found with id " + quoteId);
+				super(QuoteErrorCodes.QUOTE_NOT_FOUND, "Quote not found with id " + quoteId);
 				this.quoteId = quoteId;
 		}
 

@@ -19,6 +19,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.trustbuddy.api.config.ErrorReportingConfig;
 
+import com.trustbuddy.api.config.web.response.ApiErrorCodes;
+
 @WebMvcTest(controllers = GlobalExceptionTestController.class)
 @Import({
 		GlobalExceptionHandler.class,
@@ -57,6 +59,7 @@ class GlobalExceptionHandlerTest {
 																.content(invalidBody))
 								.andExpect(status().isBadRequest())
 								.andExpect(jsonPath("$.status").value(400))
+								.andExpect(jsonPath("$.code").value(ApiErrorCodes.VALIDATION_FAILED))
 								.andExpect(jsonPath("$.message").exists());
 		}
 
@@ -66,6 +69,7 @@ class GlobalExceptionHandlerTest {
 				mockMvc.perform(get("/test/global-exceptions/authentication"))
 								.andExpect(status().isUnauthorized())
 								.andExpect(jsonPath("$.status").value(401))
+								.andExpect(jsonPath("$.code").value(ApiErrorCodes.UNAUTHORIZED))
 								.andExpect(jsonPath("$.error").value("Unauthorized"))
 								.andExpect(jsonPath("$.message").value("Invalid or missing token"));
 		}
@@ -76,6 +80,7 @@ class GlobalExceptionHandlerTest {
 				mockMvc.perform(get("/test/global-exceptions/access-denied"))
 								.andExpect(status().isForbidden())
 								.andExpect(jsonPath("$.status").value(403))
+								.andExpect(jsonPath("$.code").value(ApiErrorCodes.FORBIDDEN))
 								.andExpect(jsonPath("$.error").value("Forbidden"))
 								.andExpect(jsonPath("$.message").value("Access is denied"));
 		}
@@ -86,6 +91,7 @@ class GlobalExceptionHandlerTest {
 				mockMvc.perform(get("/test/global-exceptions/unexpected"))
 								.andExpect(status().isInternalServerError())
 								.andExpect(jsonPath("$.status").value(500))
+								.andExpect(jsonPath("$.code").value(ApiErrorCodes.INTERNAL_ERROR))
 								.andExpect(jsonPath("$.error").value("Internal Server Error"))
 								.andExpect(jsonPath("$.message").value("An unexpected error occurred"))
 								.andExpect(jsonPath("$.path").value("/test/global-exceptions/unexpected"));

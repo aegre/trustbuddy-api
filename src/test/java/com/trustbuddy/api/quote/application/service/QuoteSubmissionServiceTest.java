@@ -13,6 +13,7 @@ import com.trustbuddy.api.quote.application.port.out.QuoteEventPublisherPort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
+import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
@@ -83,7 +84,8 @@ class QuoteSubmissionServiceTest {
 
 				// When / Then
 				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(expired.getId()))
-								.isInstanceOf(InvalidQuoteStateException.class);
+								.isInstanceOf(InvalidQuoteStateException.class)
+								.hasFieldOrPropertyWithValue("errorCode", QuoteErrorCodes.QUOTE_EXPIRED);
 				verify(insurerGateway, never()).submit(any());
 		}
 
@@ -137,6 +139,8 @@ class QuoteSubmissionServiceTest {
 				// When / Then
 				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
 								.isInstanceOf(InvalidQuoteStateException.class)
+								.hasFieldOrPropertyWithValue(
+												"errorCode", QuoteErrorCodes.QUOTE_MISSING_HEALTH_FIELDS)
 								.hasMessageContaining("takesPrescriptionMedication is required");
 				verify(insurerGateway, never()).submit(any());
 		}
@@ -157,6 +161,8 @@ class QuoteSubmissionServiceTest {
 				// When / Then
 				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
 								.isInstanceOf(InvalidQuoteStateException.class)
+								.hasFieldOrPropertyWithValue(
+												"errorCode", QuoteErrorCodes.QUOTE_MISSING_HEALTH_FIELDS)
 								.hasMessageContaining("hasPreexistingConditions is required");
 				verify(insurerGateway, never()).submit(any());
 		}
@@ -171,6 +177,8 @@ class QuoteSubmissionServiceTest {
 				// When / Then
 				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
 								.isInstanceOf(InvalidQuoteStateException.class)
+								.hasFieldOrPropertyWithValue(
+												"errorCode", QuoteErrorCodes.QUOTE_MISSING_COVERAGE)
 								.hasMessageContaining("coverage data");
 		}
 

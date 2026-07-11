@@ -11,18 +11,20 @@ public final class ErrorResponseFactory {
 
 		private ErrorResponseFactory() {}
 
-		public static ErrorResponse create(HttpStatus status, String message, String path) {
+		public static ErrorResponse create(HttpStatus status, String code, String message, String path) {
 				ErrorResponse body = new ErrorResponse();
 				body.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 				body.setStatus(status.value());
 				body.setError(status.getReasonPhrase());
+				body.setCode(code);
 				body.setMessage(message);
 				body.setPath(path);
 				return body;
 		}
 
 		public static ResponseEntity<ErrorResponse> toResponseEntity(
-						HttpStatus status, String message, HttpServletRequest request) {
-				return ResponseEntity.status(status).body(create(status, message, request.getRequestURI()));
+						HttpStatus status, String code, String message, HttpServletRequest request) {
+				return ResponseEntity.status(status)
+								.body(create(status, code, message, request.getRequestURI()));
 		}
 }
