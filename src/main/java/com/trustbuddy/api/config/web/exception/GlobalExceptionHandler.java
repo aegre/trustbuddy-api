@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-		private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+		private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 		private final SentryErrorReporter sentryErrorReporter;
 
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
 		@ExceptionHandler(Exception.class)
 		public ResponseEntity<ErrorResponse> handleUnexpected(
 						Exception exception, HttpServletRequest request) {
-				log.error(
+				LOG.error(
 								"Unexpected error on {} {}",
 								request.getMethod(),
 								request.getRequestURI(),

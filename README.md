@@ -31,7 +31,7 @@ See [BUILD_JOURNEY.md](BUILD_JOURNEY.md) for how this was delivered in **14 incr
 | Auth | JWT (stateless) |
 | API docs | springdoc OpenAPI (Swagger UI) |
 | Architecture | Hexagonal (ports & adapters) |
-| Observability | Spring Actuator + Micrometer |
+| Observability | Spring Actuator + Micrometer + Sentry (errors) |
 
 ## Prerequisites
 
@@ -151,6 +151,20 @@ Actuator exposes health, info, and metrics. Custom counters (Micrometer):
 | `quote.expired.total` | Drafts expired by scheduled job |
 
 Example: `GET /actuator/metrics/quote.submissions.total` (when API is running).
+
+### Error reporting (Sentry)
+
+Unexpected server errors (500) and insurer gateway failures (502) are reported to Sentry when enabled. Expected client errors (4xx) are not sent.
+
+Configure via environment variables (see [`.env.example`](.env.example)):
+
+| Variable | Purpose |
+|----------|---------|
+| `SENTRY_DSN` | Project DSN from Sentry.io |
+| `SENTRY_ENVIRONMENT` | e.g. `development`, `production` |
+| `SENTRY_ENABLED` | `true` to send events (default `false`) |
+
+Use separate Sentry projects for local dev and production. Tests and CI run with Sentry disabled.
 
 ## Testing
 
