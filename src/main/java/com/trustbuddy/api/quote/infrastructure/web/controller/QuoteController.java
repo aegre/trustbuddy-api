@@ -7,6 +7,7 @@ import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.infrastructure.web.mapper.QuoteWebMapper;
 import com.trustbuddy.api.quote.infrastructure.web.request.CreateQuoteRequest;
 import com.trustbuddy.api.quote.infrastructure.web.request.UpdateCoverageRequest;
+import com.trustbuddy.api.quote.infrastructure.web.request.UpdatePersonalInfoRequest;
 import com.trustbuddy.api.quote.infrastructure.web.response.QuoteResponse;
 import com.trustbuddy.api.quote.infrastructure.web.support.QuotePageables;
 import io.swagger.v3.oas.annotations.Operation;
@@ -55,6 +56,14 @@ public class QuoteController {
 												.buildAndExpand(created.getId())
 												.toUri();
 				return ResponseEntity.created(location).body(response);
+		}
+
+		@PatchMapping("/{id}")
+		@Operation(summary = "Update personal information on a draft quote")
+		public QuoteResponse updatePersonalInfo(
+						@PathVariable UUID id, @RequestBody UpdatePersonalInfoRequest request) {
+				Quote updated = quoteService.updatePersonalInfo(id, QuoteWebMapper.toCommand(request));
+				return QuoteWebMapper.toResponse(updated);
 		}
 
 		@PatchMapping("/{id}/coverage")
