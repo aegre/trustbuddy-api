@@ -39,7 +39,7 @@ flowchart TB
     SubmitSvc --> Repo[QuoteRepositoryPort]
     SubmitSvc --> Gateway[InsurerGatewayPort]
     Gateway --> HttpAdapter[InsurerGatewayHttpAdapter]
-    HttpAdapter --> External[httpstat.us or configured URL]
+    HttpAdapter --> External[pickup-services HTTP status mock or configured URL]
     Repo --> DB[(PostgreSQL)]
 ```
 
@@ -171,7 +171,7 @@ REST surface (challenge contract):
 | Port | Adapter | Status |
 |------|---------|--------|
 | `QuoteRepositoryPort` | `QuotePersistenceAdapter` | implemented |
-| `InsurerGatewayPort` | `InsurerGatewayHttpAdapter` | implemented (`app.insurer.gateway.url`, default httpstat.us) |
+| `InsurerGatewayPort` | `InsurerGatewayHttpAdapter` | implemented (`app.insurer.gateway.url`, default pickup-services HTTP status mock) |
 | `QuoteEventPublisherPort` | `KafkaQuoteEventPublisher` | planned |
 | `QuoteCachePort` | `RedisQuoteCacheAdapter` | planned |
 

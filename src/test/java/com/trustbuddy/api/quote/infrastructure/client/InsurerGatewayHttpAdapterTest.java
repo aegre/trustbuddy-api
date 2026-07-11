@@ -15,7 +15,7 @@ import org.springframework.web.client.RestClient;
 
 class InsurerGatewayHttpAdapterTest {
 
-		private static final String GATEWAY_URL = "https://httpstat.us/200";
+		private static final String GATEWAY_URL = "https://tools-httpstatus.pickup-services.com/200";
 
 		private MockRestServiceServer mockServer;
 		private InsurerGatewayHttpAdapter adapter;

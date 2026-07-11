@@ -113,7 +113,7 @@ Full diagrams, port table, and layer rules: [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Immutable `Quote`** with value objects (`PersonalInfo`, `CoverageDetails`, `QuoteAudit`) for clarity and safe state transitions
 - **Repository decorator** (`CachingQuoteRepositoryAdapter`) centralizes cache eviction on every persist
 - **Idempotent submit** when quote is already `SUBMITTED`; Kafka event only on first success
-- **Real insurer gateway** HTTP client (default `https://httpstat.us/200`), not an in-memory mock
+- **Real insurer gateway** HTTP client (default `https://tools-httpstatus.pickup-services.com/200`), not an in-memory mock
 - API paths at `/quotes` per challenge spec (documented deviation from `/api/v1/...` internal convention)
 
 ## API
@@ -131,7 +131,7 @@ Base URL when running locally: `http://localhost:8080`
 
 **Submit** requires personal info, coverage, and health answers. For age > 65, pre-existing condition fields are required. On gateway failure the quote becomes `SUBMISSION_FAILED` and can be resubmitted. **Expired** or **incomplete** drafts return **409** on submit.
 
-**Insurer gateway** — configure with `INSURER_GATEWAY_URL` (dev default `https://httpstat.us/200`).
+**Insurer gateway** — configure with `INSURER_GATEWAY_URL` (dev default `https://tools-httpstatus.pickup-services.com/200`).
 
 Interactive docs (dev/docker profiles):
 
