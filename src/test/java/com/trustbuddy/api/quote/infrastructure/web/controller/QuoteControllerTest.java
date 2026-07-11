@@ -1,5 +1,6 @@
 package com.trustbuddy.api.quote.infrastructure.web.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -30,6 +31,7 @@ import com.trustbuddy.api.quote.infrastructure.web.exception.QuoteExceptionHandl
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -39,6 +41,8 @@ import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -236,13 +240,35 @@ class QuoteControllerTest {
 		}
 
 		@Test
-		void givenExcessivePageSize_whenListQuotes_thenReturns400() throws Exception {
-				// When / Then
-				mockMvc.perform(get(ApiPaths.QUOTES).param("size", "101"))
-								.andExpect(status().isBadRequest())
-								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_QUERY))
-								.andExpect(jsonPath("$.message").value("size must not exceed 100"));
+		void givenMultipleSortParams_whenListQuotes_thenReturn200() throws Exception {
+				// Given
+				var quote = QuoteGenerator.draft(30);
+				when(quoteRepository.findAll(any())).thenReturn(new PageImpl<>(java.util.List.of(quote)));
 
-				verify(quoteRepository, never()).findAll(any());
+				// When / Then
+				mockMvc.perform(
+												get(ApiPaths.QUOTES)
+																.param("sort", "status,asc")
+																.param("sort", "createdAt,desc"))
+								.andExpect(status().isOk());
+
+				ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+				verify(quoteRepository).findAll(pageableCaptor.capture());
+				assertThat(pageableCaptor.getValue().getSort().toList())
+								.containsExactly(Sort.Order.asc("status"), Sort.Order.desc("createdAt"));
+		}
+
+		@Test
+		void givenExcessivePageSize_whenListQuotes_thenClampSizeTo100() throws Exception {
+				// Given
+				var quote = QuoteGenerator.draft(30);
+				when(quoteRepository.findAll(any())).thenReturn(new PageImpl<>(java.util.List.of(quote)));
+
+				// When / Then
+				mockMvc.perform(get(ApiPaths.QUOTES).param("size", "101")).andExpect(status().isOk());
+
+				ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+				verify(quoteRepository).findAll(pageableCaptor.capture());
+				assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(100);
 		}
 }

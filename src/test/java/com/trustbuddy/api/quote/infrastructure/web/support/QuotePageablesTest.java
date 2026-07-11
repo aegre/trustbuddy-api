@@ -7,6 +7,7 @@ import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 class QuotePageablesTest {
@@ -37,15 +38,16 @@ class QuotePageablesTest {
 		}
 
 		@Test
-		void givenExcessivePageSize_whenRequireValid_thenThrowQuoteValidationException() {
+		void givenExcessivePageSize_whenRequireValid_thenClampToMaxSize() {
 				// Given
-				var pageable = PageRequest.of(0, 101);
+				var pageable = PageRequest.of(2, 101, Sort.by(Sort.Direction.ASC, "name"));
 
-				// When / Then
-				assertThatThrownBy(() -> QuotePageables.requireValid(pageable))
-								.isInstanceOf(QuoteValidationException.class)
-								.hasMessage("size must not exceed 100")
-								.extracting("errorCode")
-								.isEqualTo(QuoteErrorCodes.QUOTE_INVALID_QUERY);
+				// When
+				Pageable actual = QuotePageables.requireValid(pageable);
+
+				// Then
+				assertThat(actual.getPageNumber()).isEqualTo(2);
+				assertThat(actual.getPageSize()).isEqualTo(100);
+				assertThat(actual.getSort()).isEqualTo(pageable.getSort());
 		}
 }

@@ -79,11 +79,14 @@ public class QuoteController {
 		@Operation(
 						summary = "List quotes with pagination",
 						description =
-										"Query params: page (0-based), size (max "
+										"Query params: page (0-based), size (capped at "
 														+ QuotePageables.MAX_SIZE
-														+ "), sort (field,asc|desc). Allowed sort fields: "
+														+ "), sort (<field>,asc|desc — repeat sort for multiple fields). "
+														+ "Allowed fields: "
 														+ QuotePageables.ALLOWED_SORT_FIELDS_DOC
-														+ ". Default sort: createdAt,desc.")
+														+ ". "
+														+ QuotePageables.SORT_USAGE_DOC
+														+ " Default: createdAt,desc.")
 		public Page<QuoteResponse> listQuotes(
 						@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
 										Pageable pageable) {
