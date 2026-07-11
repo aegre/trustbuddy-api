@@ -252,6 +252,36 @@ There is no separate `make` target; fix Error Prone warnings during compilation 
 
 JaCoCo instruments tests via the `prepare-agent` goal and writes an HTML report to `target/site/jacoco/index.html`. Use `make coverage` to run **tests only** (no Checkstyle or SpotBugs) and print the report path. A report is also generated during `make verify`. Coverage is reported for visibility; there is no enforced minimum threshold in the build.
 
+## Extras
+
+Beyond the challenge’s core quote flow, a few tools were added deliberately to improve **operability**, **contract sharing**, and **developer experience**. Each is optional in local dev but pays off as the API grows and more clients integrate.
+
+### Sentry (error monitoring)
+
+Actuator metrics tell you *that* something failed; they do not give stack traces, request context, or alerting. [Sentry](https://sentry.io/) fills that gap for **unexpected 500s** and **operational failures** such as insurer gateway **502** responses — without noise from expected client errors (4xx).
+
+Why Sentry here:
+
+- **Actionable alerts** — production issues surface with stack traces and environment tags instead of digging through logs alone.
+- **Scoped reporting** — only unexpected and operational errors are sent; validation and auth failures stay client-side.
+- **Safe by default** — disabled in tests/CI; sensitive headers and fields are scrubbed before events leave the app.
+- **Decoupled design** — handlers depend on an `ErrorReporterPort`, not the Sentry SDK directly, so the core stays testable.
+
+Setup and env vars: [Error reporting (Sentry)](#error-reporting-sentry).
+
+### OpenAPI / Swagger (API contract)
+
+The REST surface is the integration boundary for the React frontend, Postman collections, and future consumers. [springdoc OpenAPI](https://springdoc.org/) generates a live spec from code and serves Swagger UI in dev/docker profiles.
+
+Why OpenAPI here:
+
+- **Single source of truth** — controllers stay annotated; the spec is derived from the running app, not a hand-maintained duplicate.
+- **Easier client tooling** — import `/v3/api-docs` or the committed [`openapi/openapi.json`](openapi/openapi.json) into Postman; frontend teams can generate typed clients from the same file.
+- **Drift prevention** — `OpenApiSpecDriftTest` in CI fails if the exported contract falls behind code (`make openapi-drift`).
+- **Interactive exploration** — Swagger UI (`make swagger-url`) for manual testing alongside JWT auth.
+
+Regenerate the committed export with `make openapi-export` while the API is running.
+
 ## Frontend
 
 This API pairs with a separate React frontend repository. Add the sibling repo link here when available.
