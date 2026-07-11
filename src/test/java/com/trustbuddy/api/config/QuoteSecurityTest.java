@@ -9,13 +9,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.trustbuddy.api.config.AccessTokenCookieService;
-import com.trustbuddy.api.config.ApplicationConfig;
 import com.trustbuddy.api.config.web.AuthController;
+import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.quote.application.service.QuoteService;
 import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
 import com.trustbuddy.api.quote.infrastructure.web.controller.QuoteController;
-import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.quote.infrastructure.web.exception.QuoteExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -134,7 +132,9 @@ class QuoteSecurityTest {
 				when(quoteService.listQuotes(any())).thenReturn(new PageImpl<>(java.util.List.of()));
 
 				// When / Then
-				mockMvc.perform(get("/quotes").cookie(new jakarta.servlet.http.Cookie("access_token", token)))
+				mockMvc.perform(
+												get("/quotes")
+																.cookie(new jakarta.servlet.http.Cookie("access_token", token)))
 								.andExpect(status().isOk());
 		}
 
