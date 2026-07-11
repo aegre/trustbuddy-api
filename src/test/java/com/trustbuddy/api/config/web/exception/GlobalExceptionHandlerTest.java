@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(controllers = GlobalExceptionTestController.class)
 @Import({
 		GlobalExceptionHandler.class,
+		ClientRequestExceptionHandler.class,
 		ErrorReportingConfig.class,
 		GlobalExceptionHandlerTest.CacheTestConfig.class
 })
@@ -81,6 +82,30 @@ class GlobalExceptionHandlerTest {
 								.andExpect(jsonPath("$.code").value(ApiErrorCodes.FORBIDDEN))
 								.andExpect(jsonPath("$.error").value("Forbidden"))
 								.andExpect(jsonPath("$.message").value("Access is denied"));
+		}
+
+		@Test
+		void givenMalformedJson_whenPost_thenReturns400InvalidRequestErrorResponse() throws Exception {
+				// When / Then
+				mockMvc.perform(
+												post("/test/global-exceptions/validation")
+																.contentType(MediaType.APPLICATION_JSON)
+																.content("{not-json"))
+								.andExpect(status().isBadRequest())
+								.andExpect(jsonPath("$.status").value(400))
+								.andExpect(jsonPath("$.code").value(ApiErrorCodes.INVALID_REQUEST))
+								.andExpect(jsonPath("$.message").value("Malformed request body"));
+		}
+
+		@Test
+		void givenInvalidUuidPathVariable_whenGet_thenReturns400InvalidRequestErrorResponse()
+						throws Exception {
+				// When / Then
+				mockMvc.perform(get("/test/global-exceptions/type-mismatch/not-a-uuid"))
+								.andExpect(status().isBadRequest())
+								.andExpect(jsonPath("$.status").value(400))
+								.andExpect(jsonPath("$.code").value(ApiErrorCodes.INVALID_REQUEST))
+								.andExpect(jsonPath("$.message").value("id must be a valid UUID"));
 		}
 
 		@Test

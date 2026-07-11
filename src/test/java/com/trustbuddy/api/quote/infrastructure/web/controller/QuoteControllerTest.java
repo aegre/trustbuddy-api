@@ -13,7 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.trustbuddy.api.config.ErrorReportingConfig;
 import com.trustbuddy.api.config.web.ApiPaths;
+import com.trustbuddy.api.config.web.exception.ClientRequestExceptionHandler;
 import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
+import com.trustbuddy.api.config.web.response.ApiErrorCodes;
 import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.service.QuoteService;
@@ -45,6 +47,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(controllers = QuoteController.class)
 @Import({
 		GlobalExceptionHandler.class,
+		ClientRequestExceptionHandler.class,
 		QuoteExceptionHandler.class,
 		ErrorReportingConfig.class,
 		CommandValidator.class,
@@ -158,6 +161,18 @@ class QuoteControllerTest {
 								.andExpect(status().isConflict())
 								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_MISSING_COVERAGE))
 								.andExpect(jsonPath("$.message").value("Quote is missing required coverage data"));
+		}
+
+		@Test
+		void givenInvalidUuid_whenGetQuote_thenReturns400() throws Exception {
+				// When / Then
+				mockMvc.perform(get(ApiPaths.QUOTES + "/{id}", "not-a-uuid"))
+								.andExpect(status().isBadRequest())
+								.andExpect(jsonPath("$.status").value(400))
+								.andExpect(jsonPath("$.code").value(ApiErrorCodes.INVALID_REQUEST))
+								.andExpect(jsonPath("$.message").value("id must be a valid UUID"));
+
+				verify(quoteRepository, never()).findById(any());
 		}
 
 		@Test
