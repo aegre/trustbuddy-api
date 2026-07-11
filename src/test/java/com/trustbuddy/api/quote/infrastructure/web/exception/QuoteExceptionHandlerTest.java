@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -43,6 +44,7 @@ class QuoteExceptionHandlerTest {
 				mockMvc.perform(get("/test/exceptions/quote-not-found"))
 								.andExpect(status().isNotFound())
 								.andExpect(jsonPath("$.status").value(404))
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_NOT_FOUND))
 								.andExpect(jsonPath("$.error").value("Not Found"))
 								.andExpect(
 												jsonPath("$.message")
@@ -58,6 +60,7 @@ class QuoteExceptionHandlerTest {
 				mockMvc.perform(get("/test/exceptions/invalid-state"))
 								.andExpect(status().isConflict())
 								.andExpect(jsonPath("$.status").value(409))
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_STATUS))
 								.andExpect(jsonPath("$.error").value("Conflict"))
 								.andExpect(
 												jsonPath("$.message")
@@ -72,6 +75,9 @@ class QuoteExceptionHandlerTest {
 								.andExpect(status().isBadRequest())
 								.andExpect(jsonPath("$.status").value(400))
 								.andExpect(
+												jsonPath("$.code")
+																.value(QuoteErrorCodes.QUOTE_CONDITIONAL_FIELD_REJECTED))
+								.andExpect(
 												jsonPath("$.message")
 																.value(
 																				"Supplemental health fields are not allowed when age is 65 or younger"));
@@ -82,6 +88,7 @@ class QuoteExceptionHandlerTest {
 				// When / Then
 				mockMvc.perform(get("/test/exceptions/quote-validation"))
 								.andExpect(status().isBadRequest())
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_VALIDATION_FAILED))
 								.andExpect(
 												jsonPath("$.message")
 																.value("hasPreexistingConditions is required when age is over 65"));
@@ -93,6 +100,9 @@ class QuoteExceptionHandlerTest {
 				mockMvc.perform(get("/test/exceptions/external-submission"))
 								.andExpect(status().isBadGateway())
 								.andExpect(jsonPath("$.status").value(502))
+								.andExpect(
+												jsonPath("$.code")
+																.value(QuoteErrorCodes.QUOTE_EXTERNAL_SUBMISSION_FAILED))
 								.andExpect(jsonPath("$.error").value("Bad Gateway"))
 								.andExpect(jsonPath("$.message").value("Insurer gateway returned an error"));
 		}

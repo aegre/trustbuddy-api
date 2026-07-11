@@ -1,5 +1,6 @@
 package com.trustbuddy.api.config;
 
+import com.trustbuddy.api.config.web.response.ApiErrorCodes;
 import com.trustbuddy.api.config.web.exception.ErrorResponseFactory;
 import com.trustbuddy.api.config.web.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 				ErrorResponse body =
 								ErrorResponseFactory.create(
 												HttpStatus.UNAUTHORIZED,
+												ApiErrorCodes.UNAUTHORIZED,
 												resolveMessage(authException),
 												request.getRequestURI());
 

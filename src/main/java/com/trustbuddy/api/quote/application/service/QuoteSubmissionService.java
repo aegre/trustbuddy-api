@@ -9,6 +9,7 @@ import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
+import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
@@ -118,7 +119,8 @@ public class QuoteSubmissionService {
 						coverageHealthPolicy.validateHealthFieldsForAge(
 										quote.getAge(), quote.getHasPreexistingConditions(), conditions);
 				} catch (QuoteValidationException exception) {
-						throw new InvalidQuoteStateException(exception.getMessage());
+						throw new InvalidQuoteStateException(
+										QuoteErrorCodes.QUOTE_MISSING_HEALTH_FIELDS, exception.getMessage());
 				}
 		}
 }

@@ -31,21 +31,30 @@ public class QuoteExceptionHandler {
 		public ResponseEntity<ErrorResponse> handleQuoteNotFound(
 						QuoteNotFoundException exception, HttpServletRequest request) {
 				return ErrorResponseFactory.toResponseEntity(
-								HttpStatus.NOT_FOUND, exception.getMessage(), request);
+								HttpStatus.NOT_FOUND,
+								exception.getErrorCode(),
+								exception.getMessage(),
+								request);
 		}
 
 		@ExceptionHandler(InvalidQuoteStateException.class)
 		public ResponseEntity<ErrorResponse> handleInvalidQuoteState(
 						InvalidQuoteStateException exception, HttpServletRequest request) {
 				return ErrorResponseFactory.toResponseEntity(
-								HttpStatus.CONFLICT, exception.getMessage(), request);
+								HttpStatus.CONFLICT,
+								exception.getErrorCode(),
+								exception.getMessage(),
+								request);
 		}
 
 		@ExceptionHandler({QuoteValidationException.class, ConditionalFieldRejectedException.class})
 		public ResponseEntity<ErrorResponse> handleQuoteValidation(
 						DomainException exception, HttpServletRequest request) {
 				return ErrorResponseFactory.toResponseEntity(
-								HttpStatus.BAD_REQUEST, exception.getMessage(), request);
+								HttpStatus.BAD_REQUEST,
+								exception.getErrorCode(),
+								exception.getMessage(),
+								request);
 		}
 
 		@ExceptionHandler(ExternalSubmissionException.class)
@@ -53,6 +62,9 @@ public class QuoteExceptionHandler {
 						ExternalSubmissionException exception, HttpServletRequest request) {
 				errorReporter.reportOperational(exception, request.getRequestURI());
 				return ErrorResponseFactory.toResponseEntity(
-								HttpStatus.BAD_GATEWAY, exception.getMessage(), request);
+								HttpStatus.BAD_GATEWAY,
+								exception.getErrorCode(),
+								exception.getMessage(),
+								request);
 		}
 }

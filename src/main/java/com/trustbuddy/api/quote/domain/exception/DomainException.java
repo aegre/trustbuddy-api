@@ -2,11 +2,19 @@ package com.trustbuddy.api.quote.domain.exception;
 
 public abstract class DomainException extends RuntimeException {
 
-		protected DomainException(String message) {
+		private final String errorCode;
+
+		protected DomainException(String errorCode, String message) {
 				super(message);
+				this.errorCode = errorCode;
 		}
 
-		protected DomainException(String message, Throwable cause) {
+		protected DomainException(String errorCode, String message, Throwable cause) {
 				super(message, cause);
+				this.errorCode = errorCode;
+		}
+
+		public String getErrorCode() {
+				return errorCode;
 		}
 }
