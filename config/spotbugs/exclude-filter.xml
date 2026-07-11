@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
+	<!-- JPA entities: mutable collection/date exposure is accepted for persistence mapping -->
 	<Match>
 		<Class name="~.*\.entity\..*"/>
+		<Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+	</Match>
+	<!-- Spring-managed layers: constructor injection stores container-owned singletons (false positive) -->
+	<Match>
+		<Class name="~com\.trustbuddy\.api\.config\..*"/>
+		<Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+	</Match>
+	<Match>
+		<Class name="~com\.trustbuddy\.api\..*\.application\..*"/>
+		<Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+	</Match>
+	<Match>
+		<Class name="~com\.trustbuddy\.api\..*\.infrastructure\..*"/>
 		<Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
 	</Match>
 </FindBugsFilter>

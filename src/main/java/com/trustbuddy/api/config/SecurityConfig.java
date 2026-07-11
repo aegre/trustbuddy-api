@@ -23,8 +23,9 @@ public class SecurityConfig {
 		}
 
 		@Bean
-		JwtAuthFilter jwtAuthFilter(JwtService jwtService) {
-				return new JwtAuthFilter(jwtService);
+		JwtAuthFilter jwtAuthFilter(
+						JwtService jwtService, AccessTokenCookieService accessTokenCookieService) {
+				return new JwtAuthFilter(jwtService, accessTokenCookieService);
 		}
 
 		@Bean
@@ -49,7 +50,7 @@ public class SecurityConfig {
 																		exception.authenticationEntryPoint(authenticationEntryPoint))
 										.authorizeHttpRequests(
 														auth -> {
-																auth.requestMatchers("/auth/token").permitAll();
+																auth.requestMatchers("/auth/token", "/auth/logout").permitAll();
 																auth.requestMatchers("/actuator/health", "/actuator/info")
 																				.permitAll();
 																if (isSwaggerEnabled()) {

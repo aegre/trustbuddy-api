@@ -10,10 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.trustbuddy.api.config.web.AuthController;
+import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.quote.application.service.QuoteService;
 import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
 import com.trustbuddy.api.quote.infrastructure.web.controller.QuoteController;
-import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.quote.infrastructure.web.exception.QuoteExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(controllers = {QuoteController.class, AuthController.class})
 @Import({
 		ApplicationConfig.class,
+		AccessTokenCookieService.class,
 		CorsConfig.class,
 		JwtService.class,
 		SecurityConfig.class,
@@ -48,6 +49,9 @@ import org.springframework.test.web.servlet.MockMvc;
 				properties = {
 						"app.jwt.secret=test-jwt-secret-at-least-32-characters-long",
 						"app.jwt.expiration-ms=900000",
+						"app.jwt.cookie.name=access_token",
+						"app.jwt.cookie.secure=false",
+						"app.jwt.cookie.same-site=Lax",
 						"app.auth.username=test-user",
 						"app.auth.password=test-password",
 						"app.cors.allowed-origins=http://localhost:5173"
@@ -118,6 +122,19 @@ class QuoteSecurityTest {
 
 				// When / Then
 				mockMvc.perform(get("/quotes").header("Authorization", "Bearer " + token))
+								.andExpect(status().isOk());
+		}
+
+		@Test
+		void givenValidAccessTokenCookie_whenListQuotes_thenReturn200() throws Exception {
+				// Given
+				String token = jwtService.generateToken("test-user");
+				when(quoteService.listQuotes(any())).thenReturn(new PageImpl<>(java.util.List.of()));
+
+				// When / Then
+				mockMvc.perform(
+												get("/quotes")
+																.cookie(new jakarta.servlet.http.Cookie("access_token", token)))
 								.andExpect(status().isOk());
 		}
 

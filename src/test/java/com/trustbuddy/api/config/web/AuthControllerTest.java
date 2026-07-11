@@ -1,10 +1,13 @@
 package com.trustbuddy.api.config.web;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.trustbuddy.api.config.ApplicationConfig;
+import com.trustbuddy.api.config.AccessTokenCookieService;
 import com.trustbuddy.api.config.CorsConfig;
 import com.trustbuddy.api.config.JwtService;
 import com.trustbuddy.api.config.ErrorReportingConfig;
@@ -27,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(controllers = AuthController.class)
 @Import({
 		ApplicationConfig.class,
+		AccessTokenCookieService.class,
 		CorsConfig.class,
 		JwtService.class,
 		SecurityConfig.class,
@@ -40,6 +44,9 @@ import org.springframework.test.web.servlet.MockMvc;
 				properties = {
 						"app.jwt.secret=test-jwt-secret-at-least-32-characters-long",
 						"app.jwt.expiration-ms=900000",
+						"app.jwt.cookie.name=access_token",
+						"app.jwt.cookie.secure=false",
+						"app.jwt.cookie.same-site=Lax",
 						"app.auth.username=test-user",
 						"app.auth.password=test-password",
 						"app.cors.allowed-origins=http://localhost:5173"
@@ -73,7 +80,19 @@ class AuthControllerTest {
 								.andExpect(status().isOk())
 								.andExpect(jsonPath("$.accessToken").isNotEmpty())
 								.andExpect(jsonPath("$.tokenType").value("Bearer"))
-								.andExpect(jsonPath("$.expiresInMs").value(900000));
+								.andExpect(jsonPath("$.expiresInMs").value(900000))
+								.andExpect(header().exists("Set-Cookie"))
+								.andExpect(header().string("Set-Cookie", containsString("access_token=")))
+								.andExpect(header().string("Set-Cookie", containsString("HttpOnly")));
+		}
+
+		@Test
+		void givenAuthenticatedSession_whenLogout_thenClearsAccessTokenCookie() throws Exception {
+				// When / Then
+				mockMvc.perform(post("/auth/logout"))
+								.andExpect(status().isNoContent())
+								.andExpect(header().string("Set-Cookie", containsString("access_token=")))
+								.andExpect(header().string("Set-Cookie", containsString("Max-Age=0")));
 		}
 
 		@Test
