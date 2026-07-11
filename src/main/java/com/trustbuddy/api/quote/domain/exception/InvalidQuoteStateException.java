@@ -7,4 +7,8 @@ public class InvalidQuoteStateException extends DomainException {
 		public InvalidQuoteStateException(QuoteStatus currentStatus, String operation) {
 				super("Cannot " + operation + " while quote is in status " + currentStatus);
 		}
+
+		public InvalidQuoteStateException(String message) {
+				super(message);
+		}
 }

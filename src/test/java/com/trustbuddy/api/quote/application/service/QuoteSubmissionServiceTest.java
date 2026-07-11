@@ -13,7 +13,6 @@ import com.trustbuddy.api.quote.application.port.out.QuoteEventPublisherPort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
-import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
@@ -128,7 +127,7 @@ class QuoteSubmissionServiceTest {
 
 		@Test
 		void
-						givenQuoteWithoutTakesPrescriptionMedication_whenSubmitQuote_thenThrowsQuoteValidationException() {
+						givenQuoteWithoutTakesPrescriptionMedication_whenSubmitQuote_thenThrowsInvalidQuoteStateException() {
 				// Given
 				Quote draft =
 								QuoteGenerator.readyForSubmissionWithoutTakesPrescriptionMedication(30)
@@ -137,14 +136,14 @@ class QuoteSubmissionServiceTest {
 
 				// When / Then
 				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
-								.isInstanceOf(QuoteValidationException.class)
+								.isInstanceOf(InvalidQuoteStateException.class)
 								.hasMessageContaining("takesPrescriptionMedication is required");
 				verify(insurerGateway, never()).submit(any());
 		}
 
 		@Test
 		void
-						givenSeniorQuoteWithoutRequiredHealthAnswer_whenSubmitQuote_thenThrowsQuoteValidationException() {
+						givenSeniorQuoteWithoutRequiredHealthAnswer_whenSubmitQuote_thenThrowsInvalidQuoteStateException() {
 				// Given
 				Quote draft =
 								QuoteGenerator.coverage(70, CoverageType.STANDARD)
@@ -157,13 +156,13 @@ class QuoteSubmissionServiceTest {
 
 				// When / Then
 				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
-								.isInstanceOf(QuoteValidationException.class)
+								.isInstanceOf(InvalidQuoteStateException.class)
 								.hasMessageContaining("hasPreexistingConditions is required");
 				verify(insurerGateway, never()).submit(any());
 		}
 
 		@Test
-		void givenQuoteWithoutCoverage_whenSubmitQuote_thenThrowsQuoteValidationException() {
+		void givenQuoteWithoutCoverage_whenSubmitQuote_thenThrowsInvalidQuoteStateException() {
 				// Given
 				Quote draft =
 								QuoteGenerator.readyForSubmissionWithoutCoverage(30).withStatus(QuoteStatus.DRAFT);
@@ -171,7 +170,7 @@ class QuoteSubmissionServiceTest {
 
 				// When / Then
 				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
-								.isInstanceOf(QuoteValidationException.class)
+								.isInstanceOf(InvalidQuoteStateException.class)
 								.hasMessageContaining("coverage data");
 		}
 

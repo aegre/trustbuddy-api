@@ -129,7 +129,7 @@ Base URL when running locally: `http://localhost:8080`
 | `GET` | `/quotes/{id}` | Bearer | Get quote by id |
 | `GET` | `/quotes` | Bearer | List quotes (`page`, `size`, `sort`) |
 
-**Submit** requires personal info, coverage, and health answers. For age > 65, pre-existing condition fields are required. On gateway failure the quote becomes `SUBMISSION_FAILED` and can be resubmitted. **Expired** drafts return **409** on submit.
+**Submit** requires personal info, coverage, and health answers. For age > 65, pre-existing condition fields are required. On gateway failure the quote becomes `SUBMISSION_FAILED` and can be resubmitted. **Expired** or **incomplete** drafts return **409** on submit.
 
 **Insurer gateway** — configure with `INSURER_GATEWAY_URL` (dev default `https://httpstat.us/200`).
 

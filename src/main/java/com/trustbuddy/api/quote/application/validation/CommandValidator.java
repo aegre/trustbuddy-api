@@ -1,5 +1,6 @@
 package com.trustbuddy.api.quote.application.validation;
 
+import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -21,6 +22,18 @@ public class CommandValidator {
 				if (violations.isEmpty()) {
 						return;
 				}
+				throw new QuoteValidationException(formatFirstViolation(violations));
+		}
+
+		public <T> void validateSubmissionReadiness(T command) {
+				Set<ConstraintViolation<T>> violations = validator.validate(command);
+				if (violations.isEmpty()) {
+						return;
+				}
+				throw new InvalidQuoteStateException(formatFirstViolation(violations));
+		}
+
+		private <T> String formatFirstViolation(Set<ConstraintViolation<T>> violations) {
 				ConstraintViolation<T> first =
 								violations.stream()
 												.min(
@@ -28,10 +41,8 @@ public class CommandValidator {
 																				violation -> violation.getPropertyPath().toString()))
 												.orElseThrow();
 				String propertyPath = first.getPropertyPath().toString();
-				String message =
-								propertyPath.isEmpty()
-												? first.getMessage()
-												: propertyPath + ": " + first.getMessage();
-				throw new QuoteValidationException(message);
+				return propertyPath.isEmpty()
+								? first.getMessage()
+								: propertyPath + ": " + first.getMessage();
 		}
 }
