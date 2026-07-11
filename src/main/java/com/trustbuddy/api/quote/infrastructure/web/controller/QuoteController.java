@@ -46,7 +46,9 @@ public class QuoteController {
 		}
 
 		@PostMapping
-		@Operation(summary = "Create a draft quote from personal information")
+		@Operation(
+						summary = "Create a draft quote from personal information",
+						description = "Initializes the quote with the STANDARD coverage plan selected.")
 		public ResponseEntity<QuoteResponse> createQuote(@RequestBody CreateQuoteRequest request) {
 				Quote created = quoteService.createQuote(QuoteWebMapper.toCommand(request));
 				QuoteResponse response = QuoteWebMapper.toResponse(created);

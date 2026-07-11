@@ -53,6 +53,7 @@
                     "Quotes"
                 ],
                 "summary": "Create a draft quote from personal information",
+                "description": "Initializes the quote with the STANDARD coverage plan selected.",
                 "operationId": "createQuote",
                 "requestBody": {
                     "content": {

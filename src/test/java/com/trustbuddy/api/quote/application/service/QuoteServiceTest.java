@@ -67,6 +67,8 @@ class QuoteServiceTest {
 				// Then
 				assertThat(created.getStatus()).isEqualTo(QuoteStatus.DRAFT);
 				assertThat(created.getName()).isEqualTo("Jane Doe");
+				assertThat(created.getCoverageType()).isEqualTo(CoverageType.STANDARD);
+				assertThat(created.getEstimatedMonthlyPremium()).isEqualByComparingTo("100.00");
 				verify(quoteRepository).save(any(Quote.class));
 		}
 
@@ -210,7 +212,7 @@ class QuoteServiceTest {
 		void
 						givenQuoteWithoutCoverage_whenUpdateCoverageWithoutCoverageType_thenThrowsQuoteValidationException() {
 				// Given
-				Quote draft = QuoteGenerator.draft(30);
+				Quote draft = QuoteGenerator.draftWithoutCoverage(30);
 				when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
 				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 				UpdateCoverageCommand command = new UpdateCoverageCommand();

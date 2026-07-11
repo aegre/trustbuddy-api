@@ -31,6 +31,10 @@ public final class QuoteGenerator {
 				return Quote.createDraft(DEFAULT_NAME, DEFAULT_EMAIL, age, DEFAULT_ZIP_CODE);
 		}
 
+		public static Quote draftWithoutCoverage(int age) {
+				return readyForSubmissionWithoutCoverage(age);
+		}
+
 		public static Quote readyForSubmission(int age) {
 				return coverage(age, CoverageType.STANDARD)
 								.takesPrescriptionMedication(false)

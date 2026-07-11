@@ -109,7 +109,9 @@ class QuoteControllerTest {
 								.andExpect(status().isCreated())
 								.andExpect(header().exists("Location"))
 								.andExpect(jsonPath("$.id").exists())
-								.andExpect(jsonPath("$.status").value("DRAFT"));
+								.andExpect(jsonPath("$.status").value("DRAFT"))
+								.andExpect(jsonPath("$.coverageType").value("STANDARD"))
+								.andExpect(jsonPath("$.estimatedMonthlyPremium").value(100.00));
 		}
 
 		@Test
