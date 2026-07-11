@@ -83,9 +83,7 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 								.andExpect(status().isConflict())
 								.andExpect(jsonPath("$.status").value(409))
 								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_MISSING_COVERAGE))
-								.andExpect(
-												jsonPath("$.message")
-																.value("Quote is missing required coverage data"));
+								.andExpect(jsonPath("$.message").value("Quote is missing required coverage data"));
 		}
 
 		@Test

@@ -177,8 +177,7 @@ class QuoteSubmissionServiceTest {
 				// When / Then
 				assertThatThrownBy(() -> quoteSubmissionService.submitQuote(draft.getId()))
 								.isInstanceOf(InvalidQuoteStateException.class)
-								.hasFieldOrPropertyWithValue(
-												"errorCode", QuoteErrorCodes.QUOTE_MISSING_COVERAGE)
+								.hasFieldOrPropertyWithValue("errorCode", QuoteErrorCodes.QUOTE_MISSING_COVERAGE)
 								.hasMessageContaining("coverage data");
 		}
 

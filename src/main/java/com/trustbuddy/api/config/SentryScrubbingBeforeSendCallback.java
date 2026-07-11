@@ -63,7 +63,8 @@ public class SentryScrubbingBeforeSendCallback implements SentryOptions.BeforeSe
 		private void scrubRequestData(Request request) {
 				Object data = request.getData();
 				if (data instanceof String body && !body.isBlank()) {
-						request.setData(SENSITIVE_JSON_FIELD.matcher(body).replaceAll("$1\"" + REDACTED + "\""));
+						request.setData(
+										SENSITIVE_JSON_FIELD.matcher(body).replaceAll("$1\"" + REDACTED + "\""));
 				}
 		}
 

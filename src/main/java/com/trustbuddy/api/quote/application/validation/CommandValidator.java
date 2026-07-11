@@ -38,7 +38,8 @@ public class CommandValidator {
 
 		private <T> String resolveSubmissionReadinessCode(ConstraintViolation<T> violation) {
 				return switch (violation.getPropertyPath().toString()) {
-						case "coverageType", "estimatedMonthlyPremium" -> QuoteErrorCodes.QUOTE_MISSING_COVERAGE;
+						case "coverageType", "estimatedMonthlyPremium" ->
+										QuoteErrorCodes.QUOTE_MISSING_COVERAGE;
 						case "takesPrescriptionMedication", "usesTobacco", "needsSpouseCoverage" ->
 										QuoteErrorCodes.QUOTE_MISSING_HEALTH_FIELDS;
 						default -> QuoteErrorCodes.QUOTE_NOT_READY;
@@ -47,9 +48,7 @@ public class CommandValidator {
 
 		private <T> ConstraintViolation<T> firstViolation(Set<ConstraintViolation<T>> violations) {
 				return violations.stream()
-								.min(
-												Comparator.comparing(
-																violation -> violation.getPropertyPath().toString()))
+								.min(Comparator.comparing(violation -> violation.getPropertyPath().toString()))
 								.orElseThrow();
 		}
 

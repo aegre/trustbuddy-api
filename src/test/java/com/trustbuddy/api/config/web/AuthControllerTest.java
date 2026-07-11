@@ -6,11 +6,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.trustbuddy.api.config.ApplicationConfig;
 import com.trustbuddy.api.config.AccessTokenCookieService;
+import com.trustbuddy.api.config.ApplicationConfig;
 import com.trustbuddy.api.config.CorsConfig;
-import com.trustbuddy.api.config.JwtService;
 import com.trustbuddy.api.config.ErrorReportingConfig;
+import com.trustbuddy.api.config.JwtService;
 import com.trustbuddy.api.config.SecurityConfig;
 import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
