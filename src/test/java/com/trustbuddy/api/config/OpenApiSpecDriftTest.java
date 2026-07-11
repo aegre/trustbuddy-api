@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.trustbuddy.api.testsupport.PostgresRedisTestcontainers;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,17 +42,25 @@ class OpenApiSpecDriftTest extends PostgresRedisTestcontainers {
 				assertThat(OPENAPI_SPEC_PATH)
 								.as("Run make openapi-export to create %s", OPENAPI_SPEC_PATH)
 								.isRegularFile();
-				JsonNode committed = OBJECT_MAPPER.readTree(Files.readString(OPENAPI_SPEC_PATH));
+				JsonNode committed =
+								withoutServers(OBJECT_MAPPER.readTree(Files.readString(OPENAPI_SPEC_PATH)));
 
 				// When
 				MvcResult result =
 								mockMvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andReturn();
-				JsonNode live = OBJECT_MAPPER.readTree(result.getResponse().getContentAsString());
+				JsonNode live =
+								withoutServers(OBJECT_MAPPER.readTree(result.getResponse().getContentAsString()));
 
 				// Then
 				assertThat(live)
 								.as(
 												"openapi/openapi.json is out of date — run make openapi-export and commit the file")
 								.isEqualTo(committed);
+		}
+
+		private static JsonNode withoutServers(JsonNode node) {
+				ObjectNode copy = node.deepCopy();
+				copy.remove("servers");
+				return copy;
 		}
 }
