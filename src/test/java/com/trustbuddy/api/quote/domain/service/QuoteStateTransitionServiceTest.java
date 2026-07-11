@@ -133,4 +133,25 @@ class QuoteStateTransitionServiceTest {
 								.isInstanceOf(InvalidQuoteStateException.class)
 								.hasMessageContaining("update coverage");
 		}
+
+		@Test
+		void givenDraftQuote_whenEnsureCanUpdatePersonalInfo_thenPasses() {
+				// Given
+				Quote draft = QuoteGenerator.draft(30);
+
+				// When / Then
+				quoteStateTransitionService.ensureCanUpdatePersonalInfo(draft);
+		}
+
+		@Test
+		void
+						givenSubmittedQuote_whenEnsureCanUpdatePersonalInfo_thenThrowsInvalidQuoteStateException() {
+				// Given
+				Quote submitted = QuoteGenerator.draft(30).withStatus(QuoteStatus.SUBMITTED);
+
+				// When / Then
+				assertThatThrownBy(() -> quoteStateTransitionService.ensureCanUpdatePersonalInfo(submitted))
+								.isInstanceOf(InvalidQuoteStateException.class)
+								.hasMessageContaining("update personal information");
+		}
 }
