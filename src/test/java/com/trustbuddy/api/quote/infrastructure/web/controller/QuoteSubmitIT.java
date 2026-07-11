@@ -72,7 +72,7 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 		}
 
 		@Test
-		void givenDraftWithoutCoverage_whenSubmitThroughApi_thenReturns409() throws Exception {
+		void givenDraftWithoutHealthAnswers_whenSubmitThroughApi_thenReturns409() throws Exception {
 				// Given
 				String token = bearerToken();
 				String quoteId = createDraftQuote(token);
@@ -83,8 +83,8 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 																.header("Authorization", bearerAuthHeader(token)))
 								.andExpect(status().isConflict())
 								.andExpect(jsonPath("$.status").value(409))
-								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_MISSING_COVERAGE))
-								.andExpect(jsonPath("$.message").value("Quote is missing required coverage data"));
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_MISSING_HEALTH_FIELDS))
+								.andExpect(jsonPath("$.message").value("needsSpouseCoverage is required"));
 		}
 
 		@Test

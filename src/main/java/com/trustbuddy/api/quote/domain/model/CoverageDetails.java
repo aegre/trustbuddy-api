@@ -18,6 +18,11 @@ public record CoverageDetails(
 				conditions = conditions == null ? Set.of() : Set.copyOf(conditions);
 		}
 
+		public static CoverageDetails initialStandard() {
+				return new CoverageDetails(
+								CoverageType.STANDARD, null, Set.of(), null, null, null, BigDecimal.ZERO);
+		}
+
 		public CoverageDetails withPremium(BigDecimal premium) {
 				return new CoverageDetails(
 								coverageType,

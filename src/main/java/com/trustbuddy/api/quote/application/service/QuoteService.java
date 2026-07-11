@@ -76,12 +76,13 @@ public class QuoteService {
 
 		public Quote createQuote(CreateQuoteCommand command) {
 				commandValidator.validate(command);
-				return quoteRepository.save(
+				Quote draft =
 								Quote.createDraft(
 												command.getName(),
 												command.getEmail(),
 												command.getAge(),
-												command.getZipCode()));
+												command.getZipCode());
+				return saveWithRecalculatedPremium(draft);
 		}
 
 		public Quote updatePersonalInfo(UUID id, UpdatePersonalInfoCommand command) {

@@ -70,9 +70,9 @@ class PremiumCalculatorTest {
 		}
 
 		@Test
-		void givenDraftWithoutCoverage_whenCalculate_thenThrowsNullPointerException() {
+		void givenQuoteWithoutCoverage_whenCalculate_thenThrowsNullPointerException() {
 				// Given
-				Quote draft = QuoteGenerator.draft(40);
+				Quote draft = QuoteGenerator.draftWithoutCoverage(40);
 
 				// When / Then
 				assertThatThrownBy(() -> premiumCalculator.calculate(draft))

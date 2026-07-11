@@ -67,6 +67,7 @@ class QuotePersistenceAdapterTest {
 				assertThat(found.getAge()).isEqualTo(30);
 				assertThat(found.getZipCode()).isEqualTo(QuoteFieldConstraints.ZIP_CODE_EXAMPLE);
 				assertThat(found.getStatus()).isEqualTo(QuoteStatus.DRAFT);
+				assertThat(found.getCoverageType()).isEqualTo(CoverageType.STANDARD);
 		}
 
 		@Test

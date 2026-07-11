@@ -26,7 +26,7 @@ public class Quote {
 				return new Quote(
 								UUID.randomUUID(),
 								new PersonalInfo(name, email, age, zipCode),
-								null,
+								CoverageDetails.initialStandard(),
 								new QuoteAudit(QuoteStatus.DRAFT, now, now, 0L));
 		}
 

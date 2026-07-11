@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class QuoteWebMapperTest {
 
 		@Test
-		void givenDraftQuote_whenToResponse_thenMapsPersonalFieldsOnly() {
+		void givenDraftQuote_whenToResponse_thenMapsPersonalAndDefaultCoverageFields() {
 				// Given
 				Quote quote = QuoteGenerator.draft(30);
 
@@ -29,8 +29,8 @@ class QuoteWebMapperTest {
 				assertThat(response.getAge()).isEqualTo(30);
 				assertThat(response.getZipCode()).isEqualTo(QuoteFieldConstraints.ZIP_CODE_EXAMPLE);
 				assertThat(response.getStatus()).isEqualTo(QuoteStatus.DRAFT);
-				assertThat(response.getCoverageType()).isNull();
-				assertThat(response.getEstimatedMonthlyPremium()).isNull();
+				assertThat(response.getCoverageType()).isEqualTo(CoverageType.STANDARD);
+				assertThat(response.getEstimatedMonthlyPremium()).isEqualByComparingTo(BigDecimal.ZERO);
 		}
 
 		@Test
