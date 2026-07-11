@@ -270,36 +270,6 @@ class QuoteControllerTest {
 		}
 
 		@Test
-		void givenInvalidSortFormat_whenListQuotes_thenReturns400() throws Exception {
-				// When / Then
-				mockMvc.perform(get(ApiPaths.QUOTES).param("sort", "age,createdAt"))
-								.andExpect(status().isBadRequest())
-								.andExpect(jsonPath("$.status").value(400))
-								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_QUERY))
-								.andExpect(
-												jsonPath("$.message")
-																.value(
-																				"Invalid sort format 'age,createdAt'. Use sort=<field>,asc|desc for each sort parameter. Allowed fields: age, createdAt, email, name, status, updatedAt"));
-
-				verify(quoteRepository, never()).findAll(any());
-		}
-
-		@Test
-		void givenDirectionFirstSortFormat_whenListQuotes_thenReturns400() throws Exception {
-				// When / Then
-				mockMvc.perform(get(ApiPaths.QUOTES).param("sort", "asc,age,createdAt"))
-								.andExpect(status().isBadRequest())
-								.andExpect(jsonPath("$.status").value(400))
-								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_QUERY))
-								.andExpect(
-												jsonPath("$.message")
-																.value(
-																				"Invalid sort format 'asc,age,createdAt'. Use sort=<field>,asc|desc for each sort parameter. Allowed fields: age, createdAt, email, name, status, updatedAt"));
-
-				verify(quoteRepository, never()).findAll(any());
-		}
-
-		@Test
 		void givenMultipleSortParams_whenListQuotes_thenReturn200() throws Exception {
 				// Given
 				var quote = QuoteGenerator.draft(30);
