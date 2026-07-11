@@ -28,7 +28,7 @@ See [BUILD_JOURNEY.md](BUILD_JOURNEY.md) for how this was delivered in **14 incr
 | Persistence | Spring Data JPA + PostgreSQL |
 | Cache | Redis |
 | Messaging | Kafka |
-| Auth | JWT (stateless) |
+| Auth | JWT — Bearer header and HttpOnly cookie |
 | API docs | springdoc OpenAPI (Swagger UI) |
 | Architecture | Hexagonal (ports & adapters) |
 | Observability | Spring Actuator + Micrometer + Sentry (errors) |
@@ -122,12 +122,22 @@ Base URL when running locally: `http://localhost:8080`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/auth/token` | — | Obtain JWT (`username`, `password`) |
-| `POST` | `/quotes` | Bearer | Create draft quote |
-| `PATCH` | `/quotes/{id}/coverage` | Bearer | Set coverage and health answers; recalculates premium |
-| `POST` | `/quotes/{id}/submit` | Bearer | Submit to external insurer gateway |
-| `GET` | `/quotes/{id}` | Bearer | Get quote by id |
-| `GET` | `/quotes` | Bearer | List quotes (`page`, `size`, `sort`) |
+| `POST` | `/auth/token` | — | Obtain JWT (`username`, `password`); sets HttpOnly cookie and returns Bearer token in body |
+| `POST` | `/auth/logout` | — | Clear access-token cookie (browser clients) |
+| `POST` | `/quotes` | JWT | Create draft quote |
+| `PATCH` | `/quotes/{id}/coverage` | JWT | Set coverage and health answers; recalculates premium |
+| `POST` | `/quotes/{id}/submit` | JWT | Submit to external insurer gateway |
+| `GET` | `/quotes/{id}` | JWT | Get quote by id |
+| `GET` | `/quotes` | JWT | List quotes (`page`, `size`, `sort`) |
+
+**Authentication** — same JWT, two carriers:
+
+| Client | How |
+|--------|-----|
+| Postman, scripts, Swagger | `Authorization: Bearer <token>` from `POST /auth/token` response body |
+| Browser frontend | HttpOnly `access_token` cookie set by `/auth/token`; send requests with `credentials: 'include'`; call `POST /auth/logout` to clear |
+
+Bearer takes precedence when both are present. Cookie flags: `HttpOnly`, `SameSite=Lax`, `Secure` in production (`JWT_COOKIE_SECURE=true`). Configure via `JWT_COOKIE_NAME`, `JWT_COOKIE_SAME_SITE` in [`.env.example`](.env.example).
 
 **Submit** requires personal info, coverage, and health answers. For age > 65, pre-existing condition fields are required. On gateway failure the quote becomes `SUBMISSION_FAILED` and can be resubmitted. **Expired** or **incomplete** drafts return **409** on submit.
 

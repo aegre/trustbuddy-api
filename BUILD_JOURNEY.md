@@ -286,6 +286,28 @@ Phases **9**, **10**, and **11** were developed in parallel after **8** (separat
 
 ---
 
+## Dual authentication (Bearer + cookie)
+
+After the 14-phase delivery, auth was extended so the **same JWT** works for API tools and browser clients without forking login flows.
+
+**Motivation:**
+
+- **Bearer header** — keeps Postman, Swagger, `make token`, and scripts unchanged.
+- **HttpOnly cookie** — lets a same-origin React app send `credentials: 'include'` without storing the token in JavaScript (XSS mitigation).
+
+**What shipped:**
+
+- `AccessTokenCookieService` — resolves JWT from `Authorization: Bearer` (first) or `access_token` cookie; builds/clears `Set-Cookie` headers.
+- `POST /auth/token` — still returns `{ accessToken, tokenType, expiresInMs }` **and** sets the HttpOnly cookie.
+- `POST /auth/logout` — clears the cookie (`Max-Age=0`).
+- `JwtAuthFilter` — authenticates from either carrier via one code path.
+- Config: `app.jwt.cookie.*` (`name`, `secure`, `same-site`); `secure: true` in `application-prod.yml`.
+- Tests: `AccessTokenCookieServiceTest`, cookie path in `QuoteSecurityTest`, Set-Cookie assertions in `AuthControllerTest`.
+
+CSRF remains disabled (stateless API); cookie auth relies on `SameSite=Lax` and explicit CORS origins for browser use.
+
+---
+
 ## AI-assisted development
 
 Parts of this codebase were built with **AI coding assistants** (Cursor Agent) under human review:

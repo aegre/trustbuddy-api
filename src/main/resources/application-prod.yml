@@ -16,6 +16,11 @@ springdoc:
   swagger-ui:
     enabled: false
 
+app:
+  jwt:
+    cookie:
+      secure: true
+
 logging:
   level:
     com.trustbuddy: INFO
