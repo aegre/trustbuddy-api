@@ -3,6 +3,7 @@ package com.trustbuddy.api.quote.domain.service;
 import com.trustbuddy.api.quote.domain.exception.ConditionalFieldRejectedException;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
+import com.trustbuddy.api.quote.domain.model.CoverageDetails;
 import java.util.Set;
 
 /**
@@ -23,6 +24,16 @@ public class CoverageHealthPolicy {
 				} else {
 						rejectSeniorOnlyFields(hasPreexistingConditions, conditions);
 				}
+		}
+
+		public CoverageDetails adjustCoverageForAge(CoverageDetails coverage, int age) {
+				if (coverage == null || age > SENIOR_AGE_THRESHOLD) {
+						return coverage;
+				}
+				if (coverage.hasPreexistingConditions() == null && coverage.conditions().isEmpty()) {
+						return coverage;
+				}
+				return coverage.withoutSeniorOnlyFields();
 		}
 
 		public void validateHealthFieldsForPartialUpdate(

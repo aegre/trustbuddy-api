@@ -1,11 +1,15 @@
 package com.trustbuddy.api.quote.domain.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.trustbuddy.api.quote.domain.exception.ConditionalFieldRejectedException;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
+import com.trustbuddy.api.quote.domain.model.CoverageDetails;
+import com.trustbuddy.api.quote.domain.model.CoverageType;
+import java.math.BigDecimal;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -140,5 +144,47 @@ class CoverageHealthPolicyTest {
 				assertThatThrownBy(
 												() -> coverageHealthPolicy.validateHealthFieldsForAge(age, null, Set.of()))
 								.isInstanceOf(ConditionalFieldRejectedException.class);
+		}
+
+		@Test
+		void givenAgeAtMost65WithSeniorHealthFields_whenAdjustCoverageForAge_thenClearsFields() {
+				// Given
+				CoverageDetails coverage =
+								new CoverageDetails(
+												CoverageType.STANDARD,
+												true,
+												Set.of(ConditionType.DIABETES),
+												false,
+												false,
+												false,
+												BigDecimal.ZERO);
+
+				// When
+				CoverageDetails adjusted = coverageHealthPolicy.adjustCoverageForAge(coverage, 40);
+
+				// Then
+				assertThat(adjusted.hasPreexistingConditions()).isNull();
+				assertThat(adjusted.conditions()).isEmpty();
+				assertThat(adjusted.coverageType()).isEqualTo(CoverageType.STANDARD);
+		}
+
+		@Test
+		void givenAgeAbove65WithSeniorHealthFields_whenAdjustCoverageForAge_thenReturnsUnchanged() {
+				// Given
+				CoverageDetails coverage =
+								new CoverageDetails(
+												CoverageType.STANDARD,
+												true,
+												Set.of(ConditionType.DIABETES),
+												false,
+												false,
+												false,
+												BigDecimal.ZERO);
+
+				// When
+				CoverageDetails adjusted = coverageHealthPolicy.adjustCoverageForAge(coverage, 70);
+
+				// Then
+				assertThat(adjusted).isSameAs(coverage);
 		}
 }

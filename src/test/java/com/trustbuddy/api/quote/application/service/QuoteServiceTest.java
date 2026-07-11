@@ -131,6 +131,37 @@ class QuoteServiceTest {
 		}
 
 		@Test
+		void
+						givenSeniorQuoteWithHealthFields_whenUpdatePersonalInfoToYoungerAge_thenClearsSeniorFieldsAndRecalculatesPremium() {
+				// Given
+				Quote draft =
+								QuoteGenerator.coverage(70, CoverageType.STANDARD)
+												.hasPreexistingConditions(true)
+												.conditions(ConditionType.DIABETES)
+												.takesPrescriptionMedication(false)
+												.usesTobacco(false)
+												.needsSpouseCoverage(false)
+												.build();
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
+				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+
+				// When
+				Quote updated =
+								quoteService.updatePersonalInfo(
+												draft.getId(),
+												updatePersonalInfoCommand(
+																draft.getName(), draft.getEmail(), 40, draft.getZipCode()));
+
+				// Then
+				assertThat(updated.getAge()).isEqualTo(40);
+				assertThat(updated.getHasPreexistingConditions()).isNull();
+				assertThat(updated.getConditions()).isEmpty();
+				assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("100.00");
+		}
+
+		@Test
 		void givenSubmittedQuote_whenUpdatePersonalInfo_thenThrowsInvalidQuoteStateException() {
 				// Given
 				Quote submitted = QuoteGenerator.draft(30).withStatus(QuoteStatus.SUBMITTED);

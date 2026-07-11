@@ -94,6 +94,7 @@ public class QuoteService {
 												command.getEmail(),
 												command.getAge(),
 												command.getZipCode());
+				updated = applyAgeAdjustedCoverage(updated, command.getAge());
 				return saveWithRecalculatedPremium(updated);
 		}
 
@@ -161,6 +162,24 @@ public class QuoteService {
 
 		private static <T> T coalesce(T value, T fallback) {
 				return value != null ? value : fallback;
+		}
+
+		private Quote applyAgeAdjustedCoverage(Quote quote, int age) {
+				if (quote.getCoverageType() == null) {
+						return quote;
+				}
+
+				CoverageDetails coverageDetails =
+								new CoverageDetails(
+												quote.getCoverageType(),
+												quote.getHasPreexistingConditions(),
+												quote.getConditions(),
+												quote.getTakesPrescriptionMedication(),
+												quote.getUsesTobacco(),
+												quote.getNeedsSpouseCoverage(),
+												BigDecimal.ZERO);
+				CoverageDetails adjusted = coverageHealthPolicy.adjustCoverageForAge(coverageDetails, age);
+				return adjusted == coverageDetails ? quote : quote.applyCoverage(adjusted);
 		}
 
 		private Quote saveWithRecalculatedPremium(Quote quote) {
