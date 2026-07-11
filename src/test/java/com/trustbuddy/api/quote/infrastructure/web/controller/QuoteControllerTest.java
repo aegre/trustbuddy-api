@@ -191,6 +191,33 @@ class QuoteControllerTest {
 		}
 
 		@Test
+		void givenPartialCoverageRequest_whenUpdateCoverage_thenReturnsUpdatedQuote() throws Exception {
+				// Given
+				var draft =
+								QuoteGenerator.coverage(30, CoverageType.STANDARD)
+												.usesTobacco(false)
+												.needsSpouseCoverage(false)
+												.build();
+				when(quoteRepository.findById(draft.getId())).thenReturn(java.util.Optional.of(draft));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+
+				// When / Then
+				mockMvc.perform(
+												patch(ApiPaths.QUOTES + "/{id}/coverage", draft.getId())
+																.contentType(MediaType.APPLICATION_JSON)
+																.content(
+																				"""
+								{
+									"usesTobacco": true
+								}
+								"""))
+								.andExpect(status().isOk())
+								.andExpect(jsonPath("$.coverageType").value("STANDARD"))
+								.andExpect(jsonPath("$.usesTobacco").value(true));
+		}
+
+		@Test
 		void givenCoverageRequest_whenUpdateCoverage_thenReturnsUpdatedQuote() throws Exception {
 				// Given
 				var draft = QuoteGenerator.draft(30);

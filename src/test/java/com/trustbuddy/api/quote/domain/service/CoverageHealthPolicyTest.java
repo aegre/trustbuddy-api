@@ -20,6 +20,33 @@ class CoverageHealthPolicyTest {
 		}
 
 		@Test
+		void
+						givenAgeAbove65WithPartialPreexistingPatch_whenValidatePartialUpdate_thenValidatesMergedFields() {
+				// Given
+				int age = 70;
+
+				// When / Then
+				assertThatCode(
+												() ->
+																coverageHealthPolicy.validateHealthFieldsForPartialUpdate(
+																				age, true, null, false, Set.of(ConditionType.DIABETES)))
+								.doesNotThrowAnyException();
+		}
+
+		@Test
+		void givenAgeAbove65WithNoHealthFieldsInPatch_whenValidatePartialUpdate_thenPasses() {
+				// Given
+				int age = 70;
+
+				// When / Then
+				assertThatCode(
+												() ->
+																coverageHealthPolicy.validateHealthFieldsForPartialUpdate(
+																				age, null, null, null, Set.of()))
+								.doesNotThrowAnyException();
+		}
+
+		@Test
 		void givenAgeAtMost65WithNoHealthFields_whenValidate_thenPasses() {
 				// Given
 				int age = 30;

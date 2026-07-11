@@ -6,8 +6,10 @@ import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
+import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageDetails;
+import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.service.CoverageHealthPolicy;
 import com.trustbuddy.api.quote.domain.service.PremiumCalculator;
@@ -85,13 +87,17 @@ public class QuoteService {
 				commandValidator.validate(command);
 				Quote quote = getQuote(id);
 				quoteStateTransitionService.ensureCanUpdateCoverage(quote);
-				coverageHealthPolicy.validateHealthFieldsForAge(
-								quote.getAge(), command.getHasPreexistingConditions(), command.getConditions());
+				if (!command.hasAnyField()) {
+						return quote;
+				}
+				coverageHealthPolicy.validateHealthFieldsForPartialUpdate(
+								quote.getAge(),
+								command.getHasPreexistingConditions(),
+								command.getConditions(),
+								quote.getHasPreexistingConditions(),
+								quote.getConditions());
 
-				Set<ConditionType> normalizedConditions =
-								command.getConditions() == null ? Set.of() : command.getConditions();
-				CoverageDetails coverageDetails =
-								toCoverageDetails(command, normalizedConditions, BigDecimal.ZERO);
+				CoverageDetails coverageDetails = mergeCoverage(command, quote);
 				BigDecimal premium = premiumCalculator.calculate(quote.applyCoverage(coverageDetails));
 
 				return quoteRepository.save(quote.applyCoverage(coverageDetails.withPremium(premium)));
@@ -113,15 +119,33 @@ public class QuoteService {
 				return quoteRepository.findAll(pageable);
 		}
 
-		private CoverageDetails toCoverageDetails(
-						UpdateCoverageCommand command, Set<ConditionType> conditions, BigDecimal premium) {
+		private CoverageDetails mergeCoverage(UpdateCoverageCommand command, Quote quote) {
+				CoverageType coverageType =
+								command.getCoverageType() != null
+												? command.getCoverageType()
+												: quote.getCoverageType();
+				if (coverageType == null) {
+						throw new QuoteValidationException(
+										"coverageType is required when quote has no coverage set");
+				}
+
+				Set<ConditionType> conditions =
+								command.getConditions() != null ? command.getConditions() : quote.getConditions();
+
 				return new CoverageDetails(
-								command.getCoverageType(),
-								command.getHasPreexistingConditions(),
+								coverageType,
+								coalesce(
+												command.getHasPreexistingConditions(), quote.getHasPreexistingConditions()),
 								conditions,
-								command.getTakesPrescriptionMedication(),
-								command.getUsesTobacco(),
-								command.getNeedsSpouseCoverage(),
-								premium);
+								coalesce(
+												command.getTakesPrescriptionMedication(),
+												quote.getTakesPrescriptionMedication()),
+								coalesce(command.getUsesTobacco(), quote.getUsesTobacco()),
+								coalesce(command.getNeedsSpouseCoverage(), quote.getNeedsSpouseCoverage()),
+								BigDecimal.ZERO);
+		}
+
+		private static <T> T coalesce(T value, T fallback) {
+				return value != null ? value : fallback;
 		}
 }
