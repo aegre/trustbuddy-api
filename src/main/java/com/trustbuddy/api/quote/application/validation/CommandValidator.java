@@ -30,7 +30,17 @@ public class CommandValidator {
 				if (violations.isEmpty()) {
 						return;
 				}
-				throw new InvalidQuoteStateException(formatFirstViolation(violations));
+				throw new InvalidQuoteStateException(formatSubmissionReadinessViolation(violations));
+		}
+
+		private <T> String formatSubmissionReadinessViolation(Set<ConstraintViolation<T>> violations) {
+				ConstraintViolation<T> first =
+								violations.stream()
+												.min(
+																Comparator.comparing(
+																				violation -> violation.getPropertyPath().toString()))
+												.orElseThrow();
+				return first.getMessage();
 		}
 
 		private <T> String formatFirstViolation(Set<ConstraintViolation<T>> violations) {

@@ -70,6 +70,23 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 		}
 
 		@Test
+		void givenDraftWithoutCoverage_whenSubmitThroughApi_thenReturns409() throws Exception {
+				// Given
+				String token = bearerToken();
+				String quoteId = createDraftQuote(token);
+
+				// When / Then
+				mockMvc.perform(
+												post("/quotes/{id}/submit", quoteId)
+																.header("Authorization", bearerAuthHeader(token)))
+								.andExpect(status().isConflict())
+								.andExpect(jsonPath("$.status").value(409))
+								.andExpect(
+												jsonPath("$.message")
+																.value("Quote is missing required coverage data"));
+		}
+
+		@Test
 		void givenExpiredQuote_whenSubmitThroughApi_thenReturns409() throws Exception {
 				// Given
 				String token = bearerToken();

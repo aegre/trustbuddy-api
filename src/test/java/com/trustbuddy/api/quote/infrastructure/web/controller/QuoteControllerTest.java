@@ -146,14 +146,12 @@ class QuoteControllerTest {
 				// Given
 				var quote = QuoteGenerator.draft(30);
 				when(quoteSubmissionService.submitQuote(quote.getId()))
-								.thenThrow(
-												new InvalidQuoteStateException(
-																"coverageType: Quote is missing required coverage data"));
+								.thenThrow(new InvalidQuoteStateException("Quote is missing required coverage data"));
 
 				// When / Then
 				mockMvc.perform(post("/quotes/{id}/submit", quote.getId()))
 								.andExpect(status().isConflict())
-								.andExpect(jsonPath("$.message").value("coverageType: Quote is missing required coverage data"));
+								.andExpect(jsonPath("$.message").value("Quote is missing required coverage data"));
 		}
 
 		@Test
