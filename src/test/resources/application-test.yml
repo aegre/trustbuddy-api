@@ -35,6 +35,9 @@ app:
   kafka:
     topic: quote-submitted
 
+sentry:
+  enabled: false
+
 logging:
   level:
     com.trustbuddy: WARN
