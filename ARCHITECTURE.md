@@ -12,6 +12,19 @@ Feature-oriented hexagonal architecture. Each business capability is a vertical 
 
 Split by **business capability** (`quote/` today; `policy/`, `customer/` later) rather than by technical layer at the root.
 
+## Why hexagonal here?
+
+Spring Boot’s common **four-layer** layout (web → service → repository → database) is a reasonable default for simple apps. This API uses **hexagonal (ports and adapters)** so external integrations stay at the boundary — not because they are expected to change soon, but so they **could** without leaking into business logic:
+
+- **PostgreSQL / JPA** — persistence is an implementation detail behind `QuoteRepositoryPort`.
+- **Insurer submission** — external gateway HTTP call lives in `InsurerGatewayHttpAdapter`, not in `QuoteSubmissionService`.
+- **Kafka** — submit events go through `QuoteEventPublisherPort`; the topic and serializer stay in infrastructure.
+- **Redis** — cache read/evict behind `QuoteCachePort`.
+
+Application services orchestrate domain rules and call port interfaces. If Kafka, the insurer API, or the database ever changes, new adapters can plug in without rewrites of `PremiumCalculator` or `QuoteStateTransitionService`.
+
+Spring and framework code remain at the boundary (`@RestController`, `@Entity`, `KafkaTemplate`, `RestClient`). The domain and application layers do not import them.
+
 ## Request flow (quote)
 
 ### Create / read / update coverage
