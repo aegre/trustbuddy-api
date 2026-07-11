@@ -13,6 +13,12 @@ public class QuoteStateTransitionService {
 				}
 		}
 
+		public void ensureCanUpdatePersonalInfo(Quote quote) {
+				if (quote.getStatus() != QuoteStatus.DRAFT) {
+						throw new InvalidQuoteStateException(quote.getStatus(), "update personal information");
+				}
+		}
+
 		public Quote markSubmitted(Quote quote) {
 				if (quote.getStatus() == QuoteStatus.SUBMITTED) {
 						return quote;

@@ -2,9 +2,11 @@ package com.trustbuddy.api.quote.infrastructure.web.mapper;
 
 import com.trustbuddy.api.quote.application.dto.CreateQuoteCommand;
 import com.trustbuddy.api.quote.application.dto.UpdateCoverageCommand;
+import com.trustbuddy.api.quote.application.dto.UpdatePersonalInfoCommand;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.infrastructure.web.request.CreateQuoteRequest;
 import com.trustbuddy.api.quote.infrastructure.web.request.UpdateCoverageRequest;
+import com.trustbuddy.api.quote.infrastructure.web.request.UpdatePersonalInfoRequest;
 import com.trustbuddy.api.quote.infrastructure.web.response.QuoteResponse;
 import java.util.LinkedHashSet;
 
@@ -29,6 +31,15 @@ public final class QuoteWebMapper {
 				command.setTakesPrescriptionMedication(request.getTakesPrescriptionMedication());
 				command.setUsesTobacco(request.getUsesTobacco());
 				command.setNeedsSpouseCoverage(request.getNeedsSpouseCoverage());
+				return command;
+		}
+
+		public static UpdatePersonalInfoCommand toCommand(UpdatePersonalInfoRequest request) {
+				UpdatePersonalInfoCommand command = new UpdatePersonalInfoCommand();
+				command.setName(request.getName());
+				command.setEmail(request.getEmail());
+				command.setAge(request.getAge());
+				command.setZipCode(request.getZipCode());
 				return command;
 		}
 

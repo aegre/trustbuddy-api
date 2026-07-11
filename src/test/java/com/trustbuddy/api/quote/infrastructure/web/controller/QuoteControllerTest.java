@@ -134,6 +134,60 @@ class QuoteControllerTest {
 		}
 
 		@Test
+		void givenDraftQuote_whenUpdatePersonalInfo_thenReturnsUpdatedQuote() throws Exception {
+				// Given
+				var draft = QuoteGenerator.draft(30);
+				when(quoteRepository.findById(draft.getId())).thenReturn(java.util.Optional.of(draft));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+
+				// When / Then
+				mockMvc.perform(
+												patch(ApiPaths.QUOTES + "/{id}", draft.getId())
+																.contentType(MediaType.APPLICATION_JSON)
+																.content(
+																				"""
+								{
+									"name": "Jane Updated",
+									"email": "updated@example.com",
+									"age": 35,
+									"zipCode": "06600"
+								}
+								"""))
+								.andExpect(status().isOk())
+								.andExpect(jsonPath("$.id").value(draft.getId().toString()))
+								.andExpect(jsonPath("$.name").value("Jane Updated"))
+								.andExpect(jsonPath("$.email").value("updated@example.com"))
+								.andExpect(jsonPath("$.age").value(35));
+		}
+
+		@Test
+		void givenSubmittedQuote_whenUpdatePersonalInfo_thenReturns409() throws Exception {
+				// Given
+				var submitted = QuoteGenerator.draft(30).withStatus(QuoteStatus.SUBMITTED);
+				when(quoteRepository.findById(submitted.getId()))
+								.thenReturn(java.util.Optional.of(submitted));
+
+				// When / Then
+				mockMvc.perform(
+												patch(ApiPaths.QUOTES + "/{id}", submitted.getId())
+																.contentType(MediaType.APPLICATION_JSON)
+																.content(
+																				"""
+								{
+									"name": "Jane Doe",
+									"email": "jane@example.com",
+									"age": 30,
+									"zipCode": "06600"
+								}
+								"""))
+								.andExpect(status().isConflict())
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_STATUS));
+
+				verify(quoteRepository, never()).save(any());
+		}
+
+		@Test
 		void givenCoveredQuote_whenSubmitQuote_thenReturnsSubmittedQuote() throws Exception {
 				// Given
 				var quote =

@@ -28,4 +28,15 @@ public record CoverageDetails(
 								needsSpouseCoverage,
 								Objects.requireNonNull(premium, "estimatedMonthlyPremium"));
 		}
+
+		public CoverageDetails withoutSeniorOnlyFields() {
+				return new CoverageDetails(
+								coverageType,
+								null,
+								Set.of(),
+								takesPrescriptionMedication,
+								usesTobacco,
+								needsSpouseCoverage,
+								estimatedMonthlyPremium);
+		}
 }

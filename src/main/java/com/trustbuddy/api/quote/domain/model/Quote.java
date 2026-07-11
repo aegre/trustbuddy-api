@@ -48,6 +48,10 @@ public class Quote {
 				return new Quote(id, personalInfo, coverage, audit.withVersion(version));
 		}
 
+		public Quote withPersonalInfo(String name, String email, int age, String zipCode) {
+				return new Quote(id, new PersonalInfo(name, email, age, zipCode), coverage, audit.touch());
+		}
+
 		public boolean hasCoverage() {
 				return coverage != null && coverage.estimatedMonthlyPremium() != null;
 		}
