@@ -30,7 +30,7 @@ public class OpenApiConfig {
 																								.scheme("bearer")
 																								.bearerFormat("JWT")
 																								.description(
-																												"JWT from POST /auth/token — send as Authorization Bearer header"
+																												"JWT from POST /api/v1/auth/token — send as Authorization Bearer header"
 																																+ " or via HttpOnly access_token cookie for browser clients")))
 								.addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH_SCHEME));
 		}

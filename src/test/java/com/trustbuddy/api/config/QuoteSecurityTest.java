@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.trustbuddy.api.config.web.ApiPaths;
 import com.trustbuddy.api.config.web.AuthController;
 import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.quote.application.service.QuoteService;
@@ -82,7 +83,7 @@ class QuoteSecurityTest {
 
 				// When / Then
 				mockMvc.perform(
-												options("/quotes")
+												options(ApiPaths.QUOTES)
 																.header("Origin", "http://localhost:5173")
 																.header("Access-Control-Request-Method", "GET")
 																.header("Access-Control-Request-Headers", "Authorization"))
@@ -97,7 +98,7 @@ class QuoteSecurityTest {
 
 				// When / Then
 				mockMvc.perform(
-												options("/quotes")
+												options(ApiPaths.QUOTES)
 																.header("Origin", "http://evil.example")
 																.header("Access-Control-Request-Method", "GET"))
 								.andExpect(status().isForbidden());
@@ -108,10 +109,10 @@ class QuoteSecurityTest {
 				// Given — no Authorization header
 
 				// When / Then
-				mockMvc.perform(get("/quotes"))
+				mockMvc.perform(get(ApiPaths.QUOTES))
 								.andExpect(status().isUnauthorized())
 								.andExpect(jsonPath("$.status").value(401))
-								.andExpect(jsonPath("$.path").value("/quotes"));
+								.andExpect(jsonPath("$.path").value(ApiPaths.QUOTES));
 		}
 
 		@Test
@@ -121,7 +122,7 @@ class QuoteSecurityTest {
 				when(quoteService.listQuotes(any())).thenReturn(new PageImpl<>(java.util.List.of()));
 
 				// When / Then
-				mockMvc.perform(get("/quotes").header("Authorization", "Bearer " + token))
+				mockMvc.perform(get(ApiPaths.QUOTES).header("Authorization", "Bearer " + token))
 								.andExpect(status().isOk());
 		}
 
@@ -133,7 +134,7 @@ class QuoteSecurityTest {
 
 				// When / Then
 				mockMvc.perform(
-												get("/quotes")
+												get(ApiPaths.QUOTES)
 																.cookie(new jakarta.servlet.http.Cookie("access_token", token)))
 								.andExpect(status().isOk());
 		}
@@ -144,7 +145,7 @@ class QuoteSecurityTest {
 				String token = jwtService.generateToken("test-user") + "invalid";
 
 				// When / Then
-				mockMvc.perform(get("/quotes").header("Authorization", "Bearer " + token))
+				mockMvc.perform(get(ApiPaths.QUOTES).header("Authorization", "Bearer " + token))
 								.andExpect(status().isUnauthorized());
 		}
 
@@ -160,7 +161,10 @@ class QuoteSecurityTest {
 				""";
 
 				// When / Then
-				mockMvc.perform(post("/auth/token").contentType(MediaType.APPLICATION_JSON).content(body))
+				mockMvc.perform(
+												post(ApiPaths.AUTH + "/token")
+																.contentType(MediaType.APPLICATION_JSON)
+																.content(body))
 								.andExpect(status().isOk())
 								.andExpect(jsonPath("$.accessToken").isNotEmpty());
 		}

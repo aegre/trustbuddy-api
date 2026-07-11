@@ -46,7 +46,7 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    HTTP[POST /quotes/id/submit] --> Controller[QuoteController]
+    HTTP[POST /api/v1/quotes/id/submit] --> Controller[QuoteController]
     Controller --> SubmitSvc[QuoteSubmissionService]
     SubmitSvc --> DomainSvc[QuoteStateTransitionService / CoverageHealthPolicy]
     SubmitSvc --> Repo[QuoteRepositoryPort]
@@ -169,15 +169,15 @@ This layer implements outbound ports and hosts inbound adapters.
 | Scheduler | `infrastructure/scheduler/` (planned) | application services |
 | Kafka consumer | `infrastructure/messaging/` (planned) | application services |
 
-REST surface (challenge contract):
+REST surface (versioned):
 
 | Method | Path |
 |--------|------|
-| `POST` | `/quotes` |
-| `PATCH` | `/quotes/{id}/coverage` |
-| `POST` | `/quotes/{id}/submit` |
-| `GET` | `/quotes/{id}` |
-| `GET` | `/quotes` |
+| `POST` | `/api/v1/quotes` |
+| `PATCH` | `/api/v1/quotes/{id}/coverage` |
+| `POST` | `/api/v1/quotes/{id}/submit` |
+| `GET` | `/api/v1/quotes/{id}` |
+| `GET` | `/api/v1/quotes` |
 
 ### Outbound (driven)
 

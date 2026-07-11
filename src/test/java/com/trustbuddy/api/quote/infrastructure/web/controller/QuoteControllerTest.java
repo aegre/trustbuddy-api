@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.trustbuddy.api.config.ErrorReportingConfig;
+import com.trustbuddy.api.config.web.ApiPaths;
 import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
@@ -88,7 +89,7 @@ class QuoteControllerTest {
 
 				// When / Then
 				mockMvc.perform(
-												post("/quotes")
+												post(ApiPaths.QUOTES)
 																.contentType(MediaType.APPLICATION_JSON)
 																.content(
 																				"""
@@ -109,7 +110,7 @@ class QuoteControllerTest {
 		void givenInvalidCreateRequest_whenCreateQuote_thenReturns400() throws Exception {
 				// When / Then
 				mockMvc.perform(
-												post("/quotes")
+												post(ApiPaths.QUOTES)
 																.contentType(MediaType.APPLICATION_JSON)
 																.content(
 																				"""
@@ -136,7 +137,7 @@ class QuoteControllerTest {
 				when(quoteSubmissionService.submitQuote(quote.getId())).thenReturn(quote);
 
 				// When / Then
-				mockMvc.perform(post("/quotes/{id}/submit", quote.getId()))
+				mockMvc.perform(post(ApiPaths.QUOTES + "/{id}/submit", quote.getId()))
 								.andExpect(status().isOk())
 								.andExpect(jsonPath("$.status").value("SUBMITTED"))
 								.andExpect(jsonPath("$.coverageType").value("STANDARD"));
@@ -153,7 +154,7 @@ class QuoteControllerTest {
 																"Quote is missing required coverage data"));
 
 				// When / Then
-				mockMvc.perform(post("/quotes/{id}/submit", quote.getId()))
+				mockMvc.perform(post(ApiPaths.QUOTES + "/{id}/submit", quote.getId()))
 								.andExpect(status().isConflict())
 								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_MISSING_COVERAGE))
 								.andExpect(jsonPath("$.message").value("Quote is missing required coverage data"));
@@ -166,7 +167,7 @@ class QuoteControllerTest {
 				when(quoteRepository.findById(id)).thenReturn(java.util.Optional.empty());
 
 				// When / Then
-				mockMvc.perform(get("/quotes/{id}", id))
+				mockMvc.perform(get(ApiPaths.QUOTES + "/{id}", id))
 								.andExpect(status().isNotFound())
 								.andExpect(jsonPath("$.message").value("Quote not found with id " + id));
 		}
@@ -181,7 +182,7 @@ class QuoteControllerTest {
 
 				// When / Then
 				mockMvc.perform(
-												patch("/quotes/{id}/coverage", draft.getId())
+												patch(ApiPaths.QUOTES + "/{id}/coverage", draft.getId())
 																.contentType(MediaType.APPLICATION_JSON)
 																.content(
 																				"""
@@ -201,7 +202,7 @@ class QuoteControllerTest {
 								.thenReturn(new PageImpl<>(java.util.List.of(quote)));
 
 				// When / Then
-				mockMvc.perform(get("/quotes"))
+				mockMvc.perform(get(ApiPaths.QUOTES))
 								.andExpect(status().isOk())
 								.andExpect(jsonPath("$.content[0].id").value(quote.getId().toString()));
 		}

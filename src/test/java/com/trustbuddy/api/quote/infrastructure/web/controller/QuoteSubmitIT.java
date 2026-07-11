@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.trustbuddy.api.config.JwtService;
+import com.trustbuddy.api.config.web.ApiPaths;
 import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.application.port.out.InsurerGatewayPort;
 import com.trustbuddy.api.quote.application.port.out.InsurerSubmissionResult;
@@ -62,7 +63,7 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 
 				// When / Then
 				mockMvc.perform(
-												post("/quotes/{id}/submit", quoteId)
+												post(ApiPaths.QUOTES + "/{id}/submit", quoteId)
 																.header("Authorization", bearerAuthHeader(token)))
 								.andExpect(status().isOk())
 								.andExpect(jsonPath("$.status").value("SUBMITTED"))
@@ -78,7 +79,7 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 
 				// When / Then
 				mockMvc.perform(
-												post("/quotes/{id}/submit", quoteId)
+												post(ApiPaths.QUOTES + "/{id}/submit", quoteId)
 																.header("Authorization", bearerAuthHeader(token)))
 								.andExpect(status().isConflict())
 								.andExpect(jsonPath("$.status").value(409))
@@ -96,7 +97,7 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 
 				// When / Then
 				mockMvc.perform(
-												post("/quotes/{id}/submit", expired.getId())
+												post(ApiPaths.QUOTES + "/{id}/submit", expired.getId())
 																.header("Authorization", bearerAuthHeader(token)))
 								.andExpect(status().isConflict())
 								.andExpect(jsonPath("$.status").value(409))
@@ -117,7 +118,7 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 		private String createDraftQuote(String token) throws Exception {
 				MvcResult createResult =
 								mockMvc.perform(
-																post("/quotes")
+																post(ApiPaths.QUOTES)
 																				.header("Authorization", bearerAuthHeader(token))
 																				.contentType(MediaType.APPLICATION_JSON)
 																				.content(
@@ -140,7 +141,7 @@ class QuoteSubmitIT extends PostgresRedisTestcontainers {
 
 		private void updateCoverage(String quoteId, String token) throws Exception {
 				mockMvc.perform(
-												patch("/quotes/{id}/coverage", quoteId)
+												patch(ApiPaths.QUOTES + "/{id}/coverage", quoteId)
 																.header("Authorization", bearerAuthHeader(token))
 																.contentType(MediaType.APPLICATION_JSON)
 																.content(

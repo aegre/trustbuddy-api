@@ -8,8 +8,8 @@ The quote capability is **feature-complete** for the challenge scope:
 
 - Domain model, premium calculation, and state transitions
 - PostgreSQL persistence (JPA) with optimistic locking
-- REST API under `/quotes` (create, update coverage, submit, get, list)
-- JWT authentication (`POST /auth/token`) on all quote endpoints
+- REST API under `/api/v1/quotes` (create, update coverage, submit, get, list)
+- JWT authentication (`POST /api/v1/auth/token`) on all quote endpoints
 - Redis quote cache (read-through get, eviction on save)
 - Kafka `quote-submitted` events on first successful submit
 - Scheduled draft expiration (`DRAFT` → `EXPIRED`)
@@ -114,7 +114,7 @@ Full diagrams, port table, and layer rules: [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Repository decorator** (`CachingQuoteRepositoryAdapter`) centralizes cache eviction on every persist
 - **Idempotent submit** when quote is already `SUBMITTED`; Kafka event only on first success
 - **Real insurer gateway** HTTP client (default `https://tools-httpstatus.pickup-services.com/200`), not an in-memory mock
-- API paths at `/quotes` per challenge spec (documented deviation from `/api/v1/...` internal convention)
+- Public REST paths versioned under `/api/v1/...` (see [AGENTS.md](AGENTS.md))
 
 ## API
 
@@ -122,20 +122,20 @@ Base URL when running locally: `http://localhost:8080`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/auth/token` | — | Obtain JWT (`username`, `password`); sets HttpOnly cookie and returns Bearer token in body |
-| `POST` | `/auth/logout` | — | Clear access-token cookie (browser clients) |
-| `POST` | `/quotes` | JWT | Create draft quote |
-| `PATCH` | `/quotes/{id}/coverage` | JWT | Set coverage and health answers; recalculates premium |
-| `POST` | `/quotes/{id}/submit` | JWT | Submit to external insurer gateway |
-| `GET` | `/quotes/{id}` | JWT | Get quote by id |
-| `GET` | `/quotes` | JWT | List quotes (`page`, `size`, `sort`) |
+| `POST` | `/api/v1/auth/token` | — | Obtain JWT (`username`, `password`); sets HttpOnly cookie and returns Bearer token in body |
+| `POST` | `/api/v1/auth/logout` | — | Clear access-token cookie (browser clients) |
+| `POST` | `/api/v1/quotes` | JWT | Create draft quote |
+| `PATCH` | `/api/v1/quotes/{id}/coverage` | JWT | Set coverage and health answers; recalculates premium |
+| `POST` | `/api/v1/quotes/{id}/submit` | JWT | Submit to external insurer gateway |
+| `GET` | `/api/v1/quotes/{id}` | JWT | Get quote by id |
+| `GET` | `/api/v1/quotes` | JWT | List quotes (`page`, `size`, `sort`) |
 
 **Authentication** — same JWT, two carriers:
 
 | Client | How |
 |--------|-----|
-| Postman, scripts, Swagger | `Authorization: Bearer <token>` from `POST /auth/token` response body |
-| Browser frontend | HttpOnly `access_token` cookie set by `/auth/token`; send requests with `credentials: 'include'`; call `POST /auth/logout` to clear |
+| Postman, scripts, Swagger | `Authorization: Bearer <token>` from `POST /api/v1/auth/token` response body |
+| Browser frontend | HttpOnly `access_token` cookie set by `/api/v1/auth/token`; send requests with `credentials: 'include'`; call `POST /api/v1/auth/logout` to clear |
 
 Bearer takes precedence when both are present. Cookie flags: `HttpOnly`, `SameSite=Lax`, `Secure` in production (`JWT_COOKIE_SECURE=true`). Configure via `JWT_COOKIE_NAME`, `JWT_COOKIE_SAME_SITE` in [`.env.example`](.env.example).
 

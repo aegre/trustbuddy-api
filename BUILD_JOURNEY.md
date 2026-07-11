@@ -14,7 +14,7 @@ Before opening the IDE on domain classes or controllers, the work was entirely c
 
 | Question | Outcome |
 |----------|---------|
-| What must the API expose? | CRUD-ish quote lifecycle under `/quotes`, plus `POST /auth/token` — paths fixed by the challenge spec |
+| What must the API expose? | CRUD-ish quote lifecycle under `/api/v1/quotes`, plus `POST /api/v1/auth/token` |
 | What does “done” look like? | End-to-end flow works locally with Docker infra, tests pass, errors are consistent, README explains how to run it |
 | What should production-shaped mean? | Hexagonal boundaries, env-based config, cache and messaging ports, scheduled expiration, observability hooks — not a single-layer demo |
 
@@ -199,9 +199,9 @@ Phases **9**, **10**, and **11** were developed in parallel after **8** (separat
 
 **Achieved:**
 
-- `POST /quotes`, `PATCH /quotes/{id}/coverage`, `POST /quotes/{id}/submit`, `GET` endpoints
+- `POST /api/v1/quotes`, `PATCH /api/v1/quotes/{id}/coverage`, `POST /api/v1/quotes/{id}/submit`, `GET` endpoints
 - `QuoteControllerTest` (validation, 404, happy paths)
-- Note: paths are `/quotes` (challenge contract), not `/api/v1/quotes` — documented deviation from internal REST conventions
+- Versioned public paths under `/api/v1/...` (aligned with [AGENTS.md](AGENTS.md))
 
 ---
 
@@ -211,7 +211,7 @@ Phases **9**, **10**, and **11** were developed in parallel after **8** (separat
 
 **Achieved:**
 
-- `POST /auth/token`, `JwtAuthFilter`, `SecurityConfig`, `JwtAuthenticationEntryPoint` (Jackson 3 `JsonMapper`)
+- `POST /api/v1/auth/token`, `JwtAuthFilter`, `SecurityConfig`, `JwtAuthenticationEntryPoint` (Jackson 3 `JsonMapper`)
 - `make token`, Swagger UI bearer auth, `QuoteSecurityTest`
 
 ---
@@ -298,8 +298,8 @@ After the 14-phase delivery, auth was extended so the **same JWT** works for API
 **What shipped:**
 
 - `AccessTokenCookieService` — resolves JWT from `Authorization: Bearer` (first) or `access_token` cookie; builds/clears `Set-Cookie` headers.
-- `POST /auth/token` — still returns `{ accessToken, tokenType, expiresInMs }` **and** sets the HttpOnly cookie.
-- `POST /auth/logout` — clears the cookie (`Max-Age=0`).
+- `POST /api/v1/auth/token` — still returns `{ accessToken, tokenType, expiresInMs }` **and** sets the HttpOnly cookie.
+- `POST /api/v1/auth/logout` — clears the cookie (`Max-Age=0`).
 - `JwtAuthFilter` — authenticates from either carrier via one code path.
 - Config: `app.jwt.cookie.*` (`name`, `secure`, `same-site`); `secure: true` in `application-prod.yml`.
 - Tests: `AccessTokenCookieServiceTest`, cookie path in `QuoteSecurityTest`, Set-Cookie assertions in `AuthControllerTest`.

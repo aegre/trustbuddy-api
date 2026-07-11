@@ -105,7 +105,7 @@ run-dev: infra-up ## Start infra, then run API with dev profile
 	$(MVN) spring-boot:run -Dspring-boot.run.profiles=$(RUN_PROFILE)
 
 token: ## Obtain JWT from running API (uses AUTH_USERNAME / AUTH_PASSWORD from .env)
-	@curl -s -X POST http://localhost:$(API_PORT)/auth/token \
+	@curl -s -X POST http://localhost:$(API_PORT)/api/v1/auth/token \
 		-H "Content-Type: application/json" \
 		-d '{"username":"$${AUTH_USERNAME:-dev-user}","password":"$${AUTH_PASSWORD:-dev-password}"}' \
 		| python3 -m json.tool

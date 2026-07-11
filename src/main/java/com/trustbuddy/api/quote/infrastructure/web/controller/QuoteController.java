@@ -1,5 +1,6 @@
 package com.trustbuddy.api.quote.infrastructure.web.controller;
 
+import com.trustbuddy.api.config.web.ApiPaths;
 import com.trustbuddy.api.quote.application.service.QuoteService;
 import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
 import com.trustbuddy.api.quote.domain.model.Quote;
@@ -25,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping("/quotes")
+@RequestMapping(ApiPaths.QUOTES)
 @Tag(name = "Quotes")
 public class QuoteController {
 
