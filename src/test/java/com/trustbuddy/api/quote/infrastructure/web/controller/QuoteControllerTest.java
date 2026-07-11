@@ -39,7 +39,6 @@ import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -213,12 +212,37 @@ class QuoteControllerTest {
 		void givenQuotes_whenListQuotes_thenReturnsPage() throws Exception {
 				// Given
 				var quote = QuoteGenerator.draft(30);
-				when(quoteRepository.findAll(PageRequest.of(0, 20)))
-								.thenReturn(new PageImpl<>(java.util.List.of(quote)));
+				when(quoteRepository.findAll(any())).thenReturn(new PageImpl<>(java.util.List.of(quote)));
 
 				// When / Then
 				mockMvc.perform(get(ApiPaths.QUOTES))
 								.andExpect(status().isOk())
 								.andExpect(jsonPath("$.content[0].id").value(quote.getId().toString()));
+		}
+
+		@Test
+		void givenInvalidSortField_whenListQuotes_thenReturns400() throws Exception {
+				// When / Then
+				mockMvc.perform(get(ApiPaths.QUOTES).param("sort", "unknownField,asc"))
+								.andExpect(status().isBadRequest())
+								.andExpect(jsonPath("$.status").value(400))
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_QUERY))
+								.andExpect(
+												jsonPath("$.message")
+																.value(
+																				"Invalid sort field 'unknownField'. Allowed: age, createdAt, email, name, status, updatedAt"));
+
+				verify(quoteRepository, never()).findAll(any());
+		}
+
+		@Test
+		void givenExcessivePageSize_whenListQuotes_thenReturns400() throws Exception {
+				// When / Then
+				mockMvc.perform(get(ApiPaths.QUOTES).param("size", "101"))
+								.andExpect(status().isBadRequest())
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_QUERY))
+								.andExpect(jsonPath("$.message").value("size must not exceed 100"));
+
+				verify(quoteRepository, never()).findAll(any());
 		}
 }

@@ -23,6 +23,7 @@
           "Quotes"
         ],
         "summary": "List quotes with pagination",
+        "description": "Query params: page (0-based), size (max 100), sort (field,asc|desc). Allowed sort fields: age, createdAt, email, name, status, updatedAt. Default sort: createdAt,desc.",
         "operationId": "listQuotes",
         "parameters": [
           {
@@ -475,17 +476,17 @@
             "type": "integer",
             "format": "int32"
           },
-          "numberOfElements": {
-            "type": "integer",
-            "format": "int32"
+          "last": {
+            "type": "boolean"
           },
           "pageable": {
             "$ref": "#/components/schemas/PageableObject"
           },
-          "first": {
-            "type": "boolean"
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
           },
-          "last": {
+          "first": {
             "type": "boolean"
           },
           "size": {
@@ -513,9 +514,6 @@
       "PageableObject": {
         "type": "object",
         "properties": {
-          "unpaged": {
-            "type": "boolean"
-          },
           "paged": {
             "type": "boolean"
           },
@@ -526,6 +524,9 @@
           "pageSize": {
             "type": "integer",
             "format": "int32"
+          },
+          "unpaged": {
+            "type": "boolean"
           },
           "offset": {
             "type": "integer",

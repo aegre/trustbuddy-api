@@ -8,12 +8,14 @@ import com.trustbuddy.api.quote.infrastructure.web.mapper.QuoteWebMapper;
 import com.trustbuddy.api.quote.infrastructure.web.request.CreateQuoteRequest;
 import com.trustbuddy.api.quote.infrastructure.web.request.UpdateCoverageRequest;
 import com.trustbuddy.api.quote.infrastructure.web.response.QuoteResponse;
+import com.trustbuddy.api.quote.infrastructure.web.support.QuotePageables;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -74,8 +76,19 @@ public class QuoteController {
 		}
 
 		@GetMapping
-		@Operation(summary = "List quotes with pagination")
-		public Page<QuoteResponse> listQuotes(@PageableDefault(size = 20) Pageable pageable) {
-				return quoteService.listQuotes(pageable).map(QuoteWebMapper::toResponse);
+		@Operation(
+						summary = "List quotes with pagination",
+						description =
+										"Query params: page (0-based), size (max "
+														+ QuotePageables.MAX_SIZE
+														+ "), sort (field,asc|desc). Allowed sort fields: "
+														+ QuotePageables.ALLOWED_SORT_FIELDS_DOC
+														+ ". Default sort: createdAt,desc.")
+		public Page<QuoteResponse> listQuotes(
+						@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+										Pageable pageable) {
+				return quoteService
+								.listQuotes(QuotePageables.requireValid(pageable))
+								.map(QuoteWebMapper::toResponse);
 		}
 }
