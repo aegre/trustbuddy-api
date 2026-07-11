@@ -55,9 +55,9 @@ make swagger-url              # print Swagger UI URL
 ```bash
 make test          # unit and integration tests (Docker required for Testcontainers)
 make format        # apply Spotless formatting (Java sources)
-make precommit     # format staged Java files only and re-stage
-make verify        # compile + test + Checkstyle + SpotBugs (+ JaCoCo report)
-make coverage      # tests + JaCoCo report only (skips Checkstyle/SpotBugs)
+make precommit     # run full-tree Spotless when Java is staged (pre-commit hook)
+make verify        # compile + test + Spotless + Checkstyle + SpotBugs (+ JaCoCo report)
+make coverage      # tests + JaCoCo report only (skips Spotless/Checkstyle/SpotBugs)
 ```
 
 See [Static analysis](#static-analysis) for tool configuration, individual commands, and CI integration.
@@ -193,6 +193,7 @@ Code quality is enforced with Maven plugins bound to the **`verify`** lifecycle 
 
 | Tool | What it checks | When it runs |
 |------|----------------|--------------|
+| [Spotless](https://github.com/diffplug/spotless) | Java formatting (Google Java Format AOSP + tabs) | `verify` |
 | [Checkstyle](https://checkstyle.org/) | Style, naming, imports, complexity | `verify` |
 | [SpotBugs](https://spotbugs.github.io/) | Bug patterns in compiled bytecode | `verify` |
 | [Error Prone](https://errorprone.info/) | Likely bugs and bad idioms at compile time | `compile` |
@@ -201,11 +202,11 @@ Code quality is enforced with Maven plugins bound to the **`verify`** lifecycle 
 ### Commands
 
 ```bash
-make lint          # Checkstyle + SpotBugs only (skips tests)
+make lint          # Spotless + Checkstyle + SpotBugs only (skips tests)
 make format        # apply Spotless formatting (Java sources)
-make precommit     # format staged Java files only and re-stage
-make verify        # compile + test + Checkstyle + SpotBugs (+ JaCoCo report)
-make coverage      # tests + JaCoCo report only (skips Checkstyle/SpotBugs)
+make precommit     # run full-tree Spotless when Java is staged (pre-commit hook)
+make verify        # compile + test + Spotless + Checkstyle + SpotBugs (+ JaCoCo report)
+make coverage      # tests + JaCoCo report only (skips Spotless/Checkstyle/SpotBugs)
 ```
 
 Equivalent Maven invocations:
@@ -213,15 +214,15 @@ Equivalent Maven invocations:
 ```bash
 ./mvnw spotless:apply                      # format Java sources
 ./mvnw spotless:check                      # check formatting (no changes)
-./mvnw checkstyle:check spotbugs:check   # lint only
+./mvnw spotless:check checkstyle:check spotbugs:check   # lint only
 ./mvnw verify                              # full gate
 ./mvnw test jacoco:report                  # coverage only
 ./mvnw compile                             # includes Error Prone
 ```
 
-Run `make format` to format the whole tree, or `make precommit` to format **staged Java files only** (same logic as the git pre-commit hook). On a local git checkout (not CI or Docker builds), hooks are installed automatically on the first Maven build via [git-build-hook-maven-plugin](https://github.com/rudikershaw/git-build-hook). Hook script: [`.githooks/pre-commit`](.githooks/pre-commit).
+Run `make format` to format the whole tree. The git pre-commit hook runs **full-tree** Spotless when any Java file is staged (same as `make precommit`), because per-file Spotless can miss wrapping and other cross-file rules. On a local git checkout (not CI or Docker builds), hooks are installed automatically on the first Maven build via [git-build-hook-maven-plugin](https://github.com/rudikershaw/git-build-hook). Hook script: [`.githooks/pre-commit`](.githooks/pre-commit).
 
-Use `make lint` for a faster feedback loop when fixing style or SpotBugs findings; use `make coverage` when you only need a coverage report; run `make verify` before opening a PR.
+Use `make lint` for a faster feedback loop when fixing formatting, style, or SpotBugs findings; use `make coverage` when you only need a coverage report; run `make verify` before opening a PR.
 
 ### Spotless (formatting)
 
@@ -229,7 +230,7 @@ Configuration: [`pom.xml`](pom.xml) (`spotless-maven-plugin`).
 
 Formats **main and test** Java sources with Google Java Format (AOSP style), then converts indentation to **tabs** to match project conventions. Also removes unused imports, trims trailing whitespace, and ensures a final newline.
 
-Not enforced in CI or `verify` — run `make format` locally (or `./mvnw spotless:check` to verify without applying).
+Enforced in **`verify`** and CI via `spotless:check`. Run `make format` locally to apply fixes.
 
 ### Checkstyle
 

@@ -1,8 +1,8 @@
 package com.trustbuddy.api.config.observability;
 
 import com.trustbuddy.api.config.port.ErrorReporterPort;
-import io.sentry.Sentry;
 import io.sentry.ScopeCallback;
+import io.sentry.Sentry;
 
 public class SentryErrorReporterAdapter implements ErrorReporterPort {
 

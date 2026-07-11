@@ -22,10 +22,10 @@ help: ## Show available targets
 	@echo "Build:"
 	@echo "  compile        Compile sources"
 	@echo "  format         Apply Spotless formatting to Java sources"
-	@echo "  precommit      Format staged Java files and re-stage them"
+	@echo "  precommit      Format staged Java via full-tree Spotless (pre-commit hook)"
 	@echo "  openapi-export Write openapi/openapi.json from running API"
 	@echo "  openapi-drift  Check committed OpenAPI spec matches springdoc"
-	@echo "  lint           Run Checkstyle and SpotBugs"
+	@echo "  lint           Run Spotless, Checkstyle, and SpotBugs"
 	@echo ""
 	@echo "Test:"
 	@echo "  test           Run unit and integration tests"
@@ -95,8 +95,8 @@ coverage: ## Run tests + JaCoCo report (skips Checkstyle/SpotBugs)
 	$(MVN) test jacoco:report -q
 	@echo "JaCoCo report: $$(pwd)/target/site/jacoco/index.html"
 
-lint: ## Run Checkstyle and SpotBugs (also runs during verify)
-	$(MVN) checkstyle:check spotbugs:check -q
+lint: ## Run Spotless, Checkstyle, and SpotBugs (also runs during verify)
+	$(MVN) spotless:check checkstyle:check spotbugs:check -q
 
 run: ## Run API locally (dev profile; requires make infra-up)
 	$(MVN) spring-boot:run -Dspring-boot.run.profiles=$(RUN_PROFILE)

@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.trustbuddy.api.config.ErrorReportingConfig;
+import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.service.QuoteService;
@@ -21,8 +23,6 @@ import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
-import com.trustbuddy.api.config.ErrorReportingConfig;
-import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.quote.infrastructure.web.exception.QuoteExceptionHandler;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 import java.util.UUID;

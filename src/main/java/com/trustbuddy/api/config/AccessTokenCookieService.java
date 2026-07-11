@@ -18,7 +18,8 @@ public class AccessTokenCookieService {
 		private final JwtProperties jwtProperties;
 		private final JwtCookieProperties jwtCookieProperties;
 
-		public AccessTokenCookieService(JwtProperties jwtProperties, JwtCookieProperties jwtCookieProperties) {
+		public AccessTokenCookieService(
+						JwtProperties jwtProperties, JwtCookieProperties jwtCookieProperties) {
 				this.jwtProperties = jwtProperties;
 				this.jwtCookieProperties = jwtCookieProperties;
 		}

@@ -11,9 +11,7 @@ if [ -z "$staged_java" ]; then
 fi
 
 file_count="$(printf '%s\n' "$staged_java" | wc -l | tr -d ' ')"
-files_csv="$(printf '%s\n' "$staged_java" | tr '\n' ',' | sed 's/,$//')"
-
-echo "Formatting ${file_count} staged Java file(s)..."
-./mvnw spotless:apply -DspotlessFiles="$files_csv" -q
+echo "Formatting Java sources (${file_count} staged file(s); running full-tree Spotless)..."
+./mvnw spotless:apply -q
 
 printf '%s\n' "$staged_java" | xargs git add --

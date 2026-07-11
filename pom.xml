@@ -244,6 +244,15 @@
 						</indent>
 					</java>
 				</configuration>
+				<executions>
+					<execution>
+						<id>spotless</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>

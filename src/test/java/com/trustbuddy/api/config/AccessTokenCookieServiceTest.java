@@ -14,7 +14,8 @@ class AccessTokenCookieServiceTest {
 
 		@BeforeEach
 		void setUp() {
-				JwtCookieProperties cookieProperties = new JwtCookieProperties("access_token", false, "Lax");
+				JwtCookieProperties cookieProperties =
+								new JwtCookieProperties("access_token", false, "Lax");
 				accessTokenCookieService =
 								new AccessTokenCookieService(
 												new com.trustbuddy.api.config.properties.JwtProperties(

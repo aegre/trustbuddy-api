@@ -44,7 +44,7 @@ public class AuthController {
 						summary = "Obtain a JWT access token",
 						description =
 										"Returns the JWT in the response body for Bearer clients and sets an HttpOnly"
-												+ " access-token cookie for browser clients.")
+														+ " access-token cookie for browser clients.")
 		@SecurityRequirements
 		public ResponseEntity<AuthTokenResponse> token(@Valid @RequestBody AuthTokenRequest request) {
 				if (!isValidCredentials(request)) {
@@ -61,7 +61,8 @@ public class AuthController {
 		@PostMapping("/logout")
 		@Operation(
 						summary = "Clear the access-token cookie",
-						description = "Clears the HttpOnly JWT cookie. Bearer clients discard the token client-side.")
+						description =
+										"Clears the HttpOnly JWT cookie. Bearer clients discard the token client-side.")
 		@SecurityRequirements
 		public ResponseEntity<Void> logout() {
 				return ResponseEntity.noContent()

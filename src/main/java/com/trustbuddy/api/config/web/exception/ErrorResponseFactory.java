@@ -11,7 +11,8 @@ public final class ErrorResponseFactory {
 
 		private ErrorResponseFactory() {}
 
-		public static ErrorResponse create(HttpStatus status, String code, String message, String path) {
+		public static ErrorResponse create(
+						HttpStatus status, String code, String message, String path) {
 				ErrorResponse body = new ErrorResponse();
 				body.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 				body.setStatus(status.value());

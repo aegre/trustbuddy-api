@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.trustbuddy.api.config.ErrorReportingConfig;
 import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +16,6 @@ import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
-
-import com.trustbuddy.api.config.ErrorReportingConfig;
 
 @WebMvcTest(controllers = ExceptionTestController.class)
 @Import({
@@ -75,8 +74,7 @@ class QuoteExceptionHandlerTest {
 								.andExpect(status().isBadRequest())
 								.andExpect(jsonPath("$.status").value(400))
 								.andExpect(
-												jsonPath("$.code")
-																.value(QuoteErrorCodes.QUOTE_CONDITIONAL_FIELD_REJECTED))
+												jsonPath("$.code").value(QuoteErrorCodes.QUOTE_CONDITIONAL_FIELD_REJECTED))
 								.andExpect(
 												jsonPath("$.message")
 																.value(
@@ -101,8 +99,7 @@ class QuoteExceptionHandlerTest {
 								.andExpect(status().isBadGateway())
 								.andExpect(jsonPath("$.status").value(502))
 								.andExpect(
-												jsonPath("$.code")
-																.value(QuoteErrorCodes.QUOTE_EXTERNAL_SUBMISSION_FAILED))
+												jsonPath("$.code").value(QuoteErrorCodes.QUOTE_EXTERNAL_SUBMISSION_FAILED))
 								.andExpect(jsonPath("$.error").value("Bad Gateway"))
 								.andExpect(jsonPath("$.message").value("Insurer gateway returned an error"));
 		}
