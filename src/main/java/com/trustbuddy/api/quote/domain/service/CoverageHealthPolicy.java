@@ -25,6 +25,27 @@ public class CoverageHealthPolicy {
 				}
 		}
 
+		public void validateHealthFieldsForPartialUpdate(
+						int age,
+						Boolean patchedHasPreexistingConditions,
+						Set<ConditionType> patchedConditions,
+						Boolean existingHasPreexistingConditions,
+						Set<ConditionType> existingConditions) {
+				if (age > SENIOR_AGE_THRESHOLD) {
+						if (patchedHasPreexistingConditions != null || patchedConditions != null) {
+								Boolean hasPreexistingConditions =
+												patchedHasPreexistingConditions != null
+																? patchedHasPreexistingConditions
+																: existingHasPreexistingConditions;
+								Set<ConditionType> conditions =
+												patchedConditions != null ? patchedConditions : existingConditions;
+								validateSeniorPreexistingFields(hasPreexistingConditions, conditions);
+						}
+				} else {
+						rejectSeniorOnlyFields(patchedHasPreexistingConditions, patchedConditions);
+				}
+		}
+
 		private void validateSeniorPreexistingFields(
 						Boolean hasPreexistingConditions, Set<ConditionType> conditions) {
 				if (hasPreexistingConditions == null) {

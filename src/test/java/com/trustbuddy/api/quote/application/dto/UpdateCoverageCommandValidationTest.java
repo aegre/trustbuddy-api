@@ -35,7 +35,7 @@ class UpdateCoverageCommandValidationTest {
 		}
 
 		@Test
-		void givenMissingCoverageType_whenValidate_thenReportsCoverageTypeViolation() {
+		void givenEmptyCommand_whenValidate_thenHasNoViolations() {
 				// Given
 				UpdateCoverageCommand command = new UpdateCoverageCommand();
 
@@ -43,8 +43,6 @@ class UpdateCoverageCommandValidationTest {
 				Set<ConstraintViolation<UpdateCoverageCommand>> violations = validator.validate(command);
 
 				// Then
-				assertThat(violations)
-								.extracting(violation -> violation.getPropertyPath().toString())
-								.contains("coverageType");
+				assertThat(violations).isEmpty();
 		}
 }

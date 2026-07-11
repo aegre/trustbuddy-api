@@ -58,7 +58,7 @@ public class QuoteController {
 		}
 
 		@PatchMapping("/{id}/coverage")
-		@Operation(summary = "Set coverage type and supplemental health answers")
+		@Operation(summary = "Partially update coverage type and supplemental health answers")
 		public QuoteResponse updateCoverage(
 						@PathVariable UUID id, @RequestBody UpdateCoverageRequest request) {
 				Quote updated = quoteService.updateCoverage(id, QuoteWebMapper.toCommand(request));

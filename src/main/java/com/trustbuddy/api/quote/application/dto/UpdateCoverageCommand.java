@@ -2,13 +2,12 @@ package com.trustbuddy.api.quote.application.dto;
 
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
-import jakarta.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.Set;
 
 public class UpdateCoverageCommand {
 
-		@NotNull private CoverageType coverageType;
+		private CoverageType coverageType;
 
 		private Boolean hasPreexistingConditions;
 
@@ -76,5 +75,14 @@ public class UpdateCoverageCommand {
 
 		public void setNeedsSpouseCoverage(Boolean needsSpouseCoverage) {
 				this.needsSpouseCoverage = needsSpouseCoverage;
+		}
+
+		public boolean hasAnyField() {
+				return coverageType != null
+								|| hasPreexistingConditions != null
+								|| conditions != null
+								|| takesPrescriptionMedication != null
+								|| usesTobacco != null
+								|| needsSpouseCoverage != null;
 		}
 }

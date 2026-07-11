@@ -6,13 +6,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.Set;
 
-@Schema(description = "Coverage type and supplemental health answers for a quote")
+@Schema(description = "Partial coverage update; omit fields to leave them unchanged")
 public class UpdateCoverageRequest {
 
-		@Schema(
-						description = "Selected coverage tier",
-						example = "STANDARD",
-						requiredMode = Schema.RequiredMode.REQUIRED)
+		@Schema(description = "Selected coverage tier", example = "STANDARD")
 		private CoverageType coverageType;
 
 		@Schema(

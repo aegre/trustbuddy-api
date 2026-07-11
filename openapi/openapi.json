@@ -164,7 +164,7 @@
                 "tags": [
                     "Quotes"
                 ],
-                "summary": "Set coverage type and supplemental health answers",
+                "summary": "Partially update coverage type and supplemental health answers",
                 "operationId": "updateCoverage",
                 "parameters": [
                     {
@@ -396,7 +396,7 @@
             },
             "UpdateCoverageRequest": {
                 "type": "object",
-                "description": "Coverage type and supplemental health answers for a quote",
+                "description": "Partial coverage update; omit fields to leave them unchanged",
                 "properties": {
                     "coverageType": {
                         "type": "string",
@@ -439,10 +439,7 @@
                         "type": "boolean",
                         "description": "Whether spouse coverage is needed"
                     }
-                },
-                "required": [
-                    "coverageType"
-                ]
+                }
             },
             "Pageable": {
                 "type": "object",

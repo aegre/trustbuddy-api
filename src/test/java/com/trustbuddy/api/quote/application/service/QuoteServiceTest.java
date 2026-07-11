@@ -81,6 +81,62 @@ class QuoteServiceTest {
 		}
 
 		@Test
+		void
+						givenQuoteWithCoverage_whenUpdateCoverageWithSingleField_thenMergesAndRecalculatesPremium() {
+				// Given
+				Quote draft =
+								QuoteGenerator.coverage(30, CoverageType.STANDARD)
+												.usesTobacco(false)
+												.needsSpouseCoverage(false)
+												.build();
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
+				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+				UpdateCoverageCommand command = new UpdateCoverageCommand();
+				command.setUsesTobacco(true);
+
+				// When
+				Quote updated = quoteService.updateCoverage(draft.getId(), command);
+
+				// Then
+				assertThat(updated.getCoverageType()).isEqualTo(CoverageType.STANDARD);
+				assertThat(updated.getUsesTobacco()).isTrue();
+				assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("120.00");
+		}
+
+		@Test
+		void
+						givenQuoteWithoutCoverage_whenUpdateCoverageWithoutCoverageType_thenThrowsQuoteValidationException() {
+				// Given
+				Quote draft = QuoteGenerator.draft(30);
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.empty());
+				when(quoteRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+				UpdateCoverageCommand command = new UpdateCoverageCommand();
+				command.setUsesTobacco(true);
+
+				// When / Then
+				assertThatThrownBy(() -> quoteService.updateCoverage(draft.getId(), command))
+								.isInstanceOf(QuoteValidationException.class)
+								.hasMessageContaining("coverageType is required");
+				verify(quoteRepository, never()).save(any());
+		}
+
+		@Test
+		void givenDraftQuote_whenUpdateCoverageWithEmptyCommand_thenReturnsQuoteUnchanged() {
+				// Given
+				Quote draft = QuoteGenerator.draft(30);
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.of(draft));
+
+				// When
+				Quote updated = quoteService.updateCoverage(draft.getId(), new UpdateCoverageCommand());
+
+				// Then
+				assertThat(updated).isEqualTo(draft);
+				verify(quoteRepository, never()).save(any());
+		}
+
+		@Test
 		void givenDraftQuote_whenUpdateCoverageWithOptionalFieldsOmitted_thenSavesCoverage() {
 				// Given
 				Quote draft = QuoteGenerator.draft(30);
