@@ -6,10 +6,10 @@ DOCKER_IMAGE := trustbuddy-api:local
 COMPOSE := docker compose
 API_PORT ?= 8080
 
-# Load .env when present; export only .env keys (not Make internals)
+# Load .env when present; export only uncommented KEY= assignments
 ifneq (,$(wildcard .env))
 include .env
-export $(shell sed -n 's/=.*//p' .env)
+export $(shell grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env | cut -d= -f1)
 endif
 
 .PHONY: help compile test test-one verify lint format precommit openapi-export openapi-drift run run-dev token health swagger-url \
