@@ -16,7 +16,7 @@ import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.service.QuoteService;
 import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
 import com.trustbuddy.api.quote.application.validation.CommandValidator;
-import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
+import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
@@ -142,15 +142,15 @@ class QuoteControllerTest {
 		}
 
 		@Test
-		void givenDraftWithoutCoverage_whenSubmitQuote_thenReturns400() throws Exception {
+		void givenDraftWithoutCoverage_whenSubmitQuote_thenReturns409() throws Exception {
 				// Given
 				var quote = QuoteGenerator.draft(30);
 				when(quoteSubmissionService.submitQuote(quote.getId()))
-								.thenThrow(new QuoteValidationException("Quote is missing required coverage data"));
+								.thenThrow(new InvalidQuoteStateException("Quote is missing required coverage data"));
 
 				// When / Then
 				mockMvc.perform(post("/quotes/{id}/submit", quote.getId()))
-								.andExpect(status().isBadRequest())
+								.andExpect(status().isConflict())
 								.andExpect(jsonPath("$.message").value("Quote is missing required coverage data"));
 		}
 

@@ -10,6 +10,7 @@ import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.ExternalSubmissionException;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
+import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
@@ -109,11 +110,15 @@ public class QuoteSubmissionService {
 		}
 
 		private void ensureReadyForSubmission(Quote quote) {
-				commandValidator.validate(QuoteSubmissionReadiness.from(quote));
+				commandValidator.validateSubmissionReadiness(QuoteSubmissionReadiness.from(quote));
 
 				Set<ConditionType> conditions =
 								quote.getConditions().isEmpty() ? null : quote.getConditions();
-				coverageHealthPolicy.validateHealthFieldsForAge(
-								quote.getAge(), quote.getHasPreexistingConditions(), conditions);
+				try {
+						coverageHealthPolicy.validateHealthFieldsForAge(
+										quote.getAge(), quote.getHasPreexistingConditions(), conditions);
+				} catch (QuoteValidationException exception) {
+						throw new InvalidQuoteStateException(exception.getMessage());
+				}
 		}
 }
