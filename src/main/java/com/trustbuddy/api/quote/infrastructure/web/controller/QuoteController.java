@@ -11,7 +11,10 @@ import com.trustbuddy.api.quote.infrastructure.web.response.QuoteResponse;
 import com.trustbuddy.api.quote.infrastructure.web.support.QuotePageables;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -88,10 +91,15 @@ public class QuoteController {
 														+ QuotePageables.SORT_USAGE_DOC
 														+ " Default: createdAt,desc.")
 		public Page<QuoteResponse> listQuotes(
+						HttpServletRequest request,
 						@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
 										Pageable pageable) {
+				List<String> sortParams =
+								request.getParameterValues("sort") == null
+												? List.of()
+												: Arrays.asList(request.getParameterValues("sort"));
 				return quoteService
-								.listQuotes(QuotePageables.requireValid(pageable))
+								.listQuotes(QuotePageables.requireValid(pageable, sortParams))
 								.map(QuoteWebMapper::toResponse);
 		}
 }

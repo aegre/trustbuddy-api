@@ -2,6 +2,7 @@ package com.trustbuddy.api.quote.infrastructure.web.support;
 
 import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +25,15 @@ public final class QuotePageables {
 		private QuotePageables() {}
 
 		public static Pageable requireValid(Pageable pageable) {
+				return requireValid(pageable, List.of());
+		}
+
+		public static Pageable requireValid(Pageable pageable, List<String> sortParams) {
+				if (sortParams != null) {
+						for (String sortParam : sortParams) {
+								requireValidSortParam(sortParam);
+						}
+				}
 				Pageable normalized = normalizePageSize(pageable);
 				if (normalized.getPageNumber() < 0) {
 						throw new QuoteValidationException(
@@ -37,6 +47,32 @@ public final class QuotePageables {
 						}
 				}
 				return normalized;
+		}
+
+		private static void requireValidSortParam(String sortParam) {
+				if (sortParam == null || sortParam.isBlank()) {
+						throw new QuoteValidationException(
+										QuoteErrorCodes.QUOTE_INVALID_QUERY, invalidSortFormatMessage(sortParam));
+				}
+				String[] parts = sortParam.split(",", -1);
+				if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+						throw new QuoteValidationException(
+										QuoteErrorCodes.QUOTE_INVALID_QUERY, invalidSortFormatMessage(sortParam));
+				}
+				String field = parts[0].trim();
+				String direction = parts[1].trim();
+				if (!isSortDirection(direction)) {
+						throw new QuoteValidationException(
+										QuoteErrorCodes.QUOTE_INVALID_QUERY, invalidSortFormatMessage(sortParam));
+				}
+				if (!ALLOWED_SORT_PROPERTIES.contains(field)) {
+						throw new QuoteValidationException(
+										QuoteErrorCodes.QUOTE_INVALID_QUERY, invalidSortFieldMessage(field));
+				}
+		}
+
+		private static boolean isSortDirection(String direction) {
+				return "asc".equalsIgnoreCase(direction) || "desc".equalsIgnoreCase(direction);
 		}
 
 		private static Pageable normalizePageSize(Pageable pageable) {
@@ -54,6 +90,14 @@ public final class QuotePageables {
 				return "Invalid sort field '"
 								+ field
 								+ "'. Use sort=<field>,asc|desc. Allowed fields: "
+								+ allowedSortFields();
+		}
+
+		public static String invalidSortFormatMessage(String sortParam) {
+				String value = sortParam == null || sortParam.isBlank() ? "(empty)" : sortParam;
+				return "Invalid sort format '"
+								+ value
+								+ "'. Use sort=<field>,asc|desc for each sort parameter. Allowed fields: "
 								+ allowedSortFields();
 		}
 }

@@ -39,6 +39,57 @@ class QuotePageablesTest {
 		}
 
 		@Test
+		void givenInvalidSortFormat_whenRequireValid_thenThrowQuoteValidationException() {
+				// Given
+				var pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "age", "createdAt"));
+
+				// When / Then
+				assertThatThrownBy(
+												() ->
+																QuotePageables.requireValid(
+																				pageable, java.util.List.of("age,createdAt")))
+								.isInstanceOf(QuoteValidationException.class)
+								.hasMessage(
+												"Invalid sort format 'age,createdAt'. Use sort=<field>,asc|desc for each sort parameter. Allowed fields: age, createdAt, email, name, status, updatedAt")
+								.extracting("errorCode")
+								.isEqualTo(QuoteErrorCodes.QUOTE_INVALID_QUERY);
+		}
+
+		@Test
+		void givenMultipleFieldsInOneSortParam_whenRequireValid_thenThrowQuoteValidationException() {
+				// Given
+				var pageable =
+								PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "asc", "age", "createdAt"));
+
+				// When / Then
+				assertThatThrownBy(
+												() ->
+																QuotePageables.requireValid(
+																				pageable, java.util.List.of("asc,age,createdAt")))
+								.isInstanceOf(QuoteValidationException.class)
+								.hasMessage(
+												"Invalid sort format 'asc,age,createdAt'. Use sort=<field>,asc|desc for each sort parameter. Allowed fields: age, createdAt, email, name, status, updatedAt")
+								.extracting("errorCode")
+								.isEqualTo(QuoteErrorCodes.QUOTE_INVALID_QUERY);
+		}
+
+		@Test
+		void givenValidSortParam_whenRequireValid_thenReturnPageable() {
+				// Given
+				var pageable =
+								PageRequest.of(
+												0, 20, Sort.by(Sort.Order.asc("status"), Sort.Order.desc("createdAt")));
+
+				// When
+				var actual =
+								QuotePageables.requireValid(
+												pageable, java.util.List.of("status,asc", "createdAt,desc"));
+
+				// Then
+				assertThat(actual).isSameAs(pageable);
+		}
+
+		@Test
 		void givenExcessivePageSize_whenRequireValid_thenClampToMaxSize() {
 				// Given
 				var pageable = PageRequest.of(2, 101, Sort.by(Sort.Direction.ASC, "name"));
