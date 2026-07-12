@@ -15,7 +15,7 @@ export $(shell grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env | cut -d= -f1)
 endif
 
 .PHONY: help compile test test-one verify lint format precommit openapi-export openapi-drift run run-dev token health swagger-url \
-	clone-frontend \
+	clone-frontend ensure-env \
 	infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs \
 	stack-all-up stack-all-down stack-all-logs \
 	kafka-consume coverage test-state test-submit
@@ -55,6 +55,7 @@ help: ## Show available targets
 	@echo ""
 	@echo "Development:"
 	@echo "  clone-frontend Clone trustbuddy-frontend sibling ($(FRONTEND_REPO))"
+	@echo "  ensure-env     Create .env from .env.example when missing"
 	@echo "  run            Run API locally (dev profile; requires make infra-up)"
 	@echo "  run-dev        Start infra, then run API with dev profile"
 	@echo "  token          Obtain JWT from running API"
@@ -76,6 +77,13 @@ clone-frontend: ## Clone trustbuddy-frontend sibling next to this repo ($(FRONTE
 	else \
 		git clone "$(FRONTEND_GIT_URL)" "$(FRONTEND_REPO)"; \
 		echo "Cloned $(FRONTEND_GIT_URL) → $(FRONTEND_REPO)"; \
+	fi
+
+ensure-env: ## Create .env from .env.example when .env is missing
+	@if [ ! -f .env ]; then \
+		test -f .env.example || (echo "Missing .env.example" && exit 1); \
+		cp .env.example .env; \
+		echo "Created .env from .env.example"; \
 	fi
 
 openapi-export: ## Write openapi/openapi.json from running API (requires API on localhost)
@@ -132,7 +140,7 @@ health: ## Check actuator health endpoint
 swagger-url: ## Print local Swagger UI URL
 	@echo "http://localhost:$(API_PORT)/swagger-ui.html"
 
-infra-up: ## Start PostgreSQL, Redis, and Kafka (Docker)
+infra-up: ensure-env ## Start PostgreSQL, Redis, and Kafka (Docker)
 	$(COMPOSE) up -d postgres redis kafka
 
 infra-down: ## Stop infrastructure containers
@@ -150,10 +158,10 @@ kafka-consume: ## Tail quote-submitted Kafka topic locally
 infra-reset: ## Stop infrastructure and remove volumes
 	$(COMPOSE) down -v
 
-docker-build: ## Build API Docker image
+docker-build: ensure-env ## Build API Docker image
 	docker build -t $(DOCKER_IMAGE) .
 
-stack-up: ## Build and start full stack (API + infra) in Docker
+stack-up: ensure-env ## Build and start full stack (API + infra) in Docker
 	$(COMPOSE) up -d --build
 
 stack-down: ## Stop full stack including API
