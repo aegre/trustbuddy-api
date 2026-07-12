@@ -1,98 +1,139 @@
-# Trustbuddy API
+# trustbuddy-api
 
-Backend REST API for the multi-step insurance quote flow (Onboarding team code challenge). Built with Spring Boot 4.1, hexagonal architecture, PostgreSQL, Redis, and Kafka.
-
-## Status
-
-The quote capability is **feature-complete** for the challenge scope:
-
-- Domain model, premium calculation, and state transitions
-- PostgreSQL persistence (JPA) with optimistic locking
-- REST API under `/api/v1/quotes` (create, update coverage, submit, get, list)
-- JWT authentication (`POST /api/v1/auth/token`) on all quote endpoints
-- Redis quote cache (read-through get, eviction on save)
-- Kafka `quote-submitted` events on first successful submit
-- Scheduled draft expiration (`DRAFT` → `EXPIRED`)
-- CORS for the React frontend origin
-- Global error handling, Bean Validation, Checkstyle, SpotBugs, JaCoCo
-
-See [BUILD_JOURNEY.md](BUILD_JOURNEY.md) for how this was delivered in **14 incremental phases** (plan, timeline, and what each phase produced).
-
-## Tech stack
-
-| Area | Choice |
-|------|--------|
-| Language | Java 17 |
-| Framework | Spring Boot 4.1 |
-| Build | Maven (`./mvnw`) |
-| Persistence | Spring Data JPA + PostgreSQL |
-| Cache | Redis |
-| Messaging | Kafka |
-| Auth | JWT — Bearer header and HttpOnly cookie |
-| API docs | springdoc OpenAPI (Swagger UI) |
-| Architecture | Hexagonal (ports & adapters) |
-| Observability | Spring Actuator + Micrometer + Sentry (errors) |
+Spring Boot REST API for the Trustbuddy insurance quote flow. Pairs with [trustbuddy-frontend](https://github.com/aegre/trustbuddy-frontend).
 
 ## Prerequisites
 
 - Java 17+
-- Docker (for PostgreSQL, Redis, Kafka via `make infra-up`)
-- `make` (optional; wraps Maven commands)
+- `make` (wraps Maven / `./mvnw`)
+- Docker + Docker Compose (PostgreSQL, Redis, Kafka, optional full API stack)
+- Sibling clone of [trustbuddy-frontend](https://github.com/aegre/trustbuddy-frontend) next to this repo (`../trustbuddy-frontend`) — use `make clone-frontend` if you do not have it yet
 
-## Quick start
-
-```bash
-cp .env.example .env          # optional — dev profile has defaults
-make infra-up                 # PostgreSQL, Redis, Kafka
-make run-dev                  # infra + API (dev profile)
-make token                    # obtain JWT for API calls
-make health                   # check actuator health
-make swagger-url              # print Swagger UI URL
-```
-
-### Verify
+## Installation
 
 ```bash
-make test          # unit and integration tests (Docker required for Testcontainers)
-make format        # apply Spotless formatting (Java sources)
-make precommit     # run full-tree Spotless when Java is staged (pre-commit hook)
-make verify        # compile + test + Spotless + Checkstyle + SpotBugs (+ JaCoCo report)
-make coverage      # tests + JaCoCo report only (skips Spotless/Checkstyle/SpotBugs)
+cp .env.example .env    # AUTH_USERNAME / AUTH_PASSWORD, JWT_SECRET, CORS, Postgres password
+make clone-frontend     # clones ../trustbuddy-frontend if missing
 ```
 
-See [Static analysis](#static-analysis) for tool configuration, individual commands, and CI integration.
+For browser login from the Vite SPA and/or the frontend Docker image, set:
 
-### Docker infrastructure
+```bash
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+```
 
-| Service    | Port | Purpose        |
-|------------|------|----------------|
+Override clone location/URL if needed:
+
+```bash
+make clone-frontend FRONTEND_REPO=../trustbuddy-frontend FRONTEND_GIT_URL=https://github.com/aegre/trustbuddy-frontend.git
+```
+
+In the frontend repo, also copy `.env.example` → `.env` (`VITE_API_BASE_URL=http://localhost:8080`).
+
+## Run everything in Docker
+
+With the frontend sibling checked out beside this repo:
+
+```bash
+make stack-all-up       # API + Postgres/Redis/Kafka + frontend
+# API:      http://localhost:8080  (Swagger: /swagger-ui.html)
+# Frontend: http://localhost:3000
+make stack-all-down     # stop both
+make stack-all-logs     # tail API logs (prints hint for frontend logs)
+```
+
+If `../trustbuddy-frontend` is missing, `stack-all-up` warns and starts the API stack only.
+
+## Run the API (Docker)
+
+```bash
+cp .env.example .env
+make stack-up           # API + PostgreSQL + Redis + Kafka
+# API: http://localhost:8080
+make stack-logs         # tail all service logs
+make stack-down         # stop full stack
+```
+
+| Service    | Port | Purpose |
+|------------|------|---------|
 | PostgreSQL | 5432 | Quote persistence |
-| Redis      | 6379 | Quote cache    |
+| Redis      | 6379 | Quote cache |
 | Kafka      | 9094 | Submit events (host); `kafka:9092` inside compose network |
-| API        | 8080 | REST API (`make stack-up`) |
+| API        | 8080 | REST API |
+
+Host JVM alternative (infra still in Docker):
 
 ```bash
-make infra-up      # start infra only (for make run on host)
-make stack-up      # build and start API + infra in Docker
-make stack-logs    # tail all service logs
-make stack-down    # stop full stack
-make infra-logs    # tail infra logs
-make infra-down    # stop infra containers
-make infra-reset   # stop and wipe volumes
-make docker-build  # build API image only (trustbuddy-api:local)
-make kafka-consume # tail quote-submitted topic (local Docker Kafka)
+make infra-up
+make run-dev            # API on http://localhost:8080 (or: make run after infra-up)
+make token              # obtain JWT for Postman / curl
+make health             # actuator health
+make swagger-url        # print Swagger UI URL
 ```
 
-### Configuration
+Other infra helpers:
 
-| File | Purpose |
-|------|---------|
-| `application.yml` | Universal defaults; requires env vars for infra and secrets |
-| `application-dev.yml` | Localhost defaults for host JVM (`make run`) |
-| `application-docker.yml` | Compose service hostnames (`make stack-up`) |
-| `application-prod.yml` | Strict production settings; Swagger disabled |
+```bash
+make infra-logs         # tail Postgres/Redis/Kafka
+make infra-down         # stop infra containers
+make infra-reset        # stop and wipe volumes
+make docker-build       # build API image only (trustbuddy-api:local)
+make kafka-consume      # tail quote-submitted topic (local Docker Kafka)
+```
 
-Local dev only needs `.env` values documented in `.env.example`. Production must set `DATABASE_URL`, `REDIS_HOST`, `KAFKA_BOOTSTRAP_SERVERS`, `JWT_SECRET`, `CORS_ALLOWED_ORIGINS`, etc.
+Profiles: `application-dev.yml` for host JVM (`make run` / `make run-dev`), `application-docker.yml` for Compose (`make stack-up`), `application-prod.yml` for production.
+
+## Run the frontend
+
+Typical while iterating (API already up):
+
+```bash
+cd ../trustbuddy-frontend
+cp .env.example .env    # once
+make install            # once
+make run                # or make dev → http://localhost:5173
+```
+
+Frontend-only Docker (still needs API on `:8080`):
+
+```bash
+cd ../trustbuddy-frontend
+make stack-up           # http://localhost:3000
+```
+
+## Dev login
+
+Local API default: `dev-user` / `dev-password`.
+
+```bash
+make token              # POST /api/v1/auth/token → JWT body + HttpOnly cookie
+```
+
+## Verify / OpenAPI
+
+```bash
+make verify             # compile + test + Spotless + Checkstyle + SpotBugs (+ JaCoCo)
+make test               # unit and integration tests (Docker required for Testcontainers)
+make test-one TEST=QuoteSubmissionServiceTest
+make coverage           # tests + JaCoCo report only
+make lint               # Spotless + Checkstyle + SpotBugs (skips tests)
+make format             # apply Spotless formatting
+```
+
+After contract changes (API must be running):
+
+```bash
+make openapi-export     # write openapi/openapi.json from /v3/api-docs
+make openapi-drift      # fail if committed spec ≠ live springdoc
+```
+
+Then in the frontend repo: `make openapi-update`.
+
+Interactive docs (dev/docker profiles): `http://localhost:8080/swagger-ui.html`
+
+---
+
+# Thought process
 
 ## Architecture
 
@@ -126,6 +167,7 @@ Base URL when running locally: `http://localhost:8080`
 | `POST` | `/api/v1/auth/logout` | — | Clear access-token cookie (browser clients) |
 | `GET` | `/api/v1/auth/me` | JWT | Return authenticated username (validates Bearer header or access-token cookie) |
 | `POST` | `/api/v1/quotes` | JWT | Create draft quote |
+| `PATCH` | `/api/v1/quotes/{id}` | JWT | Update draft personal info |
 | `PATCH` | `/api/v1/quotes/{id}/coverage` | JWT | Set coverage and health answers; recalculates premium |
 | `POST` | `/api/v1/quotes/{id}/submit` | JWT | Submit to external insurer gateway |
 | `GET` | `/api/v1/quotes/{id}` | JWT | Get quote by id |
@@ -144,12 +186,7 @@ Bearer takes precedence when both are present. Cookie flags: `HttpOnly`, `SameSi
 
 **Insurer gateway** — configure with `INSURER_GATEWAY_URL` (dev default `https://tools-httpstatus.pickup-services.com/200`).
 
-Interactive docs (dev/docker profiles):
-
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
-
-Committed contract export for frontend codegen: [`openapi/openapi.json`](openapi/openapi.json). Regenerate with `make openapi-export` while the API is running (`make run-dev`). Drift is checked by `OpenApiSpecDriftTest` in CI (`make openapi-drift` locally).
+Committed contract export for frontend codegen: [`openapi/openapi.json`](openapi/openapi.json).
 
 ### Metrics
 
@@ -296,7 +333,7 @@ Regenerate the committed export with `make openapi-export` while the API is runn
 
 ## Frontend
 
-This API pairs with a separate React frontend repository. Add the sibling repo link here when available.
+This API pairs with [trustbuddy-frontend](https://github.com/aegre/trustbuddy-frontend).
 
 ## AI-assisted development
 
