@@ -167,6 +167,26 @@
         "security" : [ ]
       }
     },
+    "/api/v1/auth/me" : {
+      "get" : {
+        "tags" : [ "Authentication" ],
+        "summary" : "Return the authenticated principal",
+        "description" : "Validates the JWT from the Authorization Bearer header or the HttpOnly access-token cookie. Returns 401 when missing or invalid.",
+        "operationId" : "me",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuthMeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/quotes/{id}" : {
       "get" : {
         "tags" : [ "Quotes" ],
@@ -404,6 +424,16 @@
             "type" : "integer",
             "format" : "int64",
             "example" : 900000
+          }
+        }
+      },
+      "AuthMeResponse" : {
+        "type" : "object",
+        "description" : "Authenticated principal resolved from Bearer JWT or access-token cookie",
+        "properties" : {
+          "username" : {
+            "type" : "string",
+            "example" : "dev-user"
           }
         }
       },
