@@ -17,6 +17,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -103,7 +104,8 @@ public class QuoteController {
 														+ " Default: createdAt,desc.")
 		public Page<QuoteResponse> listQuotes(
 						HttpServletRequest request,
-						@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+						@ParameterObject
+										@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
 										Pageable pageable) {
 				List<String> sortParams =
 								request.getParameterValues("sort") == null
