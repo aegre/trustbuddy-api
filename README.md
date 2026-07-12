@@ -1,303 +1,322 @@
-# Trustbuddy API
+# trustbuddy-api
 
-Backend REST API for the multi-step insurance quote flow (Onboarding team code challenge). Built with Spring Boot 4.1, hexagonal architecture, PostgreSQL, Redis, and Kafka.
-
-## Status
-
-The quote capability is **feature-complete** for the challenge scope:
-
-- Domain model, premium calculation, and state transitions
-- PostgreSQL persistence (JPA) with optimistic locking
-- REST API under `/api/v1/quotes` (create, update coverage, submit, get, list)
-- JWT authentication (`POST /api/v1/auth/token`) on all quote endpoints
-- Redis quote cache (read-through get, eviction on save)
-- Kafka `quote-submitted` events on first successful submit
-- Scheduled draft expiration (`DRAFT` → `EXPIRED`)
-- CORS for the React frontend origin
-- Global error handling, Bean Validation, Checkstyle, SpotBugs, JaCoCo
-
-See [BUILD_JOURNEY.md](BUILD_JOURNEY.md) for how this was delivered in **14 incremental phases** (plan, timeline, and what each phase produced).
-
-## Tech stack
-
-| Area | Choice |
-|------|--------|
-| Language | Java 17 |
-| Framework | Spring Boot 4.1 |
-| Build | Maven (`./mvnw`) |
-| Persistence | Spring Data JPA + PostgreSQL |
-| Cache | Redis |
-| Messaging | Kafka |
-| Auth | JWT — Bearer header and HttpOnly cookie |
-| API docs | springdoc OpenAPI (Swagger UI) |
-| Architecture | Hexagonal (ports & adapters) |
-| Observability | Spring Actuator + Micrometer + Sentry (errors) |
+Spring Boot REST API for the Trustbuddy insurance quote flow. Pairs with [trustbuddy-frontend](https://github.com/aegre/trustbuddy-frontend).
 
 ## Prerequisites
 
 - Java 17+
-- Docker (for PostgreSQL, Redis, Kafka via `make infra-up`)
-- `make` (optional; wraps Maven commands)
+- `make` (wraps Maven / `./mvnw`)
+- Docker + Docker Compose (PostgreSQL, Redis, Kafka, optional full API stack)
+- Sibling clone of [trustbuddy-frontend](https://github.com/aegre/trustbuddy-frontend) next to this repo (`../trustbuddy-frontend`) — use `make clone-frontend` if you do not have it yet
 
-## Quick start
-
-```bash
-cp .env.example .env          # optional — dev profile has defaults
-make infra-up                 # PostgreSQL, Redis, Kafka
-make run-dev                  # infra + API (dev profile)
-make token                    # obtain JWT for API calls
-make health                   # check actuator health
-make swagger-url              # print Swagger UI URL
-```
-
-### Verify
+## Installation
 
 ```bash
-make test          # unit and integration tests (Docker required for Testcontainers)
-make format        # apply Spotless formatting (Java sources)
-make precommit     # run full-tree Spotless when Java is staged (pre-commit hook)
-make verify        # compile + test + Spotless + Checkstyle + SpotBugs (+ JaCoCo report)
-make coverage      # tests + JaCoCo report only (skips Spotless/Checkstyle/SpotBugs)
+cp .env.example .env    # AUTH_USERNAME / AUTH_PASSWORD, JWT_SECRET, CORS, Postgres password
+make clone-frontend     # clones ../trustbuddy-frontend if missing
 ```
 
-See [Static analysis](#static-analysis) for tool configuration, individual commands, and CI integration.
+For browser login from the Vite SPA and/or the frontend Docker image, set:
 
-### Docker infrastructure
+```bash
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+```
 
-| Service    | Port | Purpose        |
-|------------|------|----------------|
+Override clone location/URL if needed:
+
+```bash
+make clone-frontend FRONTEND_REPO=../trustbuddy-frontend FRONTEND_GIT_URL=https://github.com/aegre/trustbuddy-frontend.git
+```
+
+In the frontend repo, also copy `.env.example` → `.env` (`VITE_API_BASE_URL=http://localhost:8080`).
+
+## Run everything in Docker
+
+With the frontend sibling checked out beside this repo:
+
+```bash
+make stack-all-up       # API + Postgres/Redis/Kafka + frontend
+# API:      http://localhost:8080  (Swagger: /swagger-ui.html)
+# Frontend: http://localhost:3000
+make stack-all-down     # stop both
+make stack-all-logs     # tail API logs (prints hint for frontend logs)
+```
+
+If `../trustbuddy-frontend` is missing, `stack-all-up` warns and starts the API stack only.
+
+## Run the API (Docker)
+
+```bash
+cp .env.example .env
+make stack-up           # API + PostgreSQL + Redis + Kafka
+# API: http://localhost:8080
+make stack-logs         # tail all service logs
+make stack-down         # stop full stack
+```
+
+| Service    | Port | Purpose |
+|------------|------|---------|
 | PostgreSQL | 5432 | Quote persistence |
-| Redis      | 6379 | Quote cache    |
+| Redis      | 6379 | Quote cache |
 | Kafka      | 9094 | Submit events (host); `kafka:9092` inside compose network |
-| API        | 8080 | REST API (`make stack-up`) |
+| API        | 8080 | REST API |
+
+Host JVM alternative (infra still in Docker):
 
 ```bash
-make infra-up      # start infra only (for make run on host)
-make stack-up      # build and start API + infra in Docker
-make stack-logs    # tail all service logs
-make stack-down    # stop full stack
-make infra-logs    # tail infra logs
-make infra-down    # stop infra containers
-make infra-reset   # stop and wipe volumes
-make docker-build  # build API image only (trustbuddy-api:local)
-make kafka-consume # tail quote-submitted topic (local Docker Kafka)
+make infra-up
+make run-dev            # API on http://localhost:8080 (or: make run after infra-up)
+make token              # obtain JWT for Postman / curl
+make health             # actuator health
+make swagger-url        # print Swagger UI URL
 ```
 
-### Configuration
-
-| File | Purpose |
-|------|---------|
-| `application.yml` | Universal defaults; requires env vars for infra and secrets |
-| `application-dev.yml` | Localhost defaults for host JVM (`make run`) |
-| `application-docker.yml` | Compose service hostnames (`make stack-up`) |
-| `application-prod.yml` | Strict production settings; Swagger disabled |
-
-Local dev only needs `.env` values documented in `.env.example`. Production must set `DATABASE_URL`, `REDIS_HOST`, `KAFKA_BOOTSTRAP_SERVERS`, `JWT_SECRET`, `CORS_ALLOWED_ORIGINS`, etc.
-
-## Architecture
-
-Feature-oriented **hexagonal architecture** under `com.trustbuddy.api` — domain at the center, infrastructure via ports and adapters.
-
-```
-quote/
-  domain/           # Quote, premium/state logic (no Spring/JPA)
-  application/      # QuoteService, QuoteSubmissionService, ports
-  infrastructure/   # REST, JPA, Redis, Kafka, HTTP gateway, scheduler
-config/             # security, CORS, OpenAPI, metrics, shared beans
-```
-
-Full diagrams, port table, and layer rules: [ARCHITECTURE.md](ARCHITECTURE.md).
-
-**Design choices:**
-
-- **Immutable `Quote`** with value objects (`PersonalInfo`, `CoverageDetails`, `QuoteAudit`) for clarity and safe state transitions
-- **Repository decorator** (`CachingQuoteRepositoryAdapter`) centralizes cache eviction on every persist
-- **Idempotent submit** when quote is already `SUBMITTED`; Kafka event only on first success
-- **Real insurer gateway** HTTP client (default `https://tools-httpstatus.pickup-services.com/200`), not an in-memory mock
-- Public REST paths versioned under `/api/v1/...` (see [AGENTS.md](AGENTS.md))
-
-## API
-
-Base URL when running locally: `http://localhost:8080`
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `POST` | `/api/v1/auth/token` | — | Obtain JWT (`username`, `password`); sets HttpOnly cookie and returns Bearer token in body |
-| `POST` | `/api/v1/auth/logout` | — | Clear access-token cookie (browser clients) |
-| `GET` | `/api/v1/auth/me` | JWT | Return authenticated username (validates Bearer header or access-token cookie) |
-| `POST` | `/api/v1/quotes` | JWT | Create draft quote |
-| `PATCH` | `/api/v1/quotes/{id}/coverage` | JWT | Set coverage and health answers; recalculates premium |
-| `POST` | `/api/v1/quotes/{id}/submit` | JWT | Submit to external insurer gateway |
-| `GET` | `/api/v1/quotes/{id}` | JWT | Get quote by id |
-| `GET` | `/api/v1/quotes` | JWT | List quotes — `page` (0-based), `size` (values above 100 are capped to 100), `sort=<field>,asc\|desc` (repeat `sort` for multiple fields, e.g. `sort=status,asc&sort=createdAt,desc`; allowed fields: `createdAt`, `updatedAt`, `status`, `name`, `email`, `age`; default `createdAt,desc`) |
-
-**Authentication** — same JWT, two carriers:
-
-| Client | How |
-|--------|-----|
-| Postman, scripts, Swagger | `Authorization: Bearer <token>` from `POST /api/v1/auth/token` response body |
-| Browser frontend | HttpOnly `access_token` cookie set by `/api/v1/auth/token`; send requests with `credentials: 'include'`; call `GET /api/v1/auth/me` to check the session and `POST /api/v1/auth/logout` to clear |
-
-Bearer takes precedence when both are present. Cookie flags: `HttpOnly`, `SameSite=Lax`, `Secure` in production (`JWT_COOKIE_SECURE=true`). Configure via `JWT_COOKIE_NAME`, `JWT_COOKIE_SAME_SITE` in [`.env.example`](.env.example).
-
-**Submit** requires personal info, coverage, and health answers. For age > 65, pre-existing condition fields are required. On gateway failure the quote becomes `SUBMISSION_FAILED` and can be resubmitted. **Expired** or **incomplete** drafts return **409** on submit.
-
-**Insurer gateway** — configure with `INSURER_GATEWAY_URL` (dev default `https://tools-httpstatus.pickup-services.com/200`).
-
-Interactive docs (dev/docker profiles):
-
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
-
-Committed contract export for frontend codegen: [`openapi/openapi.json`](openapi/openapi.json). Regenerate with `make openapi-export` while the API is running (`make run-dev`). Drift is checked by `OpenApiSpecDriftTest` in CI (`make openapi-drift` locally).
-
-### Metrics
-
-Actuator exposes health, info, and metrics. Custom counters (Micrometer):
-
-| Metric | When incremented |
-|--------|------------------|
-| `quote.submissions.total` | First successful submit |
-| `quote.submissions.failed` | Insurer gateway failure |
-| `quote.expired.total` | Drafts expired by scheduled job |
-
-Example: `GET /actuator/metrics/quote.submissions.total` (when API is running).
-
-### Error reporting (Sentry)
-
-Unexpected server errors (500) and insurer gateway failures (502) are reported to Sentry when enabled. Expected client errors (4xx) are not sent.
-
-Configure via environment variables (see [`.env.example`](.env.example)):
-
-| Variable | Purpose |
-|----------|---------|
-| `SENTRY_DSN` | Project DSN from Sentry.io |
-| `SENTRY_ENVIRONMENT` | e.g. `development`, `production` |
-| `SENTRY_ENABLED` | `true` to send events (default `false`) |
-
-Use separate Sentry projects for local dev and production. Tests and CI run with Sentry disabled.
-
-## Testing
+Other infra helpers:
 
 ```bash
-make test
+make infra-logs         # tail Postgres/Redis/Kafka
+make infra-down         # stop infra containers
+make infra-reset        # stop and wipe volumes
+make docker-build       # build API image only (trustbuddy-api:local)
+make kafka-consume      # tail quote-submitted topic (local Docker Kafka)
+```
+
+Profiles: `application-dev.yml` for host JVM (`make run` / `make run-dev`), `application-docker.yml` for Compose (`make stack-up`), `application-prod.yml` for production.
+
+## Run the frontend
+
+Typical while iterating (API already up):
+
+```bash
+cd ../trustbuddy-frontend
+cp .env.example .env    # once
+make install            # once
+make run                # or make dev → http://localhost:5173
+```
+
+Frontend-only Docker (still needs API on `:8080`):
+
+```bash
+cd ../trustbuddy-frontend
+make stack-up           # http://localhost:3000
+```
+
+## Dev login
+
+Local API default: `dev-user` / `dev-password`.
+
+```bash
+make token              # POST /api/v1/auth/token → JWT body + HttpOnly cookie
+```
+
+Session check (Bearer or cookie): `GET /api/v1/auth/me` → `{ "username": "..." }`. Logout: `POST /api/v1/auth/logout`.
+
+## Verify / OpenAPI
+
+```bash
+make verify             # compile + test + Spotless + Checkstyle + SpotBugs (+ JaCoCo)
+make test               # unit and integration tests (Docker required for Testcontainers)
 make test-one TEST=QuoteSubmissionServiceTest
-make test-one TEST='*Premium*'
-make coverage
+make coverage           # tests + JaCoCo report only
+make lint               # Spotless + Checkstyle + SpotBugs (skips tests)
+make format             # apply Spotless formatting
 ```
 
-Tests use **given_when_then** naming and Given/When/Then structure — see [AGENTS.md](AGENTS.md).
-
-## Static analysis
-
-Code quality is enforced with Maven plugins bound to the **`verify`** lifecycle phase. GitHub Actions runs `./mvnw verify` on every push and pull request to `main` (see `.github/workflows/pr-validation.yml`).
-
-| Tool | What it checks | When it runs |
-|------|----------------|--------------|
-| [Spotless](https://github.com/diffplug/spotless) | Java formatting (Google Java Format AOSP + tabs) | `verify` |
-| [Checkstyle](https://checkstyle.org/) | Style, naming, imports, complexity | `verify` |
-| [SpotBugs](https://spotbugs.github.io/) | Bug patterns in compiled bytecode | `verify` |
-| [Error Prone](https://errorprone.info/) | Likely bugs and bad idioms at compile time | `compile` |
-| [JaCoCo](https://www.jacoco.org/) | Test coverage report (not static analysis) | `make coverage` or `verify` |
-
-### Commands
+After contract changes (API must be running):
 
 ```bash
-make lint          # Spotless + Checkstyle + SpotBugs only (skips tests)
-make format        # apply Spotless formatting (Java sources)
-make precommit     # run full-tree Spotless when Java is staged (pre-commit hook)
-make verify        # compile + test + Spotless + Checkstyle + SpotBugs (+ JaCoCo report)
-make coverage      # tests + JaCoCo report only (skips Spotless/Checkstyle/SpotBugs)
+make openapi-export     # write openapi/openapi.json from /v3/api-docs
+make openapi-drift      # fail if committed spec ≠ live springdoc
 ```
 
-Equivalent Maven invocations:
+Then in the frontend repo: `make openapi-update`.
 
-```bash
-./mvnw spotless:apply                      # format Java sources
-./mvnw spotless:check                      # check formatting (no changes)
-./mvnw spotless:check checkstyle:check spotbugs:check   # lint only
-./mvnw verify                              # full gate
-./mvnw test jacoco:report                  # coverage only
-./mvnw compile                             # includes Error Prone
-```
+Interactive docs (dev/docker profiles): `http://localhost:8080/swagger-ui.html`
 
-Run `make format` to format the whole tree. The git pre-commit hook runs **full-tree** Spotless when any Java file is staged (same as `make precommit`), because per-file Spotless can miss wrapping and other cross-file rules. On a local git checkout (not CI or Docker builds), hooks are installed automatically on the first Maven build via [git-build-hook-maven-plugin](https://github.com/rudikershaw/git-build-hook). Hook script: [`.githooks/pre-commit`](.githooks/pre-commit).
+---
 
-Use `make lint` for a faster feedback loop when fixing formatting, style, or SpotBugs findings; use `make coverage` when you only need a coverage report; run `make verify` before opening a PR.
+# Thought Process
 
-### Spotless (formatting)
+So first thing before doing any code is to get the whole picture to translate it to technical requirements.
 
-Configuration: [`pom.xml`](pom.xml) (`spotless-maven-plugin`).
+- Java 17 + Spring Boot 4.1
+- Multi-step insurance quote lifecycle (create → coverage → submit)
+- PostgreSQL persistence, Redis cache, Kafka submit events
+- JWT auth (Bearer + HttpOnly cookie for the SPA; `GET /auth/me` for session check)
+- External insurer gateway HTTP call on submit
+- REST under `/api/v1/...` with consistent errors and OpenAPI
+- Hexagonal / ports-and-adapters layout
+- Testing with JUnit + Testcontainers; verify gate (Spotless, Checkstyle, SpotBugs, JaCoCo)
 
-Formats **main and test** Java sources with Google Java Format (AOSP style), then converts indentation to **tabs** to match project conventions. Also removes unused imports, trims trailing whitespace, and ensures a final newline.
+So according to these requirements we need a production-shaped Spring Boot service, not a single-layer demo. Classic controller → service → JPA repository tutorials couple business rules to Spring and the database. Here the quote domain (premium, state transitions, health policy) should stay pure Java, with PostgreSQL, Redis, Kafka, and the insurer HTTP client behind ports so adapters can change without rewriting quote rules. A Makefile is the developer contract (`make help`, `make run-dev`, `make verify`) so infra and quality stay repeatable for reviewers and CI.
 
-Enforced in **`verify`** and CI via `spotless:check`. Run `make format` locally to apply fixes.
+## The Plan
 
-### Checkstyle
+Deliver inside-out in small reviewable phases: foundation first, domain before adapters, REST and security after use cases work. Cache, Kafka, and draft expiration can branch in parallel after JWT.
 
-Configuration: [`config/checkstyle/checkstyle.xml`](config/checkstyle/checkstyle.xml) (Checkstyle 10.x via `maven-checkstyle-plugin`).
+I can foresee 14 main steps (detail in [BUILD_JOURNEY.md](BUILD_JOURNEY.md)):
 
-Applies to **main and test** sources. Notable rules:
+1. Foundation — Spring Boot shell, profiles, Docker Compose, Makefile, AGENTS.md
+2. Domain and persistence — `Quote` aggregate, JPA adapter behind `QuoteRepositoryPort`
+3. Premium calculation — multipliers + `PremiumCalculator` with unit tests
+4. DTOs and validation — request/response boundaries, coverage health rules
+5. Exception handling — domain exceptions → consistent JSON errors
+6. Application use cases — `QuoteService`, `QuoteSubmissionService`, insurer gateway port
+7. REST controller — versioned `/api/v1/quotes` endpoints
+8. JWT authentication — token, logout, `GET /auth/me`, filter, Bearer + cookie carriers
+9. Redis quote cache — read-through get, eviction on save
+10. Kafka submit events — `quote-submitted` on first successful submit
+11. Draft expiration — scheduled `DRAFT` → `EXPIRED`
+12. CORS — browser SPA origins
+13. Testing polish — Testcontainers ITs, JaCoCo
+14. Metrics, OpenAPI export, README / Makefile polish
 
-- **Imports** — no unused, redundant, star, or illegal imports
-- **Naming** — package, type, method, parameter, member, and constant conventions
-- **Structure** — one public type per file (`OuterTypeFilename`), braces required, one statement per line, no empty catch blocks
-- **Complexity** — cyclomatic complexity ≤ 10; methods ≤ 100 lines; ≤ 7 parameters
+## Technical extras
 
-Violations fail the build (`failsOnError=true`).
+springdoc OpenAPI keeps the contract in sync with controllers; a committed [`openapi/openapi.json`](openapi/openapi.json) plus `OpenApiSpecDriftTest` lets the frontend generate typed clients. Docker Compose covers Postgres/Redis/Kafka (and the full API image via `make stack-up`). Quality is not bolted on later: Spotless, Checkstyle, SpotBugs, Error Prone, and JaCoCo run through `make verify`. Sentry reports unexpected 500s and insurer 502s behind an `ErrorReporterPort` when enabled.
 
-### SpotBugs
+# Technical decisions
 
-Configuration: [`config/spotbugs/exclude-filter.xml`](config/spotbugs/exclude-filter.xml) (`spotbugs-maven-plugin`, effort **Max**, threshold **Low**).
+Documented as **decision**, **why**, and **alternatives** considered.
 
-Analyzes compiled classes for common defect patterns (null dereferences, resource leaks, bad equality, etc.). The exclude filter suppresses `EI_EXPOSE_REP` / `EI_EXPOSE_REP2` on JPA entities under `*.entity.*` (mutable collection/date exposure for persistence mapping) and on Spring-managed packages (`config`, `*.application`, `*.infrastructure`), where constructor injection stores container-owned singletons.
+### Feature-oriented hexagonal architecture
 
-HTML report (when generated): `target/spotbugs.html`.
+**Decision:** Organize by capability under `quote/` with `domain/`, `application/`, and `infrastructure/`. Domain stays free of Spring/JPA/Kafka/HTTP. Full layout: [ARCHITECTURE.md](ARCHITECTURE.md).
 
-### Error Prone
+**Why:** Integrations (Postgres, Redis, Kafka, insurer HTTP) are stable for now but might be replaced later. Ports (`QuoteRepositoryPort`, `InsurerGatewayPort`, `QuoteEventPublisherPort`, `QuoteCachePort`) keep premium and state logic untouched when an adapter changes.
 
-Configured on `maven-compiler-plugin` in [`pom.xml`](pom.xml) as a compiler annotation processor (`error_prone_core` 2.42.x). Runs on every **`compile`** — including IDE builds that invoke the Maven compiler — and flags issues such as ambiguous overloads, ignored return values, and discouraged APIs.
+**Alternatives:** Classic Spring four-layer stack (web → service → repository) with JPA and `KafkaTemplate` inside use cases.
 
-There is no separate `make` target; fix Error Prone warnings during compilation before they reach `verify`.
+### Immutable `Quote` + value objects
 
-### JaCoCo (coverage)
+**Decision:** Model the aggregate with `PersonalInfo`, `CoverageDetails`, and `QuoteAudit`; state changes go through domain/application services rather than mutating fields from controllers.
 
-JaCoCo instruments tests via the `prepare-agent` goal and writes an HTML report to `target/site/jacoco/index.html`. Use `make coverage` to run **tests only** (no Checkstyle or SpotBugs) and print the report path. A report is also generated during `make verify`. Coverage is reported for visibility; there is no enforced minimum threshold in the build.
+**Why:** Clear invariants for draft → submitted / failed / expired, and safer transitions under concurrent updates (`@Version` optimistic locking on the entity).
 
-## Extras
+**Alternatives:** Mutable anemic entity shared across layers; expose JPA entities as API DTOs.
 
-Beyond the challenge’s core quote flow, a few tools were added deliberately to improve **operability**, **contract sharing**, and **developer experience**. Each is optional in local dev but pays off as the API grows and more clients integrate.
+### JWT with Bearer and HttpOnly cookie
 
-### Sentry (error monitoring)
+**Decision:** Same JWT from `POST /api/v1/auth/token` — scripts/Swagger use `Authorization: Bearer`; the SPA uses an HttpOnly cookie with `credentials: 'include'`. `GET /api/v1/auth/me` validates the session (either carrier) and returns the username; `POST /api/v1/auth/logout` clears the cookie. Bearer wins when both are present.
 
-Actuator metrics tell you *that* something failed; they do not give stack traces, request context, or alerting. [Sentry](https://sentry.io/) fills that gap for **unexpected 500s** and **operational failures** such as insurer gateway **502** responses — without noise from expected client errors (4xx).
+**Why:** One auth mechanism serves Postman and the browser without putting the token in `localStorage`. Cookie flags (`HttpOnly`, `SameSite`, `Secure` in prod) match frontend session restore via `/auth/me`.
 
-Why Sentry here:
+**Alternatives:** Bearer-only; opaque server sessions; OAuth2/OIDC from day one.
 
-- **Actionable alerts** — production issues surface with stack traces and environment tags instead of digging through logs alone.
-- **Scoped reporting** — only unexpected and operational errors are sent; validation and auth failures stay client-side.
-- **Safe by default** — disabled in tests/CI; sensitive headers and fields are scrubbed before events leave the app.
-- **Decoupled design** — handlers depend on an `ErrorReporterPort`, not the Sentry SDK directly, so the core stays testable.
+### Real HTTP insurer gateway (not an in-memory mock)
 
-Setup and env vars: [Error reporting (Sentry)](#error-reporting-sentry).
+**Decision:** `InsurerGatewayHttpAdapter` calls a configurable URL (dev default: HTTP status mock). Gateway failure → `SUBMISSION_FAILED` and **502**; submit is idempotent when already `SUBMITTED`.
 
-### OpenAPI / Swagger (API contract)
+**Why:** Exercises timeouts, failure mapping, and resubmit the same way a real vendor would — without depending on a proprietary insurer API for the challenge.
 
-The REST surface is the integration boundary for the React frontend, Postman collections, and future consumers. [springdoc OpenAPI](https://springdoc.org/) generates a live spec from code and serves Swagger UI in dev/docker profiles.
+**Alternatives:** Hard-coded in-memory “always succeed” stub inside the application service.
 
-Why OpenAPI here:
+### Caching via repository decorator
 
-- **Single source of truth** — controllers stay annotated; the spec is derived from the running app, not a hand-maintained duplicate.
-- **Easier client tooling** — import `/v3/api-docs` or the committed [`openapi/openapi.json`](openapi/openapi.json) into Postman; frontend teams can generate typed clients from the same file.
-- **Drift prevention** — `OpenApiSpecDriftTest` in CI fails if the exported contract falls behind code (`make openapi-drift`).
-- **Interactive exploration** — Swagger UI (`make swagger-url`) for manual testing alongside JWT auth.
+**Decision:** `@Primary` `CachingQuoteRepositoryAdapter` wraps persistence and evicts Redis on every `save`; get is read-through.
 
-Regenerate the committed export with `make openapi-export` while the API is running.
+**Why:** Cache policy stays in one place instead of scattering evict annotations across use cases.
 
-## Frontend
+**Alternatives:** Spring `@Cacheable` on services; cache only in the controller; no cache.
 
-This API pairs with a separate React frontend repository. Add the sibling repo link here when available.
+### OpenAPI as the client contract
 
-## AI-assisted development
+**Decision:** springdoc from annotations; export with `make openapi-export`; CI drift check with `make openapi-drift`.
 
-Built with human-reviewed AI assistance (Cursor Agent). Phase plan, conventions, and delivery narrative: [BUILD_JOURNEY.md](BUILD_JOURNEY.md). Contributor rules: [AGENTS.md](AGENTS.md).
+**Why:** Frontend Orval codegen and Postman stay aligned without a hand-maintained second spec.
+
+**Alternatives:** Hand-written OpenAPI YAML; no committed export (live `/v3/api-docs` only).
+
+### given_when_then tests + Testcontainers
+
+**Decision:** BDD-style method names and Given/When/Then blocks (see [AGENTS.md](AGENTS.md)); adapter ITs use Testcontainers for Postgres/Redis/Kafka where needed.
+
+**Why:** Scenario clarity without Cucumber ceremony; real infra for adapters, mocked ports for application tests.
+
+**Alternatives:** Full Gherkin suites; H2 for everything; only `@SpringBootTest` smoke tests.
+
+### Static analysis in the verify gate
+
+**Decision:** Enforce quality in CI and locally via `make verify` — Spotless (format), Checkstyle (style/complexity), SpotBugs (bytecode defects), Error Prone (compile-time), plus JaCoCo coverage reports. Pre-commit runs full-tree Spotless when Java is staged.
+
+**Why:** Catch formatting drift, naming/complexity issues, and common bug patterns before merge, instead of bolting linters on after the quote flow shipped. Same gate for humans and AI-assisted edits ([AGENTS.md](AGENTS.md)).
+
+**Alternatives:** Format-only (Spotless alone); IDE inspections without CI fail; SonarQube as the only quality gate; no coverage reporting.
+
+# Challenges
+
+Hard problems I hit while building, how I handled them, and what is still imperfect.
+
+### Keeping a hexagonal architecture without noise in the domain
+
+**Challenge:** Ship a full Spring Boot quote API (JPA, Redis, Kafka, HTTP gateway, security) while keeping `quote/domain` pure — no Spring annotations, no persistence types, no messaging or HTTP clients leaking into premium or state rules.
+
+**What I did:** Feature-oriented ports and adapters under `quote/` ([ARCHITECTURE.md](ARCHITECTURE.md)). Domain and application depend on port interfaces only; adapters and mappers live in `infrastructure/`. [AGENTS.md](AGENTS.md) and phase reviews guard the dependency rule.
+
+**Still imperfect:** The hexagonal shape is only partly realized. Controllers still call application services directly (no inbound ports), some wiring is Spring-centric at the edges, and the layout is stricter on paper than everywhere in the codebase. A fuller ports-and-adapters implementation — clearer inbound/outbound boundaries and less framework noise at the application edge — is still unfinished work.
+
+### Different runtimes: local JVM, Docker Compose, and production
+
+**Challenge:** Local host development, the Compose stack, and production do not share the same infra hostnames, secrets, or safety defaults. One `application.yml` with localhost baked in breaks Docker; Docker service names break the host JVM; production must not inherit Swagger or loose CORS.
+
+**What I did:** Split profiles — `application.yml` for universal defaults (env-driven), `application-dev.yml` for localhost + `make run` / `make run-dev`, `application-docker.yml` for Compose service names (`make stack-up`), `application-prod.yml` for strict production (Swagger off, secrets from the environment). `.env.example` documents what each mode needs.
+
+**Still imperfect:** Operators still must pick the right profile and env vars; a wrong combo fails late at startup rather than with a single “environment checklist” command.
+
+### OpenAPI drift vs frontend codegen
+
+**Challenge:** The frontend needs a stable OpenAPI JSON for Orval, but keeping a committed [`openapi/openapi.json`](openapi/openapi.json) in sync with live springdoc is fragile. Manual `make openapi-export` (curl + pretty-print) and the drift test’s comparison of “what CI/boot sees” can disagree on formatting or exploded vs nested shapes (e.g. Pageable query params) even when the API is correct — false failures or silent client breakage.
+
+**What I did:** `OpenApiSpecDriftTest` + `make openapi-export` / `make openapi-drift`, and frontend `make openapi-update` after a fresh export. Treat the committed file as a contract snapshot for sibling codegen until something better exists.
+
+**Still imperfect / ideal:** Prefer **not committing** the spec at all — generate it in CI (or pull from a hosted `/v3/api-docs`) and feed Orval from that artifact so there is one generation path, no hand export vs test mismatch, and no stale file in git.
+
+### Cookie auth for the SPA without breaking Bearer clients
+
+**Challenge:** Browser needs cookies + CORS; scripts and Swagger need Bearer; both must share one JWT. The SPA also needs a way to restore “am I logged in?” on refresh without reading the cookie from JavaScript.
+
+**What I did:** Token endpoint sets cookie and returns body token; filter accepts either; `GET /api/v1/auth/me` returns the authenticated username for session bootstrap; CORS from `CORS_ALLOWED_ORIGINS`; logout clears the cookie.
+
+**Still imperfect:** No refresh-token / sliding session — expired JWT means 401 and re-login (acceptable for local/dev).
+
+# AI Driven Development
+
+This project was developed with **Cursor** as the main AI coding tool. Clear guardrails live in [AGENTS.md](AGENTS.md), with a verify suite (`make verify`) for new changes. Discovery and architecture decisions fed a phased plan in [BUILD_JOURNEY.md](BUILD_JOURNEY.md) with boundaries, deliverables, and progress.
+
+# Deferred & out of scope
+
+Work not done yet, or deliberately left out of this delivery. Fine for local/dev use of the main quote flow.
+
+### Schema migrations (highest priority next)
+
+**Not built yet — critical follow-up:** Versioned schema migrations with **Flyway** or **Liquibase**.
+
+**Why it matters now:** Local/dev can lean on JPA schema updates, but shared environments cannot. Reproducible migrations are required before real deploys, team databases, or any schema change that must apply the same way everywhere. This is the top deferred item for the API.
+
+**Direction:** Introduce Flyway (or Liquibase) early in the next hardening pass, baseline the current `quotes` schema, and make every DDL change a migration checked into the repo.
+
+### End-user registration
+
+**Left out:** Sign-up / invite flow for real users.
+
+**Direction considered:** Email OTP or IdP. Skipped for now because the flow is exercised with **development users** (`dev-user` / `dev-password`).
+
+### Token refresh
+
+**Not built:** Silent refresh when the access cookie/JWT expires.
+
+**Current behavior:** Authenticated calls that return **401** clear the SPA session. Acceptable for local development; poor for long production sessions. Refresh-token or sliding session on API + frontend would be the follow-up.
+
+### OpenAPI from the cloud (stop committing the spec)
+
+**Still manual/sibling-based:** Contract sync depends on a local export and a committed `openapi/openapi.json`. Ideal end state: host or CI-publish `/v3/api-docs`, point the frontend/CI at that URL, and drop the committed snapshot (see Challenges).
+
+### Inbound use-case ports
+
+**Left out:** Formal `application/port/in/` interfaces for every use case.
+
+**Why it matters later:** Multiple drivers (REST, jobs, messaging) for the same command would benefit from explicit inbound ports; today REST → application service is enough.
+
+# Sibling repo
+
+https://github.com/aegre/trustbuddy-frontend

@@ -5,6 +5,8 @@ RUN_PROFILE := dev
 DOCKER_IMAGE := trustbuddy-api:local
 COMPOSE := docker compose
 API_PORT ?= 8080
+FRONTEND_REPO ?= ../trustbuddy-frontend
+FRONTEND_GIT_URL ?= https://github.com/aegre/trustbuddy-frontend.git
 
 # Load .env when present; export only uncommented KEY= assignments
 ifneq (,$(wildcard .env))
@@ -13,7 +15,9 @@ export $(shell grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env | cut -d= -f1)
 endif
 
 .PHONY: help compile test test-one verify lint format precommit openapi-export openapi-drift run run-dev token health swagger-url \
+	clone-frontend \
 	infra-up infra-down infra-logs infra-reset docker-build stack-up stack-down stack-logs \
+	stack-all-up stack-all-down stack-all-logs \
 	kafka-consume coverage test-state test-submit
 
 help: ## Show available targets
@@ -44,9 +48,13 @@ help: ## Show available targets
 	@echo "  stack-up       Build and start full stack (API + infra) in Docker"
 	@echo "  stack-down     Stop full stack including API"
 	@echo "  stack-logs     Tail logs for all services including API"
+	@echo "  stack-all-up   API stack + frontend containers (if sibling present)"
+	@echo "  stack-all-down Stop frontend + API stack"
+	@echo "  stack-all-logs Tail API logs (hint for frontend logs if sibling present)"
 	@echo "  kafka-consume  Tail quote-submitted Kafka topic locally"
 	@echo ""
 	@echo "Development:"
+	@echo "  clone-frontend Clone trustbuddy-frontend sibling ($(FRONTEND_REPO))"
 	@echo "  run            Run API locally (dev profile; requires make infra-up)"
 	@echo "  run-dev        Start infra, then run API with dev profile"
 	@echo "  token          Obtain JWT from running API"
@@ -61,6 +69,14 @@ format: ## Apply Spotless formatting to Java sources
 
 precommit: ## Format staged Java files and re-stage them (same as pre-commit hook)
 	@bash .githooks/pre-commit
+
+clone-frontend: ## Clone trustbuddy-frontend sibling next to this repo ($(FRONTEND_REPO))
+	@if [ -d "$(FRONTEND_REPO)/.git" ] || [ -f "$(FRONTEND_REPO)/Makefile" ]; then \
+		echo "Sibling already present at $(FRONTEND_REPO)"; \
+	else \
+		git clone "$(FRONTEND_GIT_URL)" "$(FRONTEND_REPO)"; \
+		echo "Cloned $(FRONTEND_GIT_URL) → $(FRONTEND_REPO)"; \
+	fi
 
 openapi-export: ## Write openapi/openapi.json from running API (requires API on localhost)
 	@mkdir -p openapi
@@ -145,3 +161,23 @@ stack-down: ## Stop full stack including API
 
 stack-logs: ## Tail logs for all services including API
 	$(COMPOSE) logs -f
+
+stack-all-up: ## Start API stack + frontend containers (if sibling present)
+	$(MAKE) stack-up
+	@if [ -f "$(FRONTEND_REPO)/Makefile" ]; then \
+		$(MAKE) -C "$(FRONTEND_REPO)" stack-up; \
+	else \
+		echo "Warning: $(FRONTEND_REPO) not found — started API stack only."; \
+	fi
+
+stack-all-down: ## Stop frontend + API stack (if sibling present)
+	@if [ -f "$(FRONTEND_REPO)/Makefile" ]; then \
+		$(MAKE) -C "$(FRONTEND_REPO)" stack-down; \
+	fi
+	$(MAKE) stack-down
+
+stack-all-logs: ## Tail API logs (prints hint for frontend logs if sibling present)
+	@if [ -f "$(FRONTEND_REPO)/Makefile" ]; then \
+		echo "Frontend logs: make -C $(FRONTEND_REPO) stack-logs"; \
+	fi
+	$(MAKE) stack-logs
