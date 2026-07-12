@@ -4,50 +4,62 @@ Spring Boot REST API for the Trustbuddy insurance quote flow. Pairs with [trustb
 
 ## Prerequisites
 
-- Java 17+
-- `make` (wraps Maven / `./mvnw`)
-- Docker + Docker Compose (PostgreSQL, Redis, Kafka, optional full API stack)
-- Sibling clone of [trustbuddy-frontend](https://github.com/aegre/trustbuddy-frontend) next to this repo (`../trustbuddy-frontend`) — use `make clone-frontend` if you do not have it yet
+**Docker quick start (recommended):**
 
-## Installation
+- `make`
+- Docker + Docker Compose
+
+**Host JVM / local frontend alternatives also need:**
+
+- Java 17+ (API on the host)
+- Node.js LTS and npm (Vite in the frontend sibling)
+- Sibling clone of [trustbuddy-frontend](https://github.com/aegre/trustbuddy-frontend) at `../trustbuddy-frontend` — or use `make clone-frontend`
+
+## Quick start (Docker) — easiest after clone
+
+Clone this repo, pull in the frontend sibling, then start **everything** in containers. Docker Make targets create `.env` from `.env.example` when missing (`make ensure-env`), so you can try the app right after cloning without hand-copying env files.
 
 ```bash
-cp .env.example .env    # AUTH_USERNAME / AUTH_PASSWORD, JWT_SECRET, CORS, Postgres password
+git clone https://github.com/aegre/trustbuddy-api.git
+cd trustbuddy-api
+
 make clone-frontend     # clones ../trustbuddy-frontend if missing
+make stack-all-up       # API + Postgres/Redis/Kafka + frontend containers
+# API:      http://localhost:8080  (Swagger: /swagger-ui.html)
+# Frontend: http://localhost:3000
+# Login:    dev-user / dev-password
 ```
 
-For browser login from the Vite SPA and/or the frontend Docker image, set:
+`stack-all-up` runs `stack-up` here and in the frontend sibling; each side copies `.env.example` → `.env` if needed. Defaults already allow the SPA on `:3000` and Vite on `:5173` (`CORS_ALLOWED_ORIGINS` in `.env.example`).
 
 ```bash
-CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+make stack-all-logs     # tail API logs (prints hint for frontend logs)
+make stack-all-down     # stop both
 ```
 
-Override clone location/URL if needed:
+Override sibling location/URL if needed:
 
 ```bash
 make clone-frontend FRONTEND_REPO=../trustbuddy-frontend FRONTEND_GIT_URL=https://github.com/aegre/trustbuddy-frontend.git
 ```
 
-In the frontend repo, also copy `.env.example` → `.env` (`VITE_API_BASE_URL=http://localhost:8080`).
+If `../trustbuddy-frontend` is missing and you skip `clone-frontend`, `stack-all-up` warns and starts the API stack only.
 
-## Run everything in Docker
+## Installation (host development)
 
-With the frontend sibling checked out beside this repo:
+For running the API JVM or Vite on the host (not required for the Docker quick start above):
 
 ```bash
-make stack-all-up       # API + Postgres/Redis/Kafka + frontend
-# API:      http://localhost:8080  (Swagger: /swagger-ui.html)
-# Frontend: http://localhost:3000
-make stack-all-down     # stop both
-make stack-all-logs     # tail API logs (prints hint for frontend logs)
+cp .env.example .env    # or: make ensure-env
+make clone-frontend     # if you do not have the sibling yet
 ```
 
-If `../trustbuddy-frontend` is missing, `stack-all-up` warns and starts the API stack only.
+In the frontend repo: `make install` and optionally `make ensure-env` / `cp .env.example .env` (`VITE_API_BASE_URL=http://localhost:8080`).
 
-## Run the API (Docker)
+## Run the API only (Docker)
 
 ```bash
-make stack-up           # API + PostgreSQL + Redis + Kafka (creates .env from .env.example if missing)
+make stack-up           # API + PostgreSQL + Redis + Kafka (creates .env if missing)
 # API: http://localhost:8080
 make stack-logs         # tail all service logs
 make stack-down         # stop full stack
@@ -82,13 +94,13 @@ make kafka-consume      # tail quote-submitted topic (local Docker Kafka)
 
 Profiles: `application-dev.yml` for host JVM (`make run` / `make run-dev`), `application-docker.yml` for Compose (`make stack-up`), `application-prod.yml` for production.
 
-## Run the frontend
+## Run the frontend (local Vite)
 
 Typical while iterating (API already up):
 
 ```bash
 cd ../trustbuddy-frontend
-cp .env.example .env    # once
+make ensure-env         # or cp .env.example .env — once
 make install            # once
 make run                # or make dev → http://localhost:5173
 ```
@@ -97,7 +109,7 @@ Frontend-only Docker (still needs API on `:8080`):
 
 ```bash
 cd ../trustbuddy-frontend
-make stack-up           # http://localhost:3000
+make stack-up           # http://localhost:3000 (creates .env if missing)
 ```
 
 ## Dev login
