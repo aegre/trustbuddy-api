@@ -1,92 +1,77 @@
 {
-  "openapi" : "3.1.0",
-  "info" : {
-    "title" : "Trustbuddy API",
-    "description" : "Insurance quote API for Trustbuddy",
-    "version" : "v1"
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Trustbuddy API",
+    "description": "Insurance quote API for Trustbuddy",
+    "version": "v1"
   },
-  "servers" : [ {
-    "url" : "http://localhost",
-    "description" : "Generated server url"
-  } ],
-  "security" : [ {
-    "bearerAuth" : [ ]
-  } ],
-  "paths" : {
-    "/api/v1/quotes" : {
-      "get" : {
-        "tags" : [ "Quotes" ],
-        "summary" : "List quotes with pagination",
-        "description" : "Query params: page (0-based), size (capped at 100), sort (<field>,asc|desc — repeat sort for multiple fields). Allowed fields: age, createdAt, email, name, status, updatedAt. One sort per query param: sort=<field>,asc|desc. Example: sort=status,asc&sort=createdAt,desc. Do not put multiple fields in one value (sort=age,createdAt is not two fields). Default: createdAt,desc.",
-        "operationId" : "listQuotes",
-        "parameters" : [ {
-          "name" : "page",
-          "in" : "query",
-          "description" : "Zero-based page index (0..N)",
-          "required" : false,
-          "schema" : {
-            "type" : "integer",
-            "default" : 0,
-            "minimum" : 0
-          }
-        }, {
-          "name" : "size",
-          "in" : "query",
-          "description" : "The size of the page to be returned",
-          "required" : false,
-          "schema" : {
-            "type" : "integer",
-            "default" : 20,
-            "minimum" : 1
-          }
-        }, {
-          "name" : "sort",
-          "in" : "query",
-          "description" : "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-          "required" : false,
-          "schema" : {
-            "type" : "array",
-            "default" : [ "createdAt,DESC" ],
-            "items" : {
-              "type" : "string"
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/quotes": {
+      "get": {
+        "tags": [
+          "Quotes"
+        ],
+        "summary": "List quotes with pagination",
+        "description": "Query params: page (0-based), size (capped at 100), sort (<field>,asc|desc \u2014 repeat sort for multiple fields). Allowed fields: age, createdAt, email, name, status, updatedAt. One sort per query param: sort=<field>,asc|desc. Example: sort=status,asc&sort=createdAt,desc. Do not put multiple fields in one value (sort=age,createdAt is not two fields). Default: createdAt,desc.",
+        "operationId": "listQuotes",
+        "parameters": [
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
             }
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PageQuoteResponse"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageQuoteResponse"
                 }
               }
             }
           }
         }
       },
-      "post" : {
-        "tags" : [ "Quotes" ],
-        "summary" : "Create a draft quote from personal information",
-        "description" : "Initializes the quote with the STANDARD coverage plan selected.",
-        "operationId" : "createQuote",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CreateQuoteRequest"
+      "post": {
+        "tags": [
+          "Quotes"
+        ],
+        "summary": "Create a draft quote from personal information",
+        "description": "Initializes the quote with the STANDARD coverage plan selected.",
+        "operationId": "createQuote",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQuoteRequest"
               }
             }
           },
-          "required" : true
+          "required": true
         },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/QuoteResponse"
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
                 }
               }
             }
@@ -94,27 +79,31 @@
         }
       }
     },
-    "/api/v1/quotes/{id}/submit" : {
-      "post" : {
-        "tags" : [ "Quotes" ],
-        "summary" : "Submit a completed quote to the external insurer gateway",
-        "operationId" : "submitQuote",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "format" : "uuid"
+    "/api/v1/quotes/{id}/submit": {
+      "post": {
+        "tags": [
+          "Quotes"
+        ],
+        "summary": "Submit a completed quote to the external insurer gateway",
+        "operationId": "submitQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/QuoteResponse"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
                 }
               }
             }
@@ -122,146 +111,162 @@
         }
       }
     },
-    "/api/v1/auth/token" : {
-      "post" : {
-        "tags" : [ "Authentication" ],
-        "summary" : "Obtain a JWT access token",
-        "description" : "Returns the JWT in the response body for Bearer clients and sets an HttpOnly access-token cookie for browser clients.",
-        "operationId" : "token",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/AuthTokenRequest"
+    "/api/v1/auth/token": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Obtain a JWT access token",
+        "description": "Returns the JWT in the response body for Bearer clients and sets an HttpOnly access-token cookie for browser clients.",
+        "operationId": "token",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthTokenRequest"
               }
             }
           },
-          "required" : true
+          "required": true
         },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/AuthTokenResponse"
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
                 }
               }
             }
           }
         },
-        "security" : [ ]
+        "security": []
       }
     },
-    "/api/v1/auth/logout" : {
-      "post" : {
-        "tags" : [ "Authentication" ],
-        "summary" : "Clear the access-token cookie",
-        "description" : "Clears the HttpOnly JWT cookie. Bearer clients discard the token client-side.",
-        "operationId" : "logout",
-        "responses" : {
-          "200" : {
-            "description" : "OK"
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Clear the access-token cookie",
+        "description": "Clears the HttpOnly JWT cookie. Bearer clients discard the token client-side.",
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         },
-        "security" : [ ]
+        "security": []
       }
     },
-    "/api/v1/quotes/{id}" : {
-      "get" : {
-        "tags" : [ "Quotes" ],
-        "summary" : "Get a quote by id",
-        "operationId" : "getQuote",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "format" : "uuid"
+    "/api/v1/quotes/{id}/coverage": {
+      "patch": {
+        "tags": [
+          "Quotes"
+        ],
+        "summary": "Partially update coverage type and supplemental health answers",
+        "operationId": "updateCoverage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/QuoteResponse"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCoverageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quotes/{id}": {
+      "get": {
+        "tags": [
+          "Quotes"
+        ],
+        "summary": "Get a quote by id",
+        "operationId": "getQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
                 }
               }
             }
           }
         }
       },
-      "patch" : {
-        "tags" : [ "Quotes" ],
-        "summary" : "Update personal information on a draft quote",
-        "operationId" : "updatePersonalInfo",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "format" : "uuid"
+      "patch": {
+        "tags": [
+          "Quotes"
+        ],
+        "summary": "Update personal information on a draft quote",
+        "operationId": "updatePersonalInfo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/UpdatePersonalInfoRequest"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePersonalInfoRequest"
               }
             }
           },
-          "required" : true
+          "required": true
         },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/QuoteResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quotes/{id}/coverage" : {
-      "patch" : {
-        "tags" : [ "Quotes" ],
-        "summary" : "Partially update coverage type and supplemental health answers",
-        "operationId" : "updateCoverage",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "format" : "uuid"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/UpdateCoverageRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/QuoteResponse"
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
                 }
               }
             }
@@ -270,307 +275,366 @@
       }
     }
   },
-  "components" : {
-    "schemas" : {
-      "CreateQuoteRequest" : {
-        "type" : "object",
-        "description" : "Personal information for creating a draft quote",
-        "properties" : {
-          "name" : {
-            "type" : "string",
-            "description" : "Applicant full name",
-            "example" : "Jane Doe",
-            "maxLength" : 255
+  "components": {
+    "schemas": {
+      "CreateQuoteRequest": {
+        "type": "object",
+        "description": "Personal information for creating a draft quote",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Applicant full name",
+            "example": "Jane Doe",
+            "maxLength": 255
           },
-          "email" : {
-            "type" : "string",
-            "format" : "email",
-            "description" : "Applicant email address",
-            "example" : "jane@example.com",
-            "maxLength" : 255
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Applicant email address",
+            "example": "jane@example.com",
+            "maxLength": 255
           },
-          "age" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "Applicant age in years",
-            "example" : 30,
-            "maximum" : 120,
-            "minimum" : 1
+          "age": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Applicant age in years",
+            "example": 30,
+            "maximum": 120,
+            "minimum": 1
           },
-          "zipCode" : {
-            "type" : "string",
-            "description" : "5-digit Mexican postal code (código postal)",
-            "example" : "06600",
-            "pattern" : "\\d{5}"
+          "zipCode": {
+            "type": "string",
+            "description": "5-digit Mexican postal code (c\u00f3digo postal)",
+            "example": "06600",
+            "pattern": "\\d{5}"
           }
         },
-        "required" : [ "age", "email", "name", "zipCode" ]
+        "required": [
+          "age",
+          "email",
+          "name",
+          "zipCode"
+        ]
       },
-      "QuoteResponse" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "format" : "uuid"
+      "QuoteResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
-          "name" : {
-            "type" : "string"
+          "name": {
+            "type": "string"
           },
-          "email" : {
-            "type" : "string"
+          "email": {
+            "type": "string"
           },
-          "age" : {
-            "type" : "integer",
-            "format" : "int32"
+          "age": {
+            "type": "integer",
+            "format": "int32"
           },
-          "zipCode" : {
-            "type" : "string"
+          "zipCode": {
+            "type": "string"
           },
-          "coverageType" : {
-            "type" : "string",
-            "enum" : [ "BASIC", "STANDARD", "PREMIUM" ]
+          "coverageType": {
+            "type": "string",
+            "enum": [
+              "BASIC",
+              "STANDARD",
+              "PREMIUM"
+            ]
           },
-          "hasPreexistingConditions" : {
-            "type" : "boolean"
+          "hasPreexistingConditions": {
+            "type": "boolean"
           },
-          "conditions" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "enum" : [ "DIABETES", "HEART_DISEASE", "HYPERTENSION", "CANCER_HISTORY", "OTHER" ]
+          "conditions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "DIABETES",
+                "HEART_DISEASE",
+                "HYPERTENSION",
+                "CANCER_HISTORY",
+                "OTHER"
+              ]
             },
-            "uniqueItems" : true
+            "uniqueItems": true
           },
-          "takesPrescriptionMedication" : {
-            "type" : "boolean"
+          "takesPrescriptionMedication": {
+            "type": "boolean"
           },
-          "usesTobacco" : {
-            "type" : "boolean"
+          "usesTobacco": {
+            "type": "boolean"
           },
-          "needsSpouseCoverage" : {
-            "type" : "boolean"
+          "needsSpouseCoverage": {
+            "type": "boolean"
           },
-          "estimatedMonthlyPremium" : {
-            "type" : "number"
+          "estimatedMonthlyPremium": {
+            "type": "number"
           },
-          "status" : {
-            "type" : "string",
-            "enum" : [ "DRAFT", "SUBMITTED", "SUBMISSION_FAILED", "EXPIRED" ]
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "SUBMITTED",
+              "SUBMISSION_FAILED",
+              "EXPIRED"
+            ]
           },
-          "createdAt" : {
-            "type" : "string",
-            "format" : "date-time"
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           },
-          "updatedAt" : {
-            "type" : "string",
-            "format" : "date-time"
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           },
-          "version" : {
-            "type" : "integer",
-            "format" : "int64"
+          "version": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
-      "AuthTokenRequest" : {
-        "type" : "object",
-        "description" : "Credentials used to obtain a JWT access token",
-        "properties" : {
-          "username" : {
-            "type" : "string",
-            "example" : "dev-user",
-            "minLength" : 1
+      "AuthTokenRequest": {
+        "type": "object",
+        "description": "Credentials used to obtain a JWT access token",
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "dev-user",
+            "minLength": 1
           },
-          "password" : {
-            "type" : "string",
-            "example" : "dev-password",
-            "minLength" : 1
+          "password": {
+            "type": "string",
+            "example": "dev-password",
+            "minLength": 1
           }
         },
-        "required" : [ "password", "username" ]
+        "required": [
+          "password",
+          "username"
+        ]
       },
-      "AuthTokenResponse" : {
-        "type" : "object",
-        "description" : "JWT access token issued after successful authentication",
-        "properties" : {
-          "accessToken" : {
-            "type" : "string",
-            "example" : "eyJhbGciOiJIUzI1NiJ9..."
+      "AuthTokenResponse": {
+        "type": "object",
+        "description": "JWT access token issued after successful authentication",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiJ9..."
           },
-          "tokenType" : {
-            "type" : "string",
-            "example" : "Bearer"
+          "tokenType": {
+            "type": "string",
+            "example": "Bearer"
           },
-          "expiresInMs" : {
-            "type" : "integer",
-            "format" : "int64",
-            "example" : 900000
+          "expiresInMs": {
+            "type": "integer",
+            "format": "int64",
+            "example": 900000
           }
         }
       },
-      "UpdatePersonalInfoRequest" : {
-        "type" : "object",
-        "description" : "Personal information for updating an existing draft quote",
-        "properties" : {
-          "name" : {
-            "type" : "string",
-            "description" : "Applicant full name",
-            "example" : "Jane Doe",
-            "maxLength" : 255
+      "UpdatePersonalInfoRequest": {
+        "type": "object",
+        "description": "Personal information for updating an existing draft quote",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Applicant full name",
+            "example": "Jane Doe",
+            "maxLength": 255
           },
-          "email" : {
-            "type" : "string",
-            "format" : "email",
-            "description" : "Applicant email address",
-            "example" : "jane@example.com",
-            "maxLength" : 255
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Applicant email address",
+            "example": "jane@example.com",
+            "maxLength": 255
           },
-          "age" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "Applicant age in years",
-            "example" : 30,
-            "maximum" : 120,
-            "minimum" : 1
+          "age": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Applicant age in years",
+            "example": 30,
+            "maximum": 120,
+            "minimum": 1
           },
-          "zipCode" : {
-            "type" : "string",
-            "description" : "5-digit Mexican postal code (código postal)",
-            "example" : "06600",
-            "pattern" : "\\d{5}"
+          "zipCode": {
+            "type": "string",
+            "description": "5-digit Mexican postal code (c\u00f3digo postal)",
+            "example": "06600",
+            "pattern": "\\d{5}"
           }
         },
-        "required" : [ "age", "email", "name", "zipCode" ]
+        "required": [
+          "age",
+          "email",
+          "name",
+          "zipCode"
+        ]
       },
-      "UpdateCoverageRequest" : {
-        "type" : "object",
-        "description" : "Partial coverage update; omit fields to leave them unchanged",
-        "properties" : {
-          "coverageType" : {
-            "type" : "string",
-            "description" : "Selected coverage tier",
-            "enum" : [ "BASIC", "STANDARD", "PREMIUM" ],
-            "example" : "STANDARD"
+      "UpdateCoverageRequest": {
+        "type": "object",
+        "description": "Partial coverage update; omit fields to leave them unchanged",
+        "properties": {
+          "coverageType": {
+            "type": "string",
+            "description": "Selected coverage tier",
+            "enum": [
+              "BASIC",
+              "STANDARD",
+              "PREMIUM"
+            ],
+            "example": "STANDARD"
           },
-          "hasPreexistingConditions" : {
-            "type" : "boolean",
-            "description" : "Whether the applicant has pre-existing conditions (required when age is over 65)"
+          "hasPreexistingConditions": {
+            "type": "boolean",
+            "description": "Whether the applicant has pre-existing conditions (required when age is over 65)"
           },
-          "conditions" : {
-            "type" : "array",
-            "description" : "Reported pre-existing conditions (required when hasPreexistingConditions is true)",
-            "items" : {
-              "type" : "string",
-              "enum" : [ "DIABETES", "HEART_DISEASE", "HYPERTENSION", "CANCER_HISTORY", "OTHER" ]
+          "conditions": {
+            "type": "array",
+            "description": "Reported pre-existing conditions (required when hasPreexistingConditions is true)",
+            "items": {
+              "type": "string",
+              "enum": [
+                "DIABETES",
+                "HEART_DISEASE",
+                "HYPERTENSION",
+                "CANCER_HISTORY",
+                "OTHER"
+              ]
             },
-            "uniqueItems" : true
+            "uniqueItems": true
           },
-          "takesPrescriptionMedication" : {
-            "type" : "boolean",
-            "description" : "Whether the applicant takes prescription medication"
+          "takesPrescriptionMedication": {
+            "type": "boolean",
+            "description": "Whether the applicant takes prescription medication"
           },
-          "usesTobacco" : {
-            "type" : "boolean",
-            "description" : "Whether the applicant uses tobacco"
+          "usesTobacco": {
+            "type": "boolean",
+            "description": "Whether the applicant uses tobacco"
           },
-          "needsSpouseCoverage" : {
-            "type" : "boolean",
-            "description" : "Whether spouse coverage is needed"
+          "needsSpouseCoverage": {
+            "type": "boolean",
+            "description": "Whether spouse coverage is needed"
           }
         }
       },
-      "PageQuoteResponse" : {
-        "type" : "object",
-        "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
+      "Pageable": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PageQuoteResponse": {
+        "type": "object",
+        "properties": {
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
           },
-          "last" : {
-            "type" : "boolean"
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
           },
-          "first" : {
-            "type" : "boolean"
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
           },
-          "size" : {
-            "type" : "integer",
-            "format" : "int32"
+          "first": {
+            "type": "boolean"
           },
-          "content" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/QuoteResponse"
+          "last": {
+            "type": "boolean"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuoteResponse"
             }
           },
-          "number" : {
-            "type" : "integer",
-            "format" : "int32"
+          "number": {
+            "type": "integer",
+            "format": "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
           },
-          "empty" : {
-            "type" : "boolean"
+          "empty": {
+            "type": "boolean"
           }
         }
       },
-      "PageableObject" : {
-        "type" : "object",
-        "properties" : {
-          "paged" : {
-            "type" : "boolean"
+      "PageableObject": {
+        "type": "object",
+        "properties": {
+          "paged": {
+            "type": "boolean"
           },
-          "pageNumber" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
           },
-          "pageSize" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
           },
-          "unpaged" : {
-            "type" : "boolean"
+          "unpaged": {
+            "type": "boolean"
           },
-          "offset" : {
-            "type" : "integer",
-            "format" : "int64"
+          "offset": {
+            "type": "integer",
+            "format": "int64"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
           }
         }
       },
-      "SortObject" : {
-        "type" : "object",
-        "properties" : {
-          "sorted" : {
-            "type" : "boolean"
+      "SortObject": {
+        "type": "object",
+        "properties": {
+          "unsorted": {
+            "type": "boolean"
           },
-          "unsorted" : {
-            "type" : "boolean"
+          "sorted": {
+            "type": "boolean"
           },
-          "empty" : {
-            "type" : "boolean"
+          "empty": {
+            "type": "boolean"
           }
         }
       }
     },
-    "securitySchemes" : {
-      "bearerAuth" : {
-        "type" : "http",
-        "description" : "JWT from POST /api/v1/auth/token — send as Authorization Bearer header or via HttpOnly access_token cookie for browser clients",
-        "scheme" : "bearer",
-        "bearerFormat" : "JWT"
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "JWT from POST /api/v1/auth/token \u2014 send as Authorization Bearer header or via HttpOnly access_token cookie for browser clients",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }
