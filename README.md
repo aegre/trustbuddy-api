@@ -47,8 +47,7 @@ If `../trustbuddy-frontend` is missing, `stack-all-up` warns and starts the API 
 ## Run the API (Docker)
 
 ```bash
-cp .env.example .env
-make stack-up           # API + PostgreSQL + Redis + Kafka
+make stack-up           # API + PostgreSQL + Redis + Kafka (creates .env from .env.example if missing)
 # API: http://localhost:8080
 make stack-logs         # tail all service logs
 make stack-down         # stop full stack
