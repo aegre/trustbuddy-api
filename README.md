@@ -124,6 +124,7 @@ Base URL when running locally: `http://localhost:8080`
 |--------|------|------|-------------|
 | `POST` | `/api/v1/auth/token` | — | Obtain JWT (`username`, `password`); sets HttpOnly cookie and returns Bearer token in body |
 | `POST` | `/api/v1/auth/logout` | — | Clear access-token cookie (browser clients) |
+| `GET` | `/api/v1/auth/me` | JWT | Return authenticated username (validates Bearer header or access-token cookie) |
 | `POST` | `/api/v1/quotes` | JWT | Create draft quote |
 | `PATCH` | `/api/v1/quotes/{id}/coverage` | JWT | Set coverage and health answers; recalculates premium |
 | `POST` | `/api/v1/quotes/{id}/submit` | JWT | Submit to external insurer gateway |
@@ -135,7 +136,7 @@ Base URL when running locally: `http://localhost:8080`
 | Client | How |
 |--------|-----|
 | Postman, scripts, Swagger | `Authorization: Bearer <token>` from `POST /api/v1/auth/token` response body |
-| Browser frontend | HttpOnly `access_token` cookie set by `/api/v1/auth/token`; send requests with `credentials: 'include'`; call `POST /api/v1/auth/logout` to clear |
+| Browser frontend | HttpOnly `access_token` cookie set by `/api/v1/auth/token`; send requests with `credentials: 'include'`; call `GET /api/v1/auth/me` to check the session and `POST /api/v1/auth/logout` to clear |
 
 Bearer takes precedence when both are present. Cookie flags: `HttpOnly`, `SameSite=Lax`, `Secure` in production (`JWT_COOKIE_SECURE=true`). Configure via `JWT_COOKIE_NAME`, `JWT_COOKIE_SAME_SITE` in [`.env.example`](.env.example).
 

@@ -63,7 +63,8 @@ public class SecurityConfig {
 																										"/v3/api-docs/**")
 																						.permitAll();
 																}
-																auth.requestMatchers(ApiPaths.QUOTES + "/**").authenticated();
+																auth.requestMatchers(ApiPaths.AUTH + "/me", ApiPaths.QUOTES + "/**")
+																				.authenticated();
 																auth.anyRequest().denyAll();
 														})
 										.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

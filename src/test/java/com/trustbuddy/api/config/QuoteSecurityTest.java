@@ -168,4 +168,39 @@ class QuoteSecurityTest {
 								.andExpect(status().isOk())
 								.andExpect(jsonPath("$.accessToken").isNotEmpty());
 		}
+
+		@Test
+		void givenNoToken_whenAuthMe_thenReturn401() throws Exception {
+				// Given — no Authorization header or cookie
+
+				// When / Then
+				mockMvc.perform(get(ApiPaths.AUTH + "/me"))
+								.andExpect(status().isUnauthorized())
+								.andExpect(jsonPath("$.status").value(401))
+								.andExpect(jsonPath("$.path").value(ApiPaths.AUTH + "/me"));
+		}
+
+		@Test
+		void givenValidBearerToken_whenAuthMe_thenReturnUsername() throws Exception {
+				// Given
+				String token = jwtService.generateToken("test-user");
+
+				// When / Then
+				mockMvc.perform(get(ApiPaths.AUTH + "/me").header("Authorization", "Bearer " + token))
+								.andExpect(status().isOk())
+								.andExpect(jsonPath("$.username").value("test-user"));
+		}
+
+		@Test
+		void givenValidAccessTokenCookie_whenAuthMe_thenReturnUsername() throws Exception {
+				// Given
+				String token = jwtService.generateToken("test-user");
+
+				// When / Then
+				mockMvc.perform(
+												get(ApiPaths.AUTH + "/me")
+																.cookie(new jakarta.servlet.http.Cookie("access_token", token)))
+								.andExpect(status().isOk())
+								.andExpect(jsonPath("$.username").value("test-user"));
+		}
 }

@@ -5,14 +5,18 @@ import com.trustbuddy.api.config.JwtService;
 import com.trustbuddy.api.config.properties.AuthProperties;
 import com.trustbuddy.api.config.properties.JwtProperties;
 import com.trustbuddy.api.config.web.request.AuthTokenRequest;
+import com.trustbuddy.api.config.web.response.AuthMeResponse;
 import com.trustbuddy.api.config.web.response.AuthTokenResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -70,6 +74,16 @@ public class AuthController {
 												HttpHeaders.SET_COOKIE,
 												accessTokenCookieService.clearAccessTokenCookie().toString())
 								.build();
+		}
+
+		@GetMapping("/me")
+		@Operation(
+						summary = "Return the authenticated principal",
+						description =
+										"Validates the JWT from the Authorization Bearer header or the HttpOnly"
+														+ " access-token cookie. Returns 401 when missing or invalid.")
+		public AuthMeResponse me(@Parameter(hidden = true) Authentication authentication) {
+				return new AuthMeResponse(authentication.getName());
 		}
 
 		private boolean isValidCredentials(AuthTokenRequest request) {
