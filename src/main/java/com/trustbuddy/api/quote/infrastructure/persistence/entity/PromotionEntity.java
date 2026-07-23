@@ -8,21 +8,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * JPA mapping for the {@code promotions} catalog table.
- *
- * <p>Columns (created via {@code ddl-auto=update} in {@code dev}/{@code docker} profiles; validated
- * elsewhere — Flyway migrations not introduced yet):
- *
- * <ul>
- *   <li>{@code id} UUID PK
- *   <li>{@code code} VARCHAR(64) unique, stored normalized (trim + uppercase)
- *   <li>{@code percentage} NUMERIC(5,2) — percent off premium (e.g. 10.00 = 10%)
- *   <li>{@code active} BOOLEAN
- *   <li>{@code starts_at} TIMESTAMPTZ
- *   <li>{@code ends_at} TIMESTAMPTZ
- * </ul>
- */
+/** JPA mapping for the {@code promotions} catalog table. */
 @Entity
 @Table(name = "promotions")
 public class PromotionEntity {
