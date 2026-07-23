@@ -2,6 +2,7 @@ package com.trustbuddy.api.quote.domain.model;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -35,7 +36,7 @@ public record Promotion(
 
 		public static String normalizeCode(String code) {
 				Objects.requireNonNull(code, "code");
-				return code.trim().toUpperCase();
+				return code.trim().toUpperCase(Locale.ENGLISH);
 		}
 
 		/** True when the promotion is active and {@code at} falls within {@code [startsAt, endsAt]}. */
