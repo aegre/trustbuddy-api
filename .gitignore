@@ -1,8 +1,6 @@
 HELP.md
 
 ### Local environment ###
-.env
-.env.*
 !.env.example
 
 ### Local Spring overrides ###
@@ -49,4 +47,4 @@ build/
 !**/src/test/**/build/
 
 ### VS Code ###
-.vscode/
+node_modules
