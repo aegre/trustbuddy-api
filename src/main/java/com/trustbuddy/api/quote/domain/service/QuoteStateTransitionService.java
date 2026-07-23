@@ -19,6 +19,12 @@ public class QuoteStateTransitionService {
 				}
 		}
 
+		public void ensureCanUpdatePromoCode(Quote quote) {
+				if (quote.getStatus() != QuoteStatus.DRAFT) {
+						throw new InvalidQuoteStateException(quote.getStatus(), "update promo code");
+				}
+		}
+
 		public Quote markSubmitted(Quote quote) {
 				if (quote.getStatus() == QuoteStatus.SUBMITTED) {
 						return quote;
