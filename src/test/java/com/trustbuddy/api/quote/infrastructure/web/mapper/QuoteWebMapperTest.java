@@ -3,13 +3,17 @@ package com.trustbuddy.api.quote.infrastructure.web.mapper;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
+import com.trustbuddy.api.quote.domain.model.AppliedPromotion;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
+import com.trustbuddy.api.quote.domain.model.CoverageDetails;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
 import com.trustbuddy.api.quote.infrastructure.web.response.QuoteResponse;
+import com.trustbuddy.api.quote.testsupport.PromotionGenerator;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 import java.math.BigDecimal;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class QuoteWebMapperTest {
@@ -31,6 +35,9 @@ class QuoteWebMapperTest {
 				assertThat(response.getStatus()).isEqualTo(QuoteStatus.DRAFT);
 				assertThat(response.getCoverageType()).isEqualTo(CoverageType.STANDARD);
 				assertThat(response.getEstimatedMonthlyPremium()).isEqualByComparingTo(BigDecimal.ZERO);
+				assertThat(response.getPromoCode()).isNull();
+				assertThat(response.getPromotionPercentage()).isNull();
+				assertThat(response.getDiscountAmount()).isNull();
 		}
 
 		@Test
@@ -54,5 +61,36 @@ class QuoteWebMapperTest {
 				assertThat(response.getUsesTobacco()).isTrue();
 				assertThat(response.getNeedsSpouseCoverage()).isTrue();
 				assertThat(response.getEstimatedMonthlyPremium()).isEqualByComparingTo(BigDecimal.ZERO);
+		}
+
+		@Test
+		void givenQuoteWithAppliedPromotion_whenToResponse_thenMapsPromoFields() {
+				// Given
+				var promotion = PromotionGenerator.active("SAVE10", new BigDecimal("10"));
+				Quote quote =
+								QuoteGenerator.coverage(30, CoverageType.STANDARD)
+												.takesPrescriptionMedication(false)
+												.usesTobacco(false)
+												.needsSpouseCoverage(false)
+												.build()
+												.applyCoverage(
+																new CoverageDetails(
+																				CoverageType.STANDARD,
+																				null,
+																				Set.of(),
+																				false,
+																				false,
+																				false,
+																				new BigDecimal("100.00")))
+												.applyPromotion(AppliedPromotion.from(promotion, new BigDecimal("10.00")));
+
+				// When
+				QuoteResponse response = QuoteWebMapper.toResponse(quote);
+
+				// Then
+				assertThat(response.getEstimatedMonthlyPremium()).isEqualByComparingTo("100.00");
+				assertThat(response.getPromoCode()).isEqualTo("SAVE10");
+				assertThat(response.getPromotionPercentage()).isEqualByComparingTo("10");
+				assertThat(response.getDiscountAmount()).isEqualByComparingTo("10.00");
 		}
 }
