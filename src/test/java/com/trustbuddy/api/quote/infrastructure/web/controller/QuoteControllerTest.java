@@ -17,6 +17,7 @@ import com.trustbuddy.api.config.web.ApiPaths;
 import com.trustbuddy.api.config.web.exception.ClientRequestExceptionHandler;
 import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.config.web.response.ApiErrorCodes;
+import com.trustbuddy.api.quote.application.port.out.PromotionRepositoryPort;
 import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.service.QuoteService;
@@ -76,14 +77,18 @@ class QuoteControllerTest {
 				QuoteService quoteService(
 								QuoteRepositoryPort quoteRepository,
 								QuoteCachePort quoteCachePort,
+								PromotionRepositoryPort promotionRepository,
 								CommandValidator commandValidator) {
-						return new QuoteService(quoteRepository, quoteCachePort, commandValidator);
+						return new QuoteService(
+										quoteRepository, quoteCachePort, promotionRepository, commandValidator);
 				}
 		}
 
 		@Autowired private MockMvc mockMvc;
 
 		@MockitoBean private QuoteRepositoryPort quoteRepository;
+
+		@MockitoBean private PromotionRepositoryPort promotionRepository;
 
 		@MockitoBean private QuoteSubmissionService quoteSubmissionService;
 

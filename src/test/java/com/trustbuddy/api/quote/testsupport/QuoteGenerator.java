@@ -54,7 +54,8 @@ public final class QuoteGenerator {
 												draft.getStatus(),
 												draft.getCreatedAt(),
 												draft.getUpdatedAt(),
-												draft.getVersion()));
+												draft.getVersion()),
+								null);
 		}
 
 		public static Quote readyForSubmissionWithoutTakesPrescriptionMedication(int age) {

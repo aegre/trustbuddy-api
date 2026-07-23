@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.trustbuddy.api.quote.domain.model.AppliedPromotion;
 import com.trustbuddy.api.quote.domain.model.CoverageDetails;
 import com.trustbuddy.api.quote.domain.model.PersonalInfo;
 import com.trustbuddy.api.quote.domain.model.Quote;
@@ -40,6 +41,7 @@ public class QuoteCacheMapper {
 		}
 
 		private static QuoteCacheDocument toDocument(Quote quote) {
+				AppliedPromotion appliedPromotion = quote.getAppliedPromotion();
 				return new QuoteCacheDocument(
 								quote.getId(),
 								quote.getName(),
@@ -53,6 +55,10 @@ public class QuoteCacheMapper {
 								quote.getUsesTobacco(),
 								quote.getNeedsSpouseCoverage(),
 								quote.getEstimatedMonthlyPremium(),
+								appliedPromotion == null ? null : appliedPromotion.promotionId(),
+								appliedPromotion == null ? null : appliedPromotion.code(),
+								appliedPromotion == null ? null : appliedPromotion.percentage(),
+								appliedPromotion == null ? null : appliedPromotion.discountAmount(),
 								quote.getStatus(),
 								quote.getCreatedAt(),
 								quote.getUpdatedAt(),
@@ -71,6 +77,14 @@ public class QuoteCacheMapper {
 																document.usesTobacco(),
 																document.needsSpouseCoverage(),
 																document.estimatedMonthlyPremium());
+				AppliedPromotion appliedPromotion =
+								document.appliedPromotionId() == null
+												? null
+												: new AppliedPromotion(
+																document.appliedPromotionId(),
+																document.promoCode(),
+																document.promotionPercentage(),
+																document.discountAmount());
 				return Quote.reconstitute(
 								document.id(),
 								new PersonalInfo(
@@ -80,6 +94,7 @@ public class QuoteCacheMapper {
 												document.status(),
 												document.createdAt(),
 												document.updatedAt(),
-												document.version()));
+												document.version()),
+								appliedPromotion);
 		}
 }
