@@ -27,7 +27,6 @@ import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
 import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
 import com.trustbuddy.api.quote.domain.model.AppliedPromotion;
-import com.trustbuddy.api.quote.domain.model.CoverageDetails;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
 import com.trustbuddy.api.quote.domain.model.Promotion;
 import com.trustbuddy.api.quote.domain.model.Quote;
@@ -36,7 +35,6 @@ import com.trustbuddy.api.quote.infrastructure.web.exception.QuoteExceptionHandl
 import com.trustbuddy.api.quote.testsupport.PromotionGenerator;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 import java.math.BigDecimal;
-import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -310,7 +308,7 @@ class QuoteControllerTest {
 		@Test
 		void givenValidPromoCode_whenUpdatePromoCode_thenReturnsQuoteWithDiscount() throws Exception {
 				// Given
-				Quote draft = quoteWithPremium(new BigDecimal("100.00"));
+				Quote draft = QuoteGenerator.withPremium(new BigDecimal("100.00"));
 				Promotion promotion = PromotionGenerator.active("SAVE10", new BigDecimal("10"));
 				when(quoteRepository.findById(draft.getId())).thenReturn(java.util.Optional.of(draft));
 				when(promotionRepository.findByCode("SAVE10")).thenReturn(java.util.Optional.of(promotion));
@@ -338,7 +336,8 @@ class QuoteControllerTest {
 		void givenSubmittedQuote_whenUpdatePromoCode_thenReturns409() throws Exception {
 				// Given
 				Quote submitted =
-								quoteWithPremium(new BigDecimal("100.00")).withStatus(QuoteStatus.SUBMITTED);
+								QuoteGenerator.withPremium(new BigDecimal("100.00"))
+												.withStatus(QuoteStatus.SUBMITTED);
 				when(quoteRepository.findById(submitted.getId()))
 								.thenReturn(java.util.Optional.of(submitted));
 
@@ -362,7 +361,7 @@ class QuoteControllerTest {
 				// Given
 				Promotion promotion = PromotionGenerator.active("SAVE10", new BigDecimal("10"));
 				Quote draft =
-								quoteWithPremium(new BigDecimal("100.00"))
+								QuoteGenerator.withPremium(new BigDecimal("100.00"))
 												.applyPromotion(AppliedPromotion.from(promotion, new BigDecimal("10.00")));
 				when(quoteRepository.findById(draft.getId())).thenReturn(java.util.Optional.of(draft));
 				when(quoteRepository.save(any(Quote.class)))
@@ -380,7 +379,7 @@ class QuoteControllerTest {
 		@Test
 		void givenBlankPromoCode_whenUpdatePromoCode_thenReturns400() throws Exception {
 				// Given
-				Quote draft = quoteWithPremium(new BigDecimal("100.00"));
+				Quote draft = QuoteGenerator.withPremium(new BigDecimal("100.00"));
 				when(quoteRepository.findById(draft.getId())).thenReturn(java.util.Optional.of(draft));
 
 				// When / Then
@@ -484,22 +483,5 @@ class QuoteControllerTest {
 				ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 				verify(quoteRepository).findAll(pageableCaptor.capture());
 				assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(100);
-		}
-
-		private static Quote quoteWithPremium(BigDecimal premium) {
-				return QuoteGenerator.coverage(30, CoverageType.STANDARD)
-								.takesPrescriptionMedication(false)
-								.usesTobacco(false)
-								.needsSpouseCoverage(false)
-								.build()
-								.applyCoverage(
-												new CoverageDetails(
-																CoverageType.STANDARD,
-																null,
-																Set.of(),
-																false,
-																false,
-																false,
-																premium));
 		}
 }
