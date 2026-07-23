@@ -1,5 +1,6 @@
 package com.trustbuddy.api.quote.infrastructure.persistence.mapper;
 
+import com.trustbuddy.api.quote.domain.model.AppliedPromotion;
 import com.trustbuddy.api.quote.domain.model.CoverageDetails;
 import com.trustbuddy.api.quote.domain.model.PersonalInfo;
 import com.trustbuddy.api.quote.domain.model.Quote;
@@ -24,6 +25,18 @@ public class QuotePersistenceMapper {
 				entity.setUsesTobacco(quote.getUsesTobacco());
 				entity.setNeedsSpouseCoverage(quote.getNeedsSpouseCoverage());
 				entity.setEstimatedMonthlyPremium(quote.getEstimatedMonthlyPremium());
+				AppliedPromotion appliedPromotion = quote.getAppliedPromotion();
+				if (appliedPromotion == null) {
+						entity.setAppliedPromotionId(null);
+						entity.setPromoCode(null);
+						entity.setPromotionPercentage(null);
+						entity.setDiscountAmount(null);
+				} else {
+						entity.setAppliedPromotionId(appliedPromotion.promotionId());
+						entity.setPromoCode(appliedPromotion.code());
+						entity.setPromotionPercentage(appliedPromotion.percentage());
+						entity.setDiscountAmount(appliedPromotion.discountAmount());
+				}
 				entity.setStatus(quote.getStatus());
 				entity.setCreatedAt(quote.getCreatedAt());
 				entity.setUpdatedAt(quote.getUpdatedAt());
@@ -40,7 +53,8 @@ public class QuotePersistenceMapper {
 												entity.getStatus(),
 												entity.getCreatedAt(),
 												entity.getUpdatedAt(),
-												entity.getVersion()));
+												entity.getVersion()),
+								toAppliedPromotion(entity));
 		}
 
 		private CoverageDetails toCoverageDetails(QuoteEntity entity) {
@@ -55,5 +69,16 @@ public class QuotePersistenceMapper {
 								entity.getUsesTobacco(),
 								entity.getNeedsSpouseCoverage(),
 								entity.getEstimatedMonthlyPremium());
+		}
+
+		private AppliedPromotion toAppliedPromotion(QuoteEntity entity) {
+				if (entity.getAppliedPromotionId() == null) {
+						return null;
+				}
+				return new AppliedPromotion(
+								entity.getAppliedPromotionId(),
+								entity.getPromoCode(),
+								entity.getPromotionPercentage(),
+								entity.getDiscountAmount());
 		}
 }

@@ -54,7 +54,8 @@ public final class QuoteGenerator {
 												draft.getStatus(),
 												draft.getCreatedAt(),
 												draft.getUpdatedAt(),
-												draft.getVersion()));
+												draft.getVersion()),
+								null);
 		}
 
 		public static Quote readyForSubmissionWithoutTakesPrescriptionMedication(int age) {
@@ -68,6 +69,20 @@ public final class QuoteGenerator {
 				return new CoverageBuilder(age, coverageType);
 		}
 
+		/** Draft STANDARD coverage with health answers set and a fixed premium (not recalculated). */
+		public static Quote withPremium(BigDecimal premium) {
+				return withPremium(30, premium);
+		}
+
+		public static Quote withPremium(int age, BigDecimal premium) {
+				return coverage(age, CoverageType.STANDARD)
+								.takesPrescriptionMedication(false)
+								.usesTobacco(false)
+								.needsSpouseCoverage(false)
+								.premium(premium)
+								.build();
+		}
+
 		public static final class CoverageBuilder {
 
 				private final int age;
@@ -77,6 +92,7 @@ public final class QuoteGenerator {
 				private Boolean takesPrescriptionMedication;
 				private Boolean usesTobacco;
 				private Boolean needsSpouseCoverage;
+				private BigDecimal estimatedMonthlyPremium = PLACEHOLDER_PREMIUM;
 
 				private CoverageBuilder(int age, CoverageType coverageType) {
 						this.age = age;
@@ -113,6 +129,11 @@ public final class QuoteGenerator {
 						return this;
 				}
 
+				public CoverageBuilder premium(BigDecimal estimatedMonthlyPremium) {
+						this.estimatedMonthlyPremium = estimatedMonthlyPremium;
+						return this;
+				}
+
 				public Quote build() {
 						CoverageDetails coverage =
 										new CoverageDetails(
@@ -122,7 +143,7 @@ public final class QuoteGenerator {
 														takesPrescriptionMedication,
 														usesTobacco,
 														needsSpouseCoverage,
-														PLACEHOLDER_PREMIUM);
+														estimatedMonthlyPremium);
 						return draft(age).applyCoverage(coverage);
 				}
 		}

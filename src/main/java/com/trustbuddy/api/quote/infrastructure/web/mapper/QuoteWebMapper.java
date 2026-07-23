@@ -3,10 +3,13 @@ package com.trustbuddy.api.quote.infrastructure.web.mapper;
 import com.trustbuddy.api.quote.application.dto.CreateQuoteCommand;
 import com.trustbuddy.api.quote.application.dto.UpdateCoverageCommand;
 import com.trustbuddy.api.quote.application.dto.UpdatePersonalInfoCommand;
+import com.trustbuddy.api.quote.application.dto.UpdatePromoCommand;
+import com.trustbuddy.api.quote.domain.model.AppliedPromotion;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.infrastructure.web.request.CreateQuoteRequest;
 import com.trustbuddy.api.quote.infrastructure.web.request.UpdateCoverageRequest;
 import com.trustbuddy.api.quote.infrastructure.web.request.UpdatePersonalInfoRequest;
+import com.trustbuddy.api.quote.infrastructure.web.request.UpdatePromoRequest;
 import com.trustbuddy.api.quote.infrastructure.web.response.QuoteResponse;
 import java.util.LinkedHashSet;
 
@@ -43,6 +46,12 @@ public final class QuoteWebMapper {
 				return command;
 		}
 
+		public static UpdatePromoCommand toCommand(UpdatePromoRequest request) {
+				UpdatePromoCommand command = new UpdatePromoCommand();
+				command.setCode(request.getCode());
+				return command;
+		}
+
 		public static QuoteResponse toResponse(Quote quote) {
 				QuoteResponse response = new QuoteResponse();
 				response.setId(quote.getId());
@@ -57,6 +66,12 @@ public final class QuoteWebMapper {
 				response.setUsesTobacco(quote.getUsesTobacco());
 				response.setNeedsSpouseCoverage(quote.getNeedsSpouseCoverage());
 				response.setEstimatedMonthlyPremium(quote.getEstimatedMonthlyPremium());
+				AppliedPromotion appliedPromotion = quote.getAppliedPromotion();
+				if (appliedPromotion != null) {
+						response.setPromoCode(appliedPromotion.code());
+						response.setPromotionPercentage(appliedPromotion.percentage());
+						response.setDiscountAmount(appliedPromotion.discountAmount());
+				}
 				response.setStatus(quote.getStatus());
 				response.setCreatedAt(quote.getCreatedAt());
 				response.setUpdatedAt(quote.getUpdatedAt());

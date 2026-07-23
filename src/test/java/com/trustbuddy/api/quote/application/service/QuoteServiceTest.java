@@ -11,17 +11,24 @@ import com.trustbuddy.api.quote.application.dto.CreateQuoteCommand;
 import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.application.dto.UpdateCoverageCommand;
 import com.trustbuddy.api.quote.application.dto.UpdatePersonalInfoCommand;
+import com.trustbuddy.api.quote.application.dto.UpdatePromoCommand;
+import com.trustbuddy.api.quote.application.port.out.PromotionRepositoryPort;
 import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
+import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
 import com.trustbuddy.api.quote.domain.exception.QuoteNotFoundException;
 import com.trustbuddy.api.quote.domain.exception.QuoteValidationException;
+import com.trustbuddy.api.quote.domain.model.AppliedPromotion;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
+import com.trustbuddy.api.quote.domain.model.Promotion;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
+import com.trustbuddy.api.quote.testsupport.PromotionGenerator;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -42,11 +49,13 @@ class QuoteServiceTest {
 
 		@Mock private QuoteCachePort quoteCache;
 
+		@Mock private PromotionRepositoryPort promotionRepository;
+
 		private QuoteService quoteService;
 
 		@BeforeEach
 		void setUp() {
-				quoteService = new QuoteService(quoteRepository, quoteCache);
+				quoteService = new QuoteService(quoteRepository, quoteCache, promotionRepository);
 		}
 
 		@Test
@@ -415,6 +424,178 @@ class QuoteServiceTest {
 								.isEqualByComparingTo(new BigDecimal("50.00"));
 		}
 
+		@Test
+		void givenDraftQuoteWithPremium_whenUpdatePromoCode_thenAppliesPromotionSnapshot() {
+				// Given
+				Quote draft = QuoteGenerator.withPremium(new BigDecimal("100.00"));
+				Promotion promotion = PromotionGenerator.active("SAVE10", new BigDecimal("10"));
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.of(draft));
+				when(promotionRepository.findByCode("SAVE10")).thenReturn(Optional.of(promotion));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+
+				// When
+				Quote updated = quoteService.updatePromoCode(draft.getId(), promoCommand("SAVE10"));
+
+				// Then
+				assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("100.00");
+				assertThat(updated.getAppliedPromotion()).isNotNull();
+				assertThat(updated.getAppliedPromotion().code()).isEqualTo("SAVE10");
+				assertThat(updated.getAppliedPromotion().percentage()).isEqualByComparingTo("10");
+				assertThat(updated.getAppliedPromotion().discountAmount()).isEqualByComparingTo("10.00");
+				assertThat(updated.getAppliedPromotion().promotionId()).isEqualTo(promotion.id());
+		}
+
+		@Test
+		void givenQuoteWithExistingPromo_whenUpdatePromoCode_thenReplacesPromotion() {
+				// Given
+				Promotion first = PromotionGenerator.active("SAVE10", new BigDecimal("10"));
+				Promotion second = PromotionGenerator.active("SAVE25", new BigDecimal("25"));
+				Quote draft =
+								QuoteGenerator.withPremium(new BigDecimal("100.00"))
+												.applyPromotion(AppliedPromotion.from(first, new BigDecimal("10.00")));
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.of(draft));
+				when(promotionRepository.findByCode("SAVE25")).thenReturn(Optional.of(second));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+
+				// When
+				Quote updated = quoteService.updatePromoCode(draft.getId(), promoCommand("SAVE25"));
+
+				// Then
+				assertThat(updated.getAppliedPromotion().code()).isEqualTo("SAVE25");
+				assertThat(updated.getAppliedPromotion().discountAmount()).isEqualByComparingTo("25.00");
+		}
+
+		@Test
+		void givenQuoteWithPromo_whenClearPromoCode_thenRemovesAppliedPromotion() {
+				// Given
+				Promotion promotion = PromotionGenerator.active();
+				Quote draft =
+								QuoteGenerator.withPremium(new BigDecimal("100.00"))
+												.applyPromotion(AppliedPromotion.from(promotion, new BigDecimal("10.00")));
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.of(draft));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+
+				// When
+				Quote updated = quoteService.clearPromoCode(draft.getId());
+
+				// Then
+				assertThat(updated.getAppliedPromotion()).isNull();
+		}
+
+		@Test
+		void givenUnknownPromoCode_whenUpdatePromoCode_thenThrowsPromoNotFound() {
+				// Given
+				Quote draft = QuoteGenerator.withPremium(new BigDecimal("100.00"));
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.of(draft));
+				when(promotionRepository.findByCode("MISSING")).thenReturn(Optional.empty());
+
+				// When / Then
+				assertThatThrownBy(
+												() -> quoteService.updatePromoCode(draft.getId(), promoCommand("MISSING")))
+								.isInstanceOf(QuoteValidationException.class)
+								.extracting(ex -> ((QuoteValidationException) ex).getErrorCode())
+								.isEqualTo(QuoteErrorCodes.PROMO_NOT_FOUND);
+				verify(quoteRepository, never()).save(any());
+		}
+
+		@Test
+		void givenInactivePromo_whenUpdatePromoCode_thenThrowsPromoInvalid() {
+				// Given
+				Quote draft = QuoteGenerator.withPremium(new BigDecimal("100.00"));
+				Promotion inactive = PromotionGenerator.builder().active(false).build();
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.of(draft));
+				when(promotionRepository.findByCode(inactive.code())).thenReturn(Optional.of(inactive));
+
+				// When / Then
+				assertThatThrownBy(
+												() ->
+																quoteService.updatePromoCode(
+																				draft.getId(), promoCommand(inactive.code())))
+								.isInstanceOf(QuoteValidationException.class)
+								.extracting(ex -> ((QuoteValidationException) ex).getErrorCode())
+								.isEqualTo(QuoteErrorCodes.PROMO_INVALID);
+				verify(quoteRepository, never()).save(any());
+		}
+
+		@Test
+		void givenExpiredPromo_whenUpdatePromoCode_thenThrowsPromoInvalid() {
+				// Given
+				Quote draft = QuoteGenerator.withPremium(new BigDecimal("100.00"));
+				Promotion expired =
+								PromotionGenerator.builder()
+												.startsAt(Instant.parse("2020-01-01T00:00:00Z"))
+												.endsAt(Instant.parse("2020-12-31T23:59:59Z"))
+												.build();
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.of(draft));
+				when(promotionRepository.findByCode(expired.code())).thenReturn(Optional.of(expired));
+
+				// When / Then
+				assertThatThrownBy(
+												() ->
+																quoteService.updatePromoCode(
+																				draft.getId(), promoCommand(expired.code())))
+								.isInstanceOf(QuoteValidationException.class)
+								.extracting(ex -> ((QuoteValidationException) ex).getErrorCode())
+								.isEqualTo(QuoteErrorCodes.PROMO_INVALID);
+		}
+
+		@Test
+		void givenSubmittedQuote_whenUpdatePromoCode_thenThrowsInvalidQuoteStateException() {
+				// Given
+				Quote submitted =
+								QuoteGenerator.withPremium(new BigDecimal("100.00"))
+												.withStatus(QuoteStatus.SUBMITTED);
+				when(quoteCache.get(submitted.getId())).thenReturn(Optional.of(submitted));
+
+				// When / Then
+				assertThatThrownBy(
+												() ->
+																quoteService.updatePromoCode(
+																				submitted.getId(), promoCommand("SAVE10")))
+								.isInstanceOf(InvalidQuoteStateException.class);
+				verify(promotionRepository, never()).findByCode(any());
+		}
+
+		@Test
+		void givenQuoteWithoutPremium_whenUpdatePromoCode_thenThrowsPromoRequiresPremium() {
+				// Given
+				Quote draft = QuoteGenerator.draft(30);
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.of(draft));
+
+				// When / Then
+				assertThatThrownBy(
+												() -> quoteService.updatePromoCode(draft.getId(), promoCommand("SAVE10")))
+								.isInstanceOf(QuoteValidationException.class)
+								.extracting(ex -> ((QuoteValidationException) ex).getErrorCode())
+								.isEqualTo(QuoteErrorCodes.PROMO_REQUIRES_PREMIUM);
+				verify(promotionRepository, never()).findByCode(any());
+		}
+
+		@Test
+		void givenQuoteWithPromo_whenUpdateCoverage_thenRefreshesDiscountFromNewPremium() {
+				// Given
+				Promotion promotion = PromotionGenerator.active("SAVE10", new BigDecimal("10"));
+				Quote draft =
+								QuoteGenerator.withPremium(new BigDecimal("100.00"))
+												.applyPromotion(AppliedPromotion.from(promotion, new BigDecimal("10.00")));
+				when(quoteCache.get(draft.getId())).thenReturn(Optional.of(draft));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+				UpdateCoverageCommand command = new UpdateCoverageCommand();
+				command.setUsesTobacco(true);
+
+				// When
+				Quote updated = quoteService.updateCoverage(draft.getId(), command);
+
+				// Then
+				assertThat(updated.getEstimatedMonthlyPremium()).isEqualByComparingTo("120.00");
+				assertThat(updated.getAppliedPromotion().code()).isEqualTo("SAVE10");
+				assertThat(updated.getAppliedPromotion().discountAmount()).isEqualByComparingTo("12.00");
+		}
+
 		private static CreateQuoteCommand createCommand(
 						String name, String email, int age, String zipCode) {
 				CreateQuoteCommand command = new CreateQuoteCommand();
@@ -438,6 +619,12 @@ class QuoteServiceTest {
 				command.setEmail(email);
 				command.setAge(age);
 				command.setZipCode(zipCode);
+				return command;
+		}
+
+		private static UpdatePromoCommand promoCommand(String code) {
+				UpdatePromoCommand command = new UpdatePromoCommand();
+				command.setCode(code);
 				return command;
 		}
 }

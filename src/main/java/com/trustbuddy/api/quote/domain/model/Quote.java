@@ -13,12 +13,19 @@ public class Quote {
 		private final PersonalInfo personalInfo;
 		private final CoverageDetails coverage;
 		private final QuoteAudit audit;
+		private final AppliedPromotion appliedPromotion;
 
-		private Quote(UUID id, PersonalInfo personalInfo, CoverageDetails coverage, QuoteAudit audit) {
+		private Quote(
+						UUID id,
+						PersonalInfo personalInfo,
+						CoverageDetails coverage,
+						QuoteAudit audit,
+						AppliedPromotion appliedPromotion) {
 				this.id = Objects.requireNonNull(id, "id");
 				this.personalInfo = Objects.requireNonNull(personalInfo, "personalInfo");
 				this.coverage = coverage;
 				this.audit = Objects.requireNonNull(audit, "audit");
+				this.appliedPromotion = appliedPromotion;
 		}
 
 		public static Quote createDraft(String name, String email, int age, String zipCode) {
@@ -27,29 +34,68 @@ public class Quote {
 								UUID.randomUUID(),
 								new PersonalInfo(name, email, age, zipCode),
 								CoverageDetails.initialStandard(),
-								new QuoteAudit(QuoteStatus.DRAFT, now, now, 0L));
+								new QuoteAudit(QuoteStatus.DRAFT, now, now, 0L),
+								null);
 		}
 
 		public static Quote reconstitute(
-						UUID id, PersonalInfo personalInfo, CoverageDetails coverage, QuoteAudit audit) {
-				return new Quote(id, personalInfo, coverage, audit);
+						UUID id,
+						PersonalInfo personalInfo,
+						CoverageDetails coverage,
+						QuoteAudit audit,
+						AppliedPromotion appliedPromotion) {
+				return new Quote(id, personalInfo, coverage, audit, appliedPromotion);
 		}
 
 		public Quote applyCoverage(CoverageDetails coverage) {
 				return new Quote(
-								id, personalInfo, Objects.requireNonNull(coverage, "coverage"), audit.touch());
+								id,
+								personalInfo,
+								Objects.requireNonNull(coverage, "coverage"),
+								audit.touch(),
+								appliedPromotion);
 		}
 
 		public Quote withStatus(QuoteStatus status) {
-				return new Quote(id, personalInfo, coverage, audit.withStatus(status));
+				return new Quote(id, personalInfo, coverage, audit.withStatus(status), appliedPromotion);
 		}
 
 		public Quote withVersion(long version) {
-				return new Quote(id, personalInfo, coverage, audit.withVersion(version));
+				return new Quote(id, personalInfo, coverage, audit.withVersion(version), appliedPromotion);
 		}
 
 		public Quote withPersonalInfo(String name, String email, int age, String zipCode) {
-				return new Quote(id, new PersonalInfo(name, email, age, zipCode), coverage, audit.touch());
+				return new Quote(
+								id,
+								new PersonalInfo(name, email, age, zipCode),
+								coverage,
+								audit.touch(),
+								appliedPromotion);
+		}
+
+		public Quote applyPromotion(AppliedPromotion promotion) {
+				return new Quote(
+								id,
+								personalInfo,
+								coverage,
+								audit.touch(),
+								Objects.requireNonNull(promotion, "appliedPromotion"));
+		}
+
+		public Quote clearPromotion() {
+				return new Quote(id, personalInfo, coverage, audit.touch(), null);
+		}
+
+		public Quote withRecalculatedDiscount(BigDecimal discountAmount) {
+				if (appliedPromotion == null) {
+						return this;
+				}
+				return new Quote(
+								id,
+								personalInfo,
+								coverage,
+								audit.touch(),
+								appliedPromotion.withDiscountAmount(discountAmount));
 		}
 
 		public boolean hasCoverage() {
@@ -102,6 +148,10 @@ public class Quote {
 
 		public BigDecimal getEstimatedMonthlyPremium() {
 				return coverage == null ? null : coverage.estimatedMonthlyPremium();
+		}
+
+		public AppliedPromotion getAppliedPromotion() {
+				return appliedPromotion;
 		}
 
 		public QuoteStatus getStatus() {

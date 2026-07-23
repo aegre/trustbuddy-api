@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -17,6 +18,7 @@ import com.trustbuddy.api.config.web.ApiPaths;
 import com.trustbuddy.api.config.web.exception.ClientRequestExceptionHandler;
 import com.trustbuddy.api.config.web.exception.GlobalExceptionHandler;
 import com.trustbuddy.api.config.web.response.ApiErrorCodes;
+import com.trustbuddy.api.quote.application.port.out.PromotionRepositoryPort;
 import com.trustbuddy.api.quote.application.port.out.QuoteCachePort;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
 import com.trustbuddy.api.quote.application.service.QuoteService;
@@ -24,11 +26,15 @@ import com.trustbuddy.api.quote.application.service.QuoteSubmissionService;
 import com.trustbuddy.api.quote.application.validation.CommandValidator;
 import com.trustbuddy.api.quote.domain.exception.InvalidQuoteStateException;
 import com.trustbuddy.api.quote.domain.exception.QuoteErrorCodes;
+import com.trustbuddy.api.quote.domain.model.AppliedPromotion;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
+import com.trustbuddy.api.quote.domain.model.Promotion;
 import com.trustbuddy.api.quote.domain.model.Quote;
 import com.trustbuddy.api.quote.domain.model.QuoteStatus;
 import com.trustbuddy.api.quote.infrastructure.web.exception.QuoteExceptionHandler;
+import com.trustbuddy.api.quote.testsupport.PromotionGenerator;
 import com.trustbuddy.api.quote.testsupport.QuoteGenerator;
+import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -76,14 +82,18 @@ class QuoteControllerTest {
 				QuoteService quoteService(
 								QuoteRepositoryPort quoteRepository,
 								QuoteCachePort quoteCachePort,
+								PromotionRepositoryPort promotionRepository,
 								CommandValidator commandValidator) {
-						return new QuoteService(quoteRepository, quoteCachePort, commandValidator);
+						return new QuoteService(
+										quoteRepository, quoteCachePort, promotionRepository, commandValidator);
 				}
 		}
 
 		@Autowired private MockMvc mockMvc;
 
 		@MockitoBean private QuoteRepositoryPort quoteRepository;
+
+		@MockitoBean private PromotionRepositoryPort promotionRepository;
 
 		@MockitoBean private QuoteSubmissionService quoteSubmissionService;
 
@@ -293,6 +303,96 @@ class QuoteControllerTest {
 								"""))
 								.andExpect(status().isOk())
 								.andExpect(jsonPath("$.coverageType").value("PREMIUM"));
+		}
+
+		@Test
+		void givenValidPromoCode_whenUpdatePromoCode_thenReturnsQuoteWithDiscount() throws Exception {
+				// Given
+				Quote draft = QuoteGenerator.withPremium(new BigDecimal("100.00"));
+				Promotion promotion = PromotionGenerator.active("SAVE10", new BigDecimal("10"));
+				when(quoteRepository.findById(draft.getId())).thenReturn(java.util.Optional.of(draft));
+				when(promotionRepository.findByCode("SAVE10")).thenReturn(java.util.Optional.of(promotion));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+
+				// When / Then
+				mockMvc.perform(
+												patch(ApiPaths.QUOTES + "/{id}/promo-code", draft.getId())
+																.contentType(MediaType.APPLICATION_JSON)
+																.content(
+																				"""
+								{
+									"code": "SAVE10"
+								}
+								"""))
+								.andExpect(status().isOk())
+								.andExpect(jsonPath("$.estimatedMonthlyPremium").value(100.00))
+								.andExpect(jsonPath("$.promoCode").value("SAVE10"))
+								.andExpect(jsonPath("$.promotionPercentage").value(10))
+								.andExpect(jsonPath("$.discountAmount").value(10.00));
+		}
+
+		@Test
+		void givenSubmittedQuote_whenUpdatePromoCode_thenReturns409() throws Exception {
+				// Given
+				Quote submitted =
+								QuoteGenerator.withPremium(new BigDecimal("100.00"))
+												.withStatus(QuoteStatus.SUBMITTED);
+				when(quoteRepository.findById(submitted.getId()))
+								.thenReturn(java.util.Optional.of(submitted));
+
+				// When / Then
+				mockMvc.perform(
+												patch(ApiPaths.QUOTES + "/{id}/promo-code", submitted.getId())
+																.contentType(MediaType.APPLICATION_JSON)
+																.content(
+																				"""
+								{
+									"code": "SAVE10"
+								}
+								"""))
+								.andExpect(status().isConflict())
+								.andExpect(jsonPath("$.code").value(QuoteErrorCodes.QUOTE_INVALID_STATUS));
+		}
+
+		@Test
+		void givenQuoteWithPromo_whenClearPromoCode_thenReturnsQuoteWithoutPromoFields()
+						throws Exception {
+				// Given
+				Promotion promotion = PromotionGenerator.active("SAVE10", new BigDecimal("10"));
+				Quote draft =
+								QuoteGenerator.withPremium(new BigDecimal("100.00"))
+												.applyPromotion(AppliedPromotion.from(promotion, new BigDecimal("10.00")));
+				when(quoteRepository.findById(draft.getId())).thenReturn(java.util.Optional.of(draft));
+				when(quoteRepository.save(any(Quote.class)))
+								.thenAnswer(invocation -> invocation.getArgument(0));
+
+				// When / Then
+				mockMvc.perform(delete(ApiPaths.QUOTES + "/{id}/promo-code", draft.getId()))
+								.andExpect(status().isOk())
+								.andExpect(jsonPath("$.promoCode").doesNotExist())
+								.andExpect(jsonPath("$.promotionPercentage").doesNotExist())
+								.andExpect(jsonPath("$.discountAmount").doesNotExist())
+								.andExpect(jsonPath("$.estimatedMonthlyPremium").value(100.00));
+		}
+
+		@Test
+		void givenBlankPromoCode_whenUpdatePromoCode_thenReturns400() throws Exception {
+				// Given
+				Quote draft = QuoteGenerator.withPremium(new BigDecimal("100.00"));
+				when(quoteRepository.findById(draft.getId())).thenReturn(java.util.Optional.of(draft));
+
+				// When / Then
+				mockMvc.perform(
+												patch(ApiPaths.QUOTES + "/{id}/promo-code", draft.getId())
+																.contentType(MediaType.APPLICATION_JSON)
+																.content(
+																				"""
+								{
+									"code": " "
+								}
+								"""))
+								.andExpect(status().isBadRequest());
 		}
 
 		@Test

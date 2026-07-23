@@ -14,6 +14,9 @@ public final class QuoteErrorCodes {
 						"QUOTE_CONDITIONAL_FIELD_REJECTED";
 		public static final String QUOTE_EXTERNAL_SUBMISSION_FAILED =
 						"QUOTE_EXTERNAL_SUBMISSION_FAILED";
+		public static final String PROMO_NOT_FOUND = "PROMO_NOT_FOUND";
+		public static final String PROMO_INVALID = "PROMO_INVALID";
+		public static final String PROMO_REQUIRES_PREMIUM = "PROMO_REQUIRES_PREMIUM";
 
 		private QuoteErrorCodes() {}
 }
