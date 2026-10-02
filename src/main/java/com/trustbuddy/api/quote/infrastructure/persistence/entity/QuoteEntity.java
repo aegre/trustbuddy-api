@@ -58,6 +58,18 @@ public class QuoteEntity {
 		@Column(precision = 19, scale = 2)
 		private BigDecimal estimatedMonthlyPremium;
 
+		@Column(name = "applied_promotion_id")
+		private UUID appliedPromotionId;
+
+		@Column(name = "promo_code", length = 64)
+		private String promoCode;
+
+		@Column(name = "promotion_percentage", precision = 5, scale = 2)
+		private BigDecimal promotionPercentage;
+
+		@Column(name = "discount_amount", precision = 19, scale = 2)
+		private BigDecimal discountAmount;
+
 		@Enumerated(EnumType.STRING)
 		@Column(nullable = false)
 		private QuoteStatus status;
@@ -164,6 +176,38 @@ public class QuoteEntity {
 
 		public void setEstimatedMonthlyPremium(BigDecimal estimatedMonthlyPremium) {
 				this.estimatedMonthlyPremium = estimatedMonthlyPremium;
+		}
+
+		public UUID getAppliedPromotionId() {
+				return appliedPromotionId;
+		}
+
+		public void setAppliedPromotionId(UUID appliedPromotionId) {
+				this.appliedPromotionId = appliedPromotionId;
+		}
+
+		public String getPromoCode() {
+				return promoCode;
+		}
+
+		public void setPromoCode(String promoCode) {
+				this.promoCode = promoCode;
+		}
+
+		public BigDecimal getPromotionPercentage() {
+				return promotionPercentage;
+		}
+
+		public void setPromotionPercentage(BigDecimal promotionPercentage) {
+				this.promotionPercentage = promotionPercentage;
+		}
+
+		public BigDecimal getDiscountAmount() {
+				return discountAmount;
+		}
+
+		public void setDiscountAmount(BigDecimal discountAmount) {
+				this.discountAmount = discountAmount;
 		}
 
 		public QuoteStatus getStatus() {

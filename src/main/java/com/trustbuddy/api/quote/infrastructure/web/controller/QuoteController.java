@@ -8,6 +8,7 @@ import com.trustbuddy.api.quote.infrastructure.web.mapper.QuoteWebMapper;
 import com.trustbuddy.api.quote.infrastructure.web.request.CreateQuoteRequest;
 import com.trustbuddy.api.quote.infrastructure.web.request.UpdateCoverageRequest;
 import com.trustbuddy.api.quote.infrastructure.web.request.UpdatePersonalInfoRequest;
+import com.trustbuddy.api.quote.infrastructure.web.request.UpdatePromoRequest;
 import com.trustbuddy.api.quote.infrastructure.web.response.QuoteResponse;
 import com.trustbuddy.api.quote.infrastructure.web.support.QuotePageables;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -74,6 +76,21 @@ public class QuoteController {
 		public QuoteResponse updateCoverage(
 						@PathVariable UUID id, @RequestBody UpdateCoverageRequest request) {
 				Quote updated = quoteService.updateCoverage(id, QuoteWebMapper.toCommand(request));
+				return QuoteWebMapper.toResponse(updated);
+		}
+
+		@PatchMapping("/{id}/promo-code")
+		@Operation(summary = "Apply or replace a promotion code on a draft quote")
+		public QuoteResponse updatePromoCode(
+						@PathVariable UUID id, @RequestBody UpdatePromoRequest request) {
+				Quote updated = quoteService.updatePromoCode(id, QuoteWebMapper.toCommand(request));
+				return QuoteWebMapper.toResponse(updated);
+		}
+
+		@DeleteMapping("/{id}/promo-code")
+		@Operation(summary = "Clear the promotion code from a draft quote")
+		public QuoteResponse clearPromoCode(@PathVariable UUID id) {
+				Quote updated = quoteService.clearPromoCode(id);
 				return QuoteWebMapper.toResponse(updated);
 		}
 

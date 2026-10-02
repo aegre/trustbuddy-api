@@ -154,4 +154,24 @@ class QuoteStateTransitionServiceTest {
 								.isInstanceOf(InvalidQuoteStateException.class)
 								.hasMessageContaining("update personal information");
 		}
+
+		@Test
+		void givenDraftQuote_whenEnsureCanUpdatePromoCode_thenPasses() {
+				// Given
+				Quote draft = QuoteGenerator.draft(30);
+
+				// When / Then
+				quoteStateTransitionService.ensureCanUpdatePromoCode(draft);
+		}
+
+		@Test
+		void givenSubmittedQuote_whenEnsureCanUpdatePromoCode_thenThrowsInvalidQuoteStateException() {
+				// Given
+				Quote submitted = QuoteGenerator.draft(30).withStatus(QuoteStatus.SUBMITTED);
+
+				// When / Then
+				assertThatThrownBy(() -> quoteStateTransitionService.ensureCanUpdatePromoCode(submitted))
+								.isInstanceOf(InvalidQuoteStateException.class)
+								.hasMessageContaining("update promo code");
+		}
 }

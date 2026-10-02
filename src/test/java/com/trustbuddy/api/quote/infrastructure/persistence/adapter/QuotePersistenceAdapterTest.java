@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.trustbuddy.api.quote.application.dto.QuoteFieldConstraints;
 import com.trustbuddy.api.quote.application.port.out.QuoteRepositoryPort;
+import com.trustbuddy.api.quote.domain.model.AppliedPromotion;
 import com.trustbuddy.api.quote.domain.model.ConditionType;
 import com.trustbuddy.api.quote.domain.model.CoverageDetails;
 import com.trustbuddy.api.quote.domain.model.CoverageType;
@@ -16,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -122,6 +124,42 @@ class QuotePersistenceAdapterTest {
 		}
 
 		@Test
+		void givenQuoteWithAppliedPromotion_whenSaveAndFindById_thenRoundTripsPromoSnapshot() {
+				// Given
+				Quote draft =
+								quoteRepository.save(Quote.createDraft("Jane", "jane@example.com", 30, "06600"));
+				UUID promotionId = UUID.randomUUID();
+				Quote withPromo =
+								draft.applyCoverage(
+																new CoverageDetails(
+																				CoverageType.STANDARD,
+																				null,
+																				Set.of(),
+																				false,
+																				false,
+																				false,
+																				new BigDecimal("100.00")))
+												.applyPromotion(
+																new AppliedPromotion(
+																				promotionId,
+																				"SAVE10",
+																				new BigDecimal("10.00"),
+																				new BigDecimal("10.00")));
+
+				// When
+				Quote saved = quoteRepository.save(withPromo);
+				Quote found = quoteRepository.findById(saved.getId()).orElseThrow();
+
+				// Then
+				assertThat(found.getAppliedPromotion()).isNotNull();
+				assertThat(found.getAppliedPromotion().promotionId()).isEqualTo(promotionId);
+				assertThat(found.getAppliedPromotion().code()).isEqualTo("SAVE10");
+				assertThat(found.getAppliedPromotion().percentage()).isEqualByComparingTo("10.00");
+				assertThat(found.getAppliedPromotion().discountAmount()).isEqualByComparingTo("10.00");
+				assertThat(found.getEstimatedMonthlyPremium()).isEqualByComparingTo("100.00");
+		}
+
+		@Test
 		void givenTwoSavedQuotes_whenFindAll_thenReturnsPagedResults() {
 				// Given
 				quoteRepository.save(Quote.createDraft("A", "a@example.com", 25, "11111"));
@@ -140,10 +178,11 @@ class QuotePersistenceAdapterTest {
 				Instant staleUpdatedAt = Instant.now().minus(Duration.ofMinutes(31));
 				Quote staleDraft =
 								Quote.reconstitute(
-												java.util.UUID.randomUUID(),
+												UUID.randomUUID(),
 												new PersonalInfo("Stale", "stale@example.com", 40, "33333"),
 												null,
-												new QuoteAudit(QuoteStatus.DRAFT, staleUpdatedAt, staleUpdatedAt, 0L));
+												new QuoteAudit(QuoteStatus.DRAFT, staleUpdatedAt, staleUpdatedAt, 0L),
+												null);
 				quoteRepository.save(staleDraft);
 				quoteRepository.save(Quote.createDraft("Fresh", "fresh@example.com", 40, "44444"));
 

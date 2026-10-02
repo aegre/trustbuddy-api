@@ -23,6 +23,9 @@ public class QuoteResponse {
 		private Boolean usesTobacco;
 		private Boolean needsSpouseCoverage;
 		private BigDecimal estimatedMonthlyPremium;
+		private String promoCode;
+		private BigDecimal promotionPercentage;
+		private BigDecimal discountAmount;
 		private QuoteStatus status;
 		private Instant createdAt;
 		private Instant updatedAt;
@@ -122,6 +125,30 @@ public class QuoteResponse {
 
 		public void setEstimatedMonthlyPremium(BigDecimal estimatedMonthlyPremium) {
 				this.estimatedMonthlyPremium = estimatedMonthlyPremium;
+		}
+
+		public String getPromoCode() {
+				return promoCode;
+		}
+
+		public void setPromoCode(String promoCode) {
+				this.promoCode = promoCode;
+		}
+
+		public BigDecimal getPromotionPercentage() {
+				return promotionPercentage;
+		}
+
+		public void setPromotionPercentage(BigDecimal promotionPercentage) {
+				this.promotionPercentage = promotionPercentage;
+		}
+
+		public BigDecimal getDiscountAmount() {
+				return discountAmount;
+		}
+
+		public void setDiscountAmount(BigDecimal discountAmount) {
+				this.discountAmount = discountAmount;
 		}
 
 		public QuoteStatus getStatus() {
